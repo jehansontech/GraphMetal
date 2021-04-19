@@ -86,7 +86,7 @@ public struct RendererView: UIViewRepresentable {
 
     let longPressHandler: RendererLongPressHandler?
 
-    init(tapHandler: RendererTapHandler? = nil,
+    public init(tapHandler: RendererTapHandler? = nil,
          longPressHandler: RendererLongPressHandler? = nil) {
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler

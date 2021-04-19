@@ -73,7 +73,7 @@ public class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
     /// * Older displays have value 1
     var screenScaleFactor: Float = 1
 
-    init(_ parent: RendererView) throws {
+    public init(_ parent: RendererView) throws {
 
         print("Renderer.init")
         
@@ -140,7 +140,7 @@ public class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
     }
 
 
-    func takeScreenshot(_ view: MTKView) {
+    public func takeScreenshot(_ view: MTKView) {
 
         // taking a screen shot
         //
