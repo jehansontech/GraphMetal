@@ -35,7 +35,7 @@ protocol Widget: AnyObject {
 ///
 ///
 ///
-class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
+public class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
 
     let parent: RendererView
 
@@ -126,7 +126,7 @@ class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
         super.init()
     }
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+    public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         print("Renderer.mtkView size=\(size)")
         parent.updateProjection(viewSize: size)
 
@@ -196,7 +196,7 @@ class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
         // UIImageWriteToSavedPhotosAlbum(...., nil, nil, nil)
     }
 
-    func draw(in view: MTKView) {
+    public func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
         
         if let commandBuffer = commandQueue.makeCommandBuffer() {
@@ -386,7 +386,7 @@ class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
     }
 
     /// needed in order to do simultaneous gestures
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith: UIGestureRecognizer) -> Bool {
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith: UIGestureRecognizer) -> Bool {
         // print("simultaneous gestures: \(printGR(gestureRecognizer)) + \(printGR(shouldRecognizeSimultaneouslyWith))")
         if gestureRecognizer is UIPanGestureRecognizer || shouldRecognizeSimultaneouslyWith is UIPanGestureRecognizer {
             return false

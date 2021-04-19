@@ -8,14 +8,16 @@
 import SwiftUI
 import MetalKit
 
-protocol RendererTapHandler {
+
+public protocol RendererTapHandler {
 
     /// location is in clip space: (-1, -1) to (+1, +1)
     mutating func tap(at location: SIMD2<Float>)
 
 }
 
-protocol RendererLongPressHandler {
+
+public protocol RendererLongPressHandler {
 
     /// location is in clip space: (-1, -1) to (+1, +1)
     mutating func longPressBegan(at location: SIMD2<Float>)
@@ -23,7 +25,8 @@ protocol RendererLongPressHandler {
     mutating func longPressEnded()
 }
 
-protocol RendererDragHandler {
+
+public protocol RendererDragHandler {
 
     /// location is in clip space: (-1, -1) to (+1, +1)
     mutating func dragBegan(at location: SIMD2<Float>)
@@ -36,7 +39,8 @@ protocol RendererDragHandler {
 
 }
 
-protocol RendererPinchHandler {
+
+public protocol RendererPinchHandler {
 
     /// center is midpoint between two fingers
     mutating func pinchBegan(at center: SIMD2<Float>)
@@ -49,7 +53,7 @@ protocol RendererPinchHandler {
 }
 
 
-protocol RendererRotationHandler {
+public protocol RendererRotationHandler {
 
     /// center is midpoint between two fingers
     mutating func rotationBegan(at center: SIMD2<Float>)
@@ -63,9 +67,9 @@ protocol RendererRotationHandler {
 ///
 ///
 ///
-struct RendererView: UIViewRepresentable {
+public struct RendererView: UIViewRepresentable {
 
-    typealias UIViewType = MTKView
+    public typealias UIViewType = MTKView
 
 //     @EnvironmentObject var appModel: AppModel
     @EnvironmentObject var povController: POVController
@@ -88,7 +92,7 @@ struct RendererView: UIViewRepresentable {
         self.longPressHandler = longPressHandler
     }
 
-    func makeCoordinator() -> Renderer {
+    public func makeCoordinator() -> Renderer {
         do {
             return try Renderer(self)
         }
@@ -97,7 +101,7 @@ struct RendererView: UIViewRepresentable {
         }
     }
 
-    func makeUIView(context: Context) -> MTKView {
+    public func makeUIView(context: Context) -> MTKView {
         let mtkView = MTKView()
         mtkView.delegate = context.coordinator
         mtkView.preferredFramesPerSecond = 60
@@ -153,7 +157,7 @@ struct RendererView: UIViewRepresentable {
         return mtkView
     }
 
-    func updateUIView(_ view: MTKView, context: Context) {
+    public func updateUIView(_ view: MTKView, context: Context) {
         // print("RendererView.updateUIView")
     }
 
