@@ -21,10 +21,17 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Shaders"),
+            name: "Shaders",
+            resources: [.copy("Shaders.metallib")]),
         .target(
             name: "GraphMetal",
             dependencies: ["GenericGraph", .target(name: "Shaders")]),
+//            dependencies: ["GenericGraph"],
+//            resources: [.copy("Shaders/")],
+//            cSettings: [
+//                .headerSearchPath("include")            ],
+//            cxxSettings: [
+//                .headerSearchPath("include")]),
         .testTarget(
             name: "GraphMetalTests",
             dependencies: [.target(name: "GraphMetal")]),
