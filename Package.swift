@@ -14,7 +14,7 @@ let package = Package(
             targets: ["GraphMetal"]),
         .library(
             name: "Shaders",
-            targets: ["Shaders"])
+            targets: ["Shaders", "GraphMetal"])
     ],
     dependencies: [
         .package(url: "git@github.com:jehansontech/GenericGraph.git", .branch("dev")),
@@ -26,12 +26,6 @@ let package = Package(
         .target(
             name: "GraphMetal",
             dependencies: ["GenericGraph", .target(name: "Shaders")]),
-//            dependencies: ["GenericGraph"],
-//            resources: [.copy("Shaders/")],
-//            cSettings: [
-//                .headerSearchPath("include")            ],
-//            cxxSettings: [
-//                .headerSearchPath("include")]),
         .testTarget(
             name: "GraphMetalTests",
             dependencies: [.target(name: "GraphMetal")]),

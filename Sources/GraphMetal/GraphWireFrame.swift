@@ -287,7 +287,10 @@ class GraphWireFrame: Widget {
 
     private static func buildNodePipeline(_ device: MTLDevice, _ view: MTKView) throws -> MTLRenderPipelineState {
 
+        // let metalLibURL: URL = Bundle.module.url(forResource: "Shaders", withExtension: "metallib", subdirectory: "Shaders")!
+
         guard
+            // let library = device.makeDefaultLibrary(bundle: Bundle.module)
             let library = device.makeDefaultLibrary()
         else {
             throw RendererError.noDefaultLibrary
