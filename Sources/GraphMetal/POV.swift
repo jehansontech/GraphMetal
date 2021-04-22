@@ -12,31 +12,31 @@ import simd
 ///
 ///
 ///
-struct POV: Codable, CustomStringConvertible {
+public struct POV: Codable, CustomStringConvertible {
     
-    static let defaultLocation = SIMD3<Float>(0, 0, 1)
-    static let defaultCenter    = SIMD3<Float>(0, 0, 0)
-    static let defaultUp       = SIMD3<Float>(0, 1, 0)
+    public static let defaultLocation = SIMD3<Float>(0, 0, 1)
+    public static let defaultCenter    = SIMD3<Float>(0, 0, 0)
+    public static let defaultUp       = SIMD3<Float>(0, 1, 0)
 
     /// The POV's location in world coordinates.
-    var location: SIMD3<Float>
+    public var location: SIMD3<Float>
 
     /// The point in world coordinates that the POV is focused on
-    var center: SIMD3<Float>
+    public var center: SIMD3<Float>
 
     /// Unit vector giving direction the POV is looking
-    var forward: SIMD3<Float> {
+    public var forward: SIMD3<Float> {
         return normalize(center - location)
     }
 
     /// Unit vector giving the POV's orientation: i.e., the direction of "up".
-    var up: SIMD3<Float>
+    public var up: SIMD3<Float>
 
-    var description: String {
+    public var description: String {
         return "loc=\(location) cntr=\(center) fwd=\(forward) up=\(up)"
     }
     
-    init(location: SIMD3<Float> = POV.defaultLocation,
+    public init(location: SIMD3<Float> = POV.defaultLocation,
          center: SIMD3<Float> = POV.defaultCenter,
          up: SIMD3<Float> = POV.defaultUp) {
         self.location = location
@@ -44,7 +44,7 @@ struct POV: Codable, CustomStringConvertible {
         self.up = normalize(up)
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         print("POV init(from decoder)")
         let values = try decoder.container(keyedBy: CodingKeys.self)
         
@@ -81,7 +81,7 @@ struct POV: Codable, CustomStringConvertible {
     }
 
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(location, forKey: .location)
         try container.encode(center, forKey: .center)

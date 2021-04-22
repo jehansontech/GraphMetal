@@ -13,7 +13,7 @@ import simd
 ///
 ///
 ///
-class POVController: ObservableObject, CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
+public class POVController: ObservableObject, CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
 
     /// EMPIRICAL
     let fovyRadians = Float(65) * .pi / 180
@@ -67,7 +67,7 @@ class POVController: ObservableObject, CustomStringConvertible, RendererDragHand
         return (flyPOV != nil)
     }
 
-    var pov: POV {
+    public var pov: POV {
         get {
             return POV(location: self.location,
                        center: self.center,
@@ -84,17 +84,17 @@ class POVController: ObservableObject, CustomStringConvertible, RendererDragHand
 
     var povDefault: POV? = nil
 
-    var markIsSet: Bool {
+    public var markIsSet: Bool {
         return _povMark != nil
     }
 
     private var _povMark: POV? = nil
 
-    var description: String {
+    public var description: String {
         return "POV: posn=\(stringify(location)) cntr=\(stringify(center)) up=\(stringify(up))"
     }
 
-    init() {
+    public init() {
         // Dummy values
         self.location = POV.defaultLocation
         self.center = POV.defaultCenter
@@ -104,47 +104,47 @@ class POVController: ObservableObject, CustomStringConvertible, RendererDragHand
         self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
     }
 
-    func markPOV() {
+    public func markPOV() {
         self._povMark = pov
         print("POV mark: \(pov)")
     }
 
-    func unsetMark() {
+    public func unsetMark() {
         self._povMark = nil
     }
     
-    func goToMarkedPOV() {
+    public func goToMarkedPOV() {
         if let pov = _povMark {
             flyTo(pov)
         }
     }
 
-    func goToDefaultPOV() {
+    public func goToDefaultPOV() {
         if let pov = povDefault {
             flyTo(pov)
         }
     }
 
-    func turnToward(_ newCenter: SIMD3<Float>) {
+    public func turnToward(_ newCenter: SIMD3<Float>) {
         flyTo(POV(location: pov.location,
                   center: newCenter,
                   up: pov.up))
     }
 
-    func flyTo(_ destination: POV) {
+    public func flyTo(_ destination: POV) {
         if !flying {
             self.flyPOV = FlyPOV(self.pov, destination)
         }
     }
 
-    func dragBegan(at location: SIMD2<Float>) {
+    public func dragBegan(at location: SIMD2<Float>) {
         // print("POVController.dragBegan")
         if !flying {
             self.dragPOV = DragPOV(self.pov, location)
         }
     }
 
-    func dragChanged(pan: Float, scroll: Float) {
+    public func dragChanged(pan: Float, scroll: Float) {
         // print("POVController.dragChanged")
         if var povDragHandler = self.dragPOV {
             if let newPOV = povDragHandler.dragChanged(self.pov, pan: pan, scroll: scroll) {
@@ -153,19 +153,19 @@ class POVController: ObservableObject, CustomStringConvertible, RendererDragHand
         }
     }
 
-    func dragEnded() {
+    public func dragEnded() {
         // print("POVController.dragEnded")
         self.dragPOV = nil
     }
 
-    func pinchBegan(at center: SIMD2<Float>) {
+    public func pinchBegan(at center: SIMD2<Float>) {
         // print("POVController.pinchBegan")
         if !flying {
             self.pinchPOV = PinchPOV(self.pov, center)
         }
     }
 
-    func pinchChanged(by scale: Float) {
+    public func pinchChanged(by scale: Float) {
         // print("POVController.pinchChanged")
         if var povPinchHandler = self.pinchPOV {
             if let newPOV = povPinchHandler.magnificationChanged(self.pov, scale: scale) {
@@ -174,19 +174,19 @@ class POVController: ObservableObject, CustomStringConvertible, RendererDragHand
         }
     }
 
-    func pinchEnded() {
+    public func pinchEnded() {
         // print("POVController.pinchEnded")
         pinchPOV = nil
     }
 
-    func rotationBegan(at location: SIMD2<Float>) {
+    public func rotationBegan(at location: SIMD2<Float>) {
         // print("POVController.rotationBegan")
         if !flying {
             rotatePOV = RotatePOV(self.pov, location)
         }
     }
     
-    func rotationChanged(by radians: Float) {
+    public func rotationChanged(by radians: Float) {
         // print("POVController.rotationChanged")
         if var povRotationHandler = self.rotatePOV {
             if let newPOV = povRotationHandler.rotationChanged(self.pov, radians: radians) {
@@ -195,7 +195,7 @@ class POVController: ObservableObject, CustomStringConvertible, RendererDragHand
         }
     }
 
-    func rotationEnded() {
+    public func rotationEnded() {
         // print("POVController.rotationEnded")
         self.rotatePOV = nil
     }
