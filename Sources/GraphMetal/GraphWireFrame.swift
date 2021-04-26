@@ -141,6 +141,8 @@ class GraphWireFrame: Widget {
 
     var device: MTLDevice
 
+    var library: MTLLibrary
+
     var nodePipelineState: MTLRenderPipelineState!
 
     var lastTopologyUpdate: Int = -1
@@ -164,7 +166,9 @@ class GraphWireFrame: Widget {
     var edgeIndexBuffer: MTLBuffer? = nil
 
     init(_ device: MTLDevice) {
-        self.device = device
+        let shaders = Shaders()
+        self.device = shaders.metalDevice
+        self.library = shaders.packageMetalLibrary
     }
 
 //    func makeTransferTask() -> GameAccessTask {
@@ -172,11 +176,19 @@ class GraphWireFrame: Widget {
 //    }
 
     func initializePipelines(_ view: MTKView) throws {
+
+        print("library functions:")
+        print(library.functionNames)
+
         if (nodePipelineState == nil) {
-            self.nodePipelineState = try Self.buildNodePipeline(device, view)
+            print("building node pipeline")
+            self.nodePipelineState = try Self.buildNodePipeline(device, library, view)
+            print("done building node pipeline")
         }
         if (edgePipelineState == nil) {
-            self.edgePipelineState = try Self.buildEdgePipeline(device, view)
+            print("building edge pipeline")
+            self.edgePipelineState = try Self.buildEdgePipeline(device, library, view)
+            print("done building edge pipeline")
         }
     }
 
@@ -285,16 +297,20 @@ class GraphWireFrame: Widget {
 
     }
 
-    private static func buildNodePipeline(_ device: MTLDevice, _ view: MTKView) throws -> MTLRenderPipelineState {
+//    private static func makeLibrary(_ device: MTLDevice) throws -> MTLLibrary? {
+//        let metalLibURL: URL = Bundle.module.url(forResource: "Shaders", withExtension: "metallib", subdirectory: "Shaders")!
+//        print("metalLibURL = \(metalLibURL)")
+//        let library = try? device.makeLibrary(filepath: metalLibURL.path)
+//        print("library = \(library)")
+//
+//
+//        // let library = try? device.makeDefaultLibrary(bundle: Bundle.module)
+//        // let library = device.makeDefaultLibrary()
+//        return library
+//
+//    }
 
-        // let metalLibURL: URL = Bundle.module.url(forResource: "Shaders", withExtension: "metallib", subdirectory: "Shaders")!
-
-        guard
-            // let library = device.makeDefaultLibrary(bundle: Bundle.module)
-            let library = device.makeDefaultLibrary()
-        else {
-            throw RendererError.noDefaultLibrary
-        }
+    private static func buildNodePipeline(_ device: MTLDevice, _ library: MTLLibrary, _ view: MTKView) throws -> MTLRenderPipelineState {
 
         let vertexFunction = library.makeFunction(name: "node_vertex")
         let fragmentFunction = library.makeFunction(name: "node_fragment")
@@ -340,13 +356,7 @@ class GraphWireFrame: Widget {
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
 
-    private static func buildEdgePipeline(_ device: MTLDevice, _ view: MTKView) throws -> MTLRenderPipelineState {
-
-        guard
-            let library = device.makeDefaultLibrary()
-        else {
-            throw RendererError.noDefaultLibrary
-        }
+    private static func buildEdgePipeline(_ device: MTLDevice, _ library: MTLLibrary, _ view: MTKView) throws -> MTLRenderPipelineState {
 
         let vertexFunction = library.makeFunction(name: "net_vertex")
         let fragmentFunction = library.makeFunction(name: "net_fragment")
