@@ -29,7 +29,7 @@ enum RendererError: Error {
 
 protocol Widget: AnyObject {
 
-//    func makeTransferTask() -> GameAccessTask
+    func makeAccessTask() -> ModelAccessTask
 }
 
 ///
@@ -452,9 +452,9 @@ public class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
         // ======================================
         // 2. Have RendererView update POV and update the wireframe
 
-//        var widgetUpdates = [GameAccessTask]()
-//        widgetUpdates.append(graphWireFrame.makeTransferTask())
-//        parent.prepareToDraw(widgetUpdates)
+        var widgetUpdates = [ModelAccessTask]()
+        widgetUpdates.append(graphWireFrame.makeAccessTask())
+        parent.prepareToDraw(widgetUpdates)
 
         // =====================================
         // 3. Update content of current uniforms buffer

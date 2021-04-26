@@ -71,15 +71,14 @@ public struct RendererView: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
 
-//     @EnvironmentObject var appModel: AppModel
-    @EnvironmentObject var povController: POVController
+    @EnvironmentObject var controllers: RenderingControllers
 
     var projectionMatrix: float4x4 {
-        return povController.projectionMatrix
+        return controllers.povController.projectionMatrix
     }
 
     var modelViewMatrix: float4x4 {
-        return povController.modelViewMatrix
+        return controllers.povController.modelViewMatrix
     }
 
     let tapHandler: RendererTapHandler?
@@ -133,9 +132,9 @@ public struct RendererView: UIViewRepresentable {
             mtkView.addGestureRecognizer(longPressGR)
         }
 
-        context.coordinator.dragHandler = povController
-        context.coordinator.pinchHandler = povController
-        context.coordinator.rotationHandler = povController
+        context.coordinator.dragHandler = controllers.povController
+        context.coordinator.pinchHandler = controllers.povController
+        context.coordinator.rotationHandler = controllers.povController
 
         let panGR = UIPanGestureRecognizer(target: context.coordinator,
                                            action: #selector(context.coordinator.pan))
@@ -162,12 +161,12 @@ public struct RendererView: UIViewRepresentable {
     }
 
     func updateProjection(viewSize: CGSize) {
-        povController.updateProjection(viewSize: viewSize)
+        controllers.povController.updateProjection(viewSize: viewSize)
     }
 
-//    func prepareToDraw(_ widgetUpdates: [GameAccessTask]) {
-//        let currTime = Date()
-//        povController.updateModelView(currTime)
-//        appModel.requestUpdate(widgetUpdates)
-//    }
+    func prepareToDraw(_ widgetUpdates: [ModelAccessTask]) {
+        let currTime = Date()
+        controllers.povController.updateModelView(currTime)
+        controllers.runTasks(widgetUpdates)
+    }
 }

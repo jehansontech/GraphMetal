@@ -12,7 +12,7 @@ import MetalKit
 import GenericGraph
 import Shaders
 
-class GraphWireFrameTransfer { // }: GameAccessTask {
+class GraphWireFrameTransfer: ModelAccessTask {
 
     var widget: GraphWireFrame
 
@@ -26,32 +26,32 @@ class GraphWireFrameTransfer { // }: GameAccessTask {
 
     var topologyUpdate: Int? = nil
 
-    var geometryUpdate: Int? = nil
+    var positionsUpdate: Int? = nil
 
-    var colorUpdate: Int? = nil
+    var colorsUpdate: Int? = nil
 
     init(_ widget: GraphWireFrame) {
         self.widget = widget
     }
 
-    func accessGame() {
-//        let graph = GameController.instance.gameData.worldGraph
-//
-//        if GameController.instance.gameData.isTopologyStale(widget.lastTopologyUpdate) {
-//            self.updateTopology(graph)
-//        }
-//        else {
-//            if GameController.instance.gameData.isGeometryStale(widget.lastGeometryUpdate) {
-//                self.updateGeometry(graph)
-//            }
-//            // no 'else' here
-//            if GameController.instance.gameData.isColorStale(widget.lastColorUpdate) {
-//                self.updateColors(graph)
-//            }
-//        }
+    func accessModel<M>(_ model: M) where M : Model {
+
+        if topologyUpdate == nil || model.hasTopologyChanged(since: topologyUpdate!) {
+            self.updateTopology(model)
+        }
+        else {
+
+            if positionsUpdate == nil || model.havePositionsChanged(since: positionsUpdate!) {
+                self.updateGeometry(model)
+            }
+            // no 'else' here
+            if colorsUpdate == nil || model.haveColorsChanged(since: colorsUpdate!) {
+                self.updateColors(model)
+            }
+        }
     }
 
-    func afterGameAccess() {
+    func afterModelAccess() {
         if let topologyUpdate = topologyUpdate {
             widget.updateTopology(topologyUpdate,
                                   nodeIndices!,
@@ -60,23 +60,24 @@ class GraphWireFrameTransfer { // }: GameAccessTask {
                                   nodeColors!)
         }
         else {
-            if let geometryUpdate = geometryUpdate {
-                widget.updateNodePositions(geometryUpdate, nodePositions!)
+
+            if let positionsUpdate = positionsUpdate {
+                widget.updateNodePositions(positionsUpdate, nodePositions!)
             }
             // no 'else' here
-            if let colorUpdate = colorUpdate {
-                widget.updateNodeColors(colorUpdate, nodeColors!)
+            if let colorsUpdate = colorsUpdate {
+                widget.updateNodeColors(colorsUpdate, nodeColors!)
             }
         }
     }
 
-    func updateTopology<G: Graph>(_ graph: G) where G.NodeType.ValueType: RenderableNodeValue, G.EdgeType.ValueType: RenderableEdgeValue {
+    func updateTopology<M: Model>(_ model: M) {
         var newNodeIndices = [NodeID: Int]()
         var newNodePositions = [SIMD3<Float>]()
         var newEdgeIndexData = [UInt32]()
 
         var nodeIndex: Int = 0
-        for node in graph.nodes {
+        for node in model.graph.nodes {
             if let nodeValue = node.value,
                !nodeValue.hidden {
                 newNodeIndices[node.id] = nodeIndex
@@ -86,7 +87,7 @@ class GraphWireFrameTransfer { // }: GameAccessTask {
         }
 
         var edgeIndex: Int = 0
-        for node in graph.nodes {
+        for node in model.graph.nodes {
             for edge in node.outEdges {
                 if let edgeValue = edge.value,
                    !edgeValue.hidden,
@@ -103,16 +104,17 @@ class GraphWireFrameTransfer { // }: GameAccessTask {
         self.nodeIndices = newNodeIndices
         self.nodePositions = newNodePositions
         self.edgeIndexData = newEdgeIndexData
-//        self.nodeColors = graph.makeStationColors()
-//        self.topologyUpdate = GameController.instance.gameData.topologyUpdate
-//        self.geometryUpdate = GameController.instance.gameData.geometryUpdate
-//        self.colorUpdate = GameController.instance.gameData.colorUpdate
+        self.nodeColors = model.graph.makeNodeColors()
+        self.topologyUpdate = model.topologyUpdate
+        self.positionsUpdate = model.positionsUpdate
+        self.colorsUpdate = model.colorsUpdate
     }
 
-    func updateGeometry<G: Graph>(_ graph: G) where G.NodeType.ValueType: RenderableNodeValue, G.EdgeType.ValueType: RenderableEdgeValue  {
+    func updateGeometry<M: Model>(_ model: M) {
+
         var newNodePositions = [SIMD3<Float>]()
 
-        for node in graph.nodes {
+        for node in model.graph.nodes {
             if let nodeIndex = widget.nodeIndices[node.id],
                let nodeValue = node.value,
                !nodeValue.hidden {
@@ -121,16 +123,19 @@ class GraphWireFrameTransfer { // }: GameAccessTask {
         }
 
         self.nodePositions = newNodePositions
-//        self.geometryUpdate = GameController.instance.gameData.geometryUpdate
+        self.positionsUpdate = model.positionsUpdate
     }
 
-    func updateColors<G: Graph>(_ graph: G) where G.NodeType.ValueType: RenderableNodeValue, G.EdgeType.ValueType: RenderableEdgeValue  {
-//        self.nodeColors = graph.makeStationColors()
-//        self.colorUpdate = GameController.instance.gameData.colorUpdate
+    func updateColors<M: Model>(_ model: M) {
+        self.nodeColors = model.graph.makeNodeColors()
+        self.colorsUpdate = model.colorsUpdate
     }
-
 }
 
+
+///
+///
+///
 class GraphWireFrame: Widget {
 
     static let edgeColor = RenderingConstants.edgeColor
@@ -171,9 +176,9 @@ class GraphWireFrame: Widget {
         self.library = shaders.packageMetalLibrary
     }
 
-//    func makeTransferTask() -> GameAccessTask {
-//        return GraphWireFrameTransfer(self)
-//    }
+    func makeAccessTask() -> ModelAccessTask {
+        return GraphWireFrameTransfer(self)
+    }
 
     func initializePipelines(_ view: MTKView) throws {
 
@@ -296,19 +301,6 @@ class GraphWireFrame: Widget {
         renderEncoder.popDebugGroup()
 
     }
-
-//    private static func makeLibrary(_ device: MTLDevice) throws -> MTLLibrary? {
-//        let metalLibURL: URL = Bundle.module.url(forResource: "Shaders", withExtension: "metallib", subdirectory: "Shaders")!
-//        print("metalLibURL = \(metalLibURL)")
-//        let library = try? device.makeLibrary(filepath: metalLibURL.path)
-//        print("library = \(library)")
-//
-//
-//        // let library = try? device.makeDefaultLibrary(bundle: Bundle.module)
-//        // let library = device.makeDefaultLibrary()
-//        return library
-//
-//    }
 
     private static func buildNodePipeline(_ device: MTLDevice, _ library: MTLLibrary, _ view: MTKView) throws -> MTLRenderPipelineState {
 

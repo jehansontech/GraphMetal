@@ -9,7 +9,7 @@ import GenericGraph
 import simd
 
 
-protocol RenderableNodeValue {
+public protocol RenderableNodeValue {
 
     /// if true, the node will not be rendered
     var hidden: Bool { get }
@@ -22,7 +22,7 @@ protocol RenderableNodeValue {
 }
 
 
-protocol RenderableEdgeValue {
+public protocol RenderableEdgeValue {
 
     /// if true, the edge will not be rendered
     var hidden: Bool { get }
@@ -44,5 +44,52 @@ extension Graph where
             }
         }
         return bbox ?? BoundingBox(SIMD3<Float>(0,0,0))
+    }
+
+    func makeNodeColors() -> [NodeID: SIMD4<Float>] {
+        var nodeColors = [NodeID: SIMD4<Float>]()
+        for node in nodes {
+            if let color = node.value?.color {
+                nodeColors[node.id] = color
+            }
+        }
+        return nodeColors
+    }
+
+    func findNearestNode(rayOrigin: SIMD3<Float>, rayDirection: SIMD3<Float>, nearZ: Float) -> (NodeType, Float)? {
+        var nearestNode: NodeType? = nil
+        var nearestD2 = Float.greatestFiniteMagnitude
+        var shortestRayDistance = Float.greatestFiniteMagnitude
+        for node in self.nodes {
+
+            if let nodeLoc = node.value?.location {
+
+                let nodeDisplacement = nodeLoc - rayOrigin
+
+                /// distance along the ray to the point closest to the node
+                let rayDistance = simd_dot(nodeDisplacement, rayDirection)
+
+                if (rayDistance < nearZ) {
+                    // Node is not in view
+                    continue
+                }
+
+                /// square of the distance from ray to the node
+                let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
+                // print("\(node) distance to ray: \(sqrt(nodeD2))")
+
+                if (nodeD2 < nearestD2 || (nodeD2 == nearestD2 && rayDistance < shortestRayDistance)) {
+                    shortestRayDistance = rayDistance
+                    nearestD2 = nodeD2
+                    nearestNode = node
+                }
+            }
+        }
+        if let nn = nearestNode {
+            return (nn, sqrt(nearestD2))
+        }
+        else {
+            return nil
+        }
     }
 }
