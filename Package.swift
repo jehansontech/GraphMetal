@@ -14,20 +14,23 @@ let package = Package(
             targets: ["GraphMetal"]),
         .library(
             name: "Shaders",
-            targets: ["Shaders", "GraphMetal"])
+            targets: ["Shaders"]),
     ],
     dependencies: [
         .package(url: "git@github.com:jehansontech/GenericGraph.git", .branch("dev")),
     ],
     targets: [
         .target(
-            name: "Shaders",
-            resources: [.copy("Shaders.metallib")]),
-        .target(
             name: "GraphMetal",
-            dependencies: ["GenericGraph", .target(name: "Shaders")]),
+            dependencies: ["Shaders", "GenericGraph"]),
         .testTarget(
             name: "GraphMetalTests",
-            dependencies: [.target(name: "GraphMetal")]),
+            dependencies: ["GraphMetal"]),
+        .target(
+            name: "Shaders",
+            dependencies: []),
+        .testTarget(
+            name: "ShadersTests",
+            dependencies: ["Shaders"]),
     ]
 )

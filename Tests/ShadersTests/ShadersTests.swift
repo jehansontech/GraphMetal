@@ -1,22 +1,21 @@
-//
-//  File.swift
-//  
-//
-//  Created by Jim Hanson on 4/26/21.
-//
-
 import XCTest
-@testable import GraphMetal
+@testable import Shaders
 
-final class GraphMetalTests: XCTestCase {
+final class ShadersTests: XCTestCase {
     func testExample() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
-        XCTAssertEqual(GraphMetal().text, "Hello, World!")
+        XCTAssertEqual(Shaders().text, "Hello, World!")
+    }
+
+    func testSetup() {
+        let shaders = Shaders()
+        print(shaders.packageMetalLibrary.functionNames)
     }
 
     static var allTests = [
         ("testExample", testExample),
+        ("testSetup", testSetup),
     ]
 }

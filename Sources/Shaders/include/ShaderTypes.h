@@ -33,13 +33,5 @@ typedef NS_ENUM(NSInteger, TextureIndex)
     TextureIndexColor    = 0,
 };
 
-typedef struct
-{
-    simd_float4x4 projectionMatrix;
-    simd_float4x4 modelViewMatrix;
-    float pointSize;
-    simd_float4 edgeColor;
-} Uniforms;
-
 #endif /* ShaderTypes_h */
 
