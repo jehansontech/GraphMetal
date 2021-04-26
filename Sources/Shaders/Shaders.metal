@@ -1,8 +1,34 @@
+
 #include <metal_stdlib>
+
+#ifdef __METAL_VERSION__
+#define NS_ENUM(_type, _name) enum _name : _type _name; enum _name : _type
+#define NSInteger metal::int32_t
+#else
+#import <Foundation/Foundation.h>
+#endif
+
 #include <simd/simd.h>
-#include "include/ShaderTypes.h"
 
 using namespace metal;
+
+typedef NS_ENUM(NSInteger, BufferIndex)
+{
+    BufferIndexNodePosition = 0,
+    BufferIndexNodeColor = 1,
+    BufferIndexUniforms   = 2
+};
+
+typedef NS_ENUM(NSInteger, VertexAttribute)
+{
+    VertexAttributePosition  = 0,
+    VertexAttributeColor   = 1,
+};
+
+typedef NS_ENUM(NSInteger, TextureIndex)
+{
+    TextureIndexColor    = 0,
+};
 
 typedef struct
 {
