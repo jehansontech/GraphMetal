@@ -56,7 +56,15 @@ extension Graph where
         return nodeColors
     }
 
-    func findNearestNode(rayOrigin: SIMD3<Float>, rayDirection: SIMD3<Float>, nearZ: Float) -> (NodeType, Float)? {
+    func findNearestNode(_ clipCoordinates: SIMD2<Float>, _ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, nearZ: Float) -> (NodeType, SIMD2<Float>)? {
+        let ray0 = SIMD4<Float>(Float(clipCoordinates.x), clipCoordinates.y, 0, 1)
+        var ray1 = projectionMatrix.inverse * ray0
+        ray1.z = -1
+        ray1.w = 0
+
+        let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
+        let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
+
         var nearestNode: NodeType? = nil
         var nearestD2 = Float.greatestFiniteMagnitude
         var shortestRayDistance = Float.greatestFiniteMagnitude
@@ -86,7 +94,7 @@ extension Graph where
             }
         }
         if let nn = nearestNode {
-            return (nn, sqrt(nearestD2))
+            return (nn, (projectionMatrix * (modelViewMatrix * SIMD4<Float>(nn.value!.location,1))).xy)
         }
         else {
             return nil
