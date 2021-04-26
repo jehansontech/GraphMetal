@@ -29,15 +29,15 @@ enum RendererError: Error {
 
 protocol Widget: AnyObject {
 
-    func makeAccessTask() -> ModelAccessTask
+    func makeAccessTask() -> GraphAccessTask
 }
 
 ///
 ///
 ///
-public class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
+public class Renderer<N: RenderableNodeValue, E: RenderableEdgeValue>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
 
-    let parent: RendererView
+    let parent: RendererView<N, E>
 
     var tapHandler: RendererTapHandler? = nil
 
@@ -73,7 +73,7 @@ public class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
     /// * Older displays have value 1
     var screenScaleFactor: Float = 1
 
-    public init(_ parent: RendererView) throws {
+    public init(_ parent: RendererView<N, E>) throws {
 
         print("Renderer.init")
         
@@ -452,7 +452,7 @@ public class Renderer: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
         // ======================================
         // 2. Have RendererView update POV and update the wireframe
 
-        var widgetUpdates = [ModelAccessTask]()
+        var widgetUpdates = [GraphAccessTask]()
         widgetUpdates.append(graphWireFrame.makeAccessTask())
         parent.prepareToDraw(widgetUpdates)
 

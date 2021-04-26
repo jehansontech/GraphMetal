@@ -6,14 +6,17 @@
 //
 
 import Foundation
+import GenericGraph
 
+public class RenderingControllers<N: RenderableNodeValue, E: RenderableEdgeValue>: ObservableObject {
 
-public class RenderingControllers: ObservableObject {
+    let povController: POVController
 
-    var povController = POVController()
+    let graphController: GraphController<N, E>
 
-    func runTasks(_ tasks: [ModelAccessTask]) {
-        // TODO
+    public init(_ graph: BaseGraph<N, E>, _ accessQueue: DispatchQueue) {
+        self.povController = POVController()
+        self.graphController = GraphController<N, E>(graph, accessQueue)
     }
 }
 

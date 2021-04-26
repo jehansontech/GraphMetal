@@ -12,7 +12,7 @@ import MetalKit
 import GenericGraph
 import Shaders
 
-class GraphWireFrameTransfer: ModelAccessTask {
+class GraphWireFrameTransfer: GraphAccessTask {
 
     var widget: GraphWireFrame
 
@@ -34,24 +34,24 @@ class GraphWireFrameTransfer: ModelAccessTask {
         self.widget = widget
     }
 
-    func accessModel<M>(_ model: M) where M : Model {
+    func accessGraph<N, E>(_ holder: GraphHolder<N, E>) {
 
-        if topologyUpdate == nil || model.hasTopologyChanged(since: topologyUpdate!) {
-            self.updateTopology(model)
+        if topologyUpdate == nil || holder.hasTopologyChanged(since: topologyUpdate!) {
+            self.updateTopology(holder)
         }
         else {
 
-            if positionsUpdate == nil || model.havePositionsChanged(since: positionsUpdate!) {
-                self.updateGeometry(model)
+            if positionsUpdate == nil || holder.havePositionsChanged(since: positionsUpdate!) {
+                self.updateGeometry(holder)
             }
             // no 'else' here
-            if colorsUpdate == nil || model.haveColorsChanged(since: colorsUpdate!) {
-                self.updateColors(model)
+            if colorsUpdate == nil || holder.haveColorsChanged(since: colorsUpdate!) {
+                self.updateColors(holder)
             }
         }
     }
 
-    func afterModelAccess() {
+    func afterAccess() {
         if let topologyUpdate = topologyUpdate {
             widget.updateTopology(topologyUpdate,
                                   nodeIndices!,
@@ -71,13 +71,13 @@ class GraphWireFrameTransfer: ModelAccessTask {
         }
     }
 
-    func updateTopology<M: Model>(_ model: M) {
+    func updateTopology<N, E>(_ holder: GraphHolder<N, E>) {
         var newNodeIndices = [NodeID: Int]()
         var newNodePositions = [SIMD3<Float>]()
         var newEdgeIndexData = [UInt32]()
 
         var nodeIndex: Int = 0
-        for node in model.graph.nodes {
+        for node in holder.graph.nodes {
             if let nodeValue = node.value,
                !nodeValue.hidden {
                 newNodeIndices[node.id] = nodeIndex
@@ -87,7 +87,7 @@ class GraphWireFrameTransfer: ModelAccessTask {
         }
 
         var edgeIndex: Int = 0
-        for node in model.graph.nodes {
+        for node in holder.graph.nodes {
             for edge in node.outEdges {
                 if let edgeValue = edge.value,
                    !edgeValue.hidden,
@@ -104,17 +104,17 @@ class GraphWireFrameTransfer: ModelAccessTask {
         self.nodeIndices = newNodeIndices
         self.nodePositions = newNodePositions
         self.edgeIndexData = newEdgeIndexData
-        self.nodeColors = model.graph.makeNodeColors()
-        self.topologyUpdate = model.topologyUpdate
-        self.positionsUpdate = model.positionsUpdate
-        self.colorsUpdate = model.colorsUpdate
+        self.nodeColors = holder.graph.makeNodeColors()
+        self.topologyUpdate = holder.topologyUpdate
+        self.positionsUpdate = holder.positionsUpdate
+        self.colorsUpdate = holder.colorsUpdate
     }
 
-    func updateGeometry<M: Model>(_ model: M) {
+    func updateGeometry<N, E>(_ holder: GraphHolder<N, E>) {
 
         var newNodePositions = [SIMD3<Float>]()
 
-        for node in model.graph.nodes {
+        for node in holder.graph.nodes {
             if let nodeIndex = widget.nodeIndices[node.id],
                let nodeValue = node.value,
                !nodeValue.hidden {
@@ -123,12 +123,12 @@ class GraphWireFrameTransfer: ModelAccessTask {
         }
 
         self.nodePositions = newNodePositions
-        self.positionsUpdate = model.positionsUpdate
+        self.positionsUpdate = holder.positionsUpdate
     }
 
-    func updateColors<M: Model>(_ model: M) {
-        self.nodeColors = model.graph.makeNodeColors()
-        self.colorsUpdate = model.colorsUpdate
+    func updateColors<N, E>(_ holder: GraphHolder<N, E>) {
+        self.nodeColors = holder.graph.makeNodeColors()
+        self.colorsUpdate = holder.colorsUpdate
     }
 }
 
@@ -176,7 +176,7 @@ class GraphWireFrame: Widget {
         self.library = shaders.packageMetalLibrary
     }
 
-    func makeAccessTask() -> ModelAccessTask {
+    func makeAccessTask() -> GraphAccessTask {
         return GraphWireFrameTransfer(self)
     }
 

@@ -64,14 +64,35 @@ public protocol RendererRotationHandler {
 }
 
 
+class WidgetUpdateTask: GraphAccessTask {
+
+    var updates: [GraphAccessTask]
+
+    init(_ updates: [GraphAccessTask]) {
+        self.updates = updates
+    }
+
+    func accessGraph<N, E>(_ holder: GraphHolder<N, E>) where N : RenderableNodeValue, E : RenderableEdgeValue {
+        for update in updates {
+            update.accessGraph(holder)
+        }
+    }
+
+    func afterAccess() {
+        for update in updates {
+            update.afterAccess()
+        }
+    }
+
+}
 ///
 ///
 ///
-public struct RendererView: UIViewRepresentable {
+public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
 
-    @EnvironmentObject var controllers: RenderingControllers
+    @EnvironmentObject var controllers: RenderingControllers<N, E>
 
     var projectionMatrix: float4x4 {
         return controllers.povController.projectionMatrix
@@ -91,9 +112,9 @@ public struct RendererView: UIViewRepresentable {
         self.longPressHandler = longPressHandler
     }
 
-    public func makeCoordinator() -> Renderer {
+    public func makeCoordinator() -> Renderer<N, E> {
         do {
-            return try Renderer(self)
+            return try Renderer<N, E>(self)
         }
         catch {
             fatalError("Problem creating renderer: \(error)")
@@ -164,9 +185,9 @@ public struct RendererView: UIViewRepresentable {
         controllers.povController.updateProjection(viewSize: viewSize)
     }
 
-    func prepareToDraw(_ widgetUpdates: [ModelAccessTask]) {
+    func prepareToDraw(_ widgetUpdates: [GraphAccessTask]) {
         let currTime = Date()
         controllers.povController.updateModelView(currTime)
-        controllers.runTasks(widgetUpdates)
+        controllers.graphController.submitTask(WidgetUpdateTask(widgetUpdates))
     }
 }
