@@ -82,7 +82,7 @@ public class POVController: CustomStringConvertible, RendererDragHandler, Render
         }
     }
 
-    var povDefault: POV? = nil
+    public var povDefault: POV? = nil
 
     public var markIsSet: Bool {
         return _povMark != nil

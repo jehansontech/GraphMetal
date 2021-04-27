@@ -18,11 +18,12 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "git@github.com:jehansontech/GenericGraph.git", .branch("dev")),
+        .package(url: "git@github.com:jehansontech/UIStuffForSwift.git", .branch("dev")),
     ],
     targets: [
         .target(
             name: "GraphMetal",
-            dependencies: ["Shaders", "GenericGraph"]),
+            dependencies: ["Shaders", "GenericGraph", "UIStuffForSwift"]),
         .testTarget(
             name: "GraphMetalTests",
             dependencies: ["GraphMetal"]),
