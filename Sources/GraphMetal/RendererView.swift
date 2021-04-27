@@ -92,9 +92,9 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
 
     public typealias UIViewType = MTKView
 
-    @EnvironmentObject var povController: POVController
+    var graphController: GraphController<N, E>
 
-    @EnvironmentObject var graphController: GraphController<N, E>
+    var povController: POVController
 
     var projectionMatrix: float4x4 {
         return povController.projectionMatrix
@@ -108,8 +108,12 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
 
     let longPressHandler: RendererLongPressHandler?
 
-    public init(tapHandler: RendererTapHandler? = nil,
-         longPressHandler: RendererLongPressHandler? = nil) {
+    public init(_ graphController: GraphController<N, E>,
+                _ povController: POVController,
+                tapHandler: RendererTapHandler? = nil,
+                longPressHandler: RendererLongPressHandler? = nil) {
+        self.graphController = graphController
+        self.povController = povController
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
     }

@@ -10,7 +10,7 @@ import UIStuffForSwift
 
 public struct POVSettingsView: View {
 
-    @EnvironmentObject var povController: POVController
+    @ObservedObject var povController: POVController
 
     @Environment(\.presentationMode) var presentationMode
 
@@ -46,7 +46,9 @@ public struct POVSettingsView: View {
         }
     }
 
-    public init() {}
+    public init(_ povController: ObservedObject<POVController>) {
+        self._povController = povController
+    }
     
     public func resetToDefault() {
         povController.goToDefaultPOV()
