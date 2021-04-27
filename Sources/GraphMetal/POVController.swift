@@ -16,13 +16,13 @@ import simd
 public class POVController: ObservableObject, CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
 
     /// EMPIRICAL
-    let fovyRadians = Float(65) * .pi / 180
+    public let fovyRadians = Float(65) * .pi / 180
 
     /// EMPIRICAL
-    let nearZ: Float = 0.001
+    public let nearZ: Float = 0.001
 
     /// EMPIRICAL
-    let farZ: Float = 1000
+    public let farZ: Float = 1000
 
     /// macOS and iOS use opposite conventions for scrolling b/c their coordinate systems have
     /// opposite "vertical" orientations. macOS has option to 'flip' the coordinate system so that it
@@ -45,9 +45,9 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     var viewSize: CGSize
 
-    var projectionMatrix: float4x4
+    public var projectionMatrix: float4x4
     
-    var modelViewMatrix: float4x4
+    public var modelViewMatrix: float4x4
 
     private var _motionEnabled: Bool = false
 
