@@ -8,7 +8,7 @@
 import SwiftUI
 import UIStuffForSwift
 
-public struct POVSettingsView<N: RenderableNodeValue, E: RenderableEdgeValue>: View {
+public struct POVSettingsView: View {
 
     @EnvironmentObject var povController: POVController
 
@@ -45,6 +45,8 @@ public struct POVSettingsView<N: RenderableNodeValue, E: RenderableEdgeValue>: V
             }
         }
     }
+
+    public init() {}
     
     public func resetToDefault() {
         povController.goToDefaultPOV()
