@@ -8,13 +8,13 @@
 import SwiftUI
 import UIStuffForSwift
 
-struct POVSettingsView: View {
+public struct POVSettingsView<N: RenderableNodeValue, E: RenderableEdgeValue>: View {
 
     @EnvironmentObject var povController: POVController
 
     @Environment(\.presentationMode) var presentationMode
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .center, spacing: 10) {
 
             Text("POV")
@@ -46,17 +46,17 @@ struct POVSettingsView: View {
         }
     }
     
-    func resetToDefault() {
+    public func resetToDefault() {
         povController.goToDefaultPOV()
         presentationMode.wrappedValue.dismiss()
     }
 
-    func setMark() {
+    public func setMark() {
         povController.markPOV()
         presentationMode.wrappedValue.dismiss()
     }
     
-    func resetToMark() {
+    public func resetToMark() {
         povController.goToMarkedPOV()
         presentationMode.wrappedValue.dismiss()
     }

@@ -92,14 +92,16 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
 
     public typealias UIViewType = MTKView
 
-    @EnvironmentObject var controllers: RenderingControllers<N, E>
+    @EnvironmentObject var povController: POVController
+
+    @EnvironmentObject var graphController: GraphController<N, E>
 
     var projectionMatrix: float4x4 {
-        return controllers.povController.projectionMatrix
+        return povController.projectionMatrix
     }
 
     var modelViewMatrix: float4x4 {
-        return controllers.povController.modelViewMatrix
+        return povController.modelViewMatrix
     }
 
     let tapHandler: RendererTapHandler?
@@ -153,9 +155,9 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
             mtkView.addGestureRecognizer(longPressGR)
         }
 
-        context.coordinator.dragHandler = controllers.povController
-        context.coordinator.pinchHandler = controllers.povController
-        context.coordinator.rotationHandler = controllers.povController
+        context.coordinator.dragHandler = povController
+        context.coordinator.pinchHandler = povController
+        context.coordinator.rotationHandler = povController
 
         let panGR = UIPanGestureRecognizer(target: context.coordinator,
                                            action: #selector(context.coordinator.pan))
@@ -182,12 +184,12 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
     }
 
     func updateProjection(viewSize: CGSize) {
-        controllers.povController.updateProjection(viewSize: viewSize)
+        povController.updateProjection(viewSize: viewSize)
     }
 
     func prepareToDraw(_ widgetUpdates: [GraphAccessTask]) {
         let currTime = Date()
-        controllers.povController.updateModelView(currTime)
-        controllers.graphController.submitTask(WidgetUpdateTask(widgetUpdates))
+        povController.updateModelView(currTime)
+        graphController.submitTask(WidgetUpdateTask(widgetUpdates))
     }
 }

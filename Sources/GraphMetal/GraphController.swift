@@ -21,6 +21,7 @@ public struct GraphHolder<N: RenderableNodeValue, E: RenderableEdgeValue> {
     public init(_ graph: BaseGraph<N, E>) {
         self.graph = graph
     }
+
     func hasTopologyChanged(since update: Int) -> Bool {
         return update < topologyUpdate
     }
@@ -43,7 +44,7 @@ public protocol GraphAccessTask: AnyObject {
     func afterAccess()
 }
 
-public struct GraphController<N: RenderableNodeValue, E: RenderableEdgeValue> {
+public class GraphController<N: RenderableNodeValue, E: RenderableEdgeValue>: ObservableObject {
 
     var graphHolder: GraphHolder<N, E>
 
@@ -55,7 +56,7 @@ public struct GraphController<N: RenderableNodeValue, E: RenderableEdgeValue> {
     }
 
     public func submitTask(_ task: GraphAccessTask) {
-        accessQueue.async {
+        accessQueue.async { [self] in
             task.accessGraph(graphHolder)
             DispatchQueue.main.sync {
                 task.afterAccess()
@@ -64,7 +65,7 @@ public struct GraphController<N: RenderableNodeValue, E: RenderableEdgeValue> {
     }
 
     public func scheduleTask(_ task: GraphAccessTask, _ delay: Double) {
-        accessQueue.asyncAfter(deadline: .now() + delay) {
+        accessQueue.asyncAfter(deadline: .now() + delay) {  [self] in
             task.accessGraph(graphHolder)
             DispatchQueue.main.sync {
                 task.afterAccess()

@@ -13,7 +13,7 @@ import simd
 ///
 ///
 ///
-public class POVController: CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
+public class POVController: ObservableObject, CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
 
     /// EMPIRICAL
     let fovyRadians = Float(65) * .pi / 180
