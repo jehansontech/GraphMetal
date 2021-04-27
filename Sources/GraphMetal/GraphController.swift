@@ -16,21 +16,33 @@ public struct GraphHolder<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     var colorsUpdate: Int = 0
 
-    var graph: BaseGraph<N, E>
+    public var graph: BaseGraph<N, E>
 
     public init(_ graph: BaseGraph<N, E>) {
         self.graph = graph
     }
 
-    func hasTopologyChanged(since update: Int) -> Bool {
+    mutating public func topologyHasChanged() {
+        topologyUpdate += 1
+    }
+
+    public func hasTopologyChanged(since update: Int) -> Bool {
         return update < topologyUpdate
     }
 
-    func havePositionsChanged(since update: Int) -> Bool {
+    mutating func positionsHaveChanged() {
+        positionsUpdate += 1
+    }
+
+    public func havePositionsChanged(since update: Int) -> Bool {
         return update < positionsUpdate
     }
 
-    func haveColorsChanged(since update: Int) -> Bool {
+    mutating func colorsHaveChanged() {
+        colorsUpdate += 1
+    }
+
+    public func haveColorsChanged(since update: Int) -> Bool {
         return update < colorsUpdate
     }
 }
@@ -44,7 +56,7 @@ public protocol GraphAccessTask: AnyObject {
     func afterAccess()
 }
 
-public class GraphController<N: RenderableNodeValue, E: RenderableEdgeValue>: ObservableObject {
+public class GraphController<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     var graphHolder: GraphHolder<N, E>
 
