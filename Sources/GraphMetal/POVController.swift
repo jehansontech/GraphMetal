@@ -138,14 +138,14 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func dragBegan(at location: SIMD2<Float>) {
-        // print("POVController.dragBegan")
+        print("POVController.dragBegan")
         if !flying {
             self.dragPOV = DragPOV(self.pov, location)
         }
     }
 
     public func dragChanged(pan: Float, scroll: Float) {
-        // print("POVController.dragChanged")
+        print("POVController.dragChanged")
         if var povDragHandler = self.dragPOV {
             if let newPOV = povDragHandler.dragChanged(self.pov, pan: pan, scroll: scroll) {
                 self.pov = newPOV
@@ -154,19 +154,19 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func dragEnded() {
-        // print("POVController.dragEnded")
+        print("POVController.dragEnded")
         self.dragPOV = nil
     }
 
     public func pinchBegan(at center: SIMD2<Float>) {
-        // print("POVController.pinchBegan")
+        print("POVController.pinchBegan")
         if !flying {
             self.pinchPOV = PinchPOV(self.pov, center)
         }
     }
 
     public func pinchChanged(by scale: Float) {
-        // print("POVController.pinchChanged")
+        print("POVController.pinchChanged")
         if var povPinchHandler = self.pinchPOV {
             if let newPOV = povPinchHandler.magnificationChanged(self.pov, scale: scale) {
                 self.pov = newPOV
@@ -175,7 +175,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func pinchEnded() {
-        // print("POVController.pinchEnded")
+        print("POVController.pinchEnded")
         pinchPOV = nil
     }
 
