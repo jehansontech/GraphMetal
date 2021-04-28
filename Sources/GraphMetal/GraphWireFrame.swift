@@ -61,7 +61,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     }
 
     func accessGraph<G>(_ holder: RenderableGraphHolder<G>) where G : Graph, E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-        print("GraphWireFrame.accessGraph")
+        // print("GraphWireFrame.accessGraph")
         if  holder.hasTopologyChanged(since: lastTopologyUpdate) {
             self.updateTopology(holder.graph)
             self.lastTopologyUpdate = holder.topologyUpdate
@@ -86,18 +86,18 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     func setup(_ view: MTKView) throws {
 
-        print("library functions:")
+        // print("library functions:")
         print(library.functionNames)
 
         if (nodePipelineState == nil) {
-            print("building node pipeline")
+            // print("building node pipeline")
             self.nodePipelineState = try Self.buildNodePipeline(device, library, view)
-            print("done building node pipeline")
+            // print("done building node pipeline")
         }
         if (edgePipelineState == nil) {
-            print("building edge pipeline")
+            // print("building edge pipeline")
             self.edgePipelineState = try Self.buildEdgePipeline(device, library, view)
-            print("done building edge pipeline")
+            // print("done building edge pipeline")
         }
     }
 
@@ -111,7 +111,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     /// updates everything
     func updateTopology<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-        print("GraphWireFrame.updateTopology")
+        // print("GraphWireFrame.updateTopology")
 
         var newNodeIndices = [NodeID: Int]()
         var newNodePositions = [SIMD3<Float>]()
@@ -175,7 +175,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     }
 
     private func updateNodePositions(_ newNodePositions: [SIMD3<Float>]) {
-        print("GraphWireFrame.updateNodePositions")
+        // print("GraphWireFrame.updateNodePositions")
         if (self.nodeCount > 0) {
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
             nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
@@ -188,7 +188,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     }
 
     private func updateNodeColors(_ newColors: [NodeID: SIMD4<Float>]) {
-        print("GraphWireFrame.updateNodeColors")
+        // print("GraphWireFrame.updateNodeColors")
         if (self.nodeCount > 0) {
             var nodeColors = [SIMD4<Float>](repeating: RenderingConstants.clearColor, count: nodeCount)
 
@@ -212,7 +212,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
               _ uniformsBuffer: MTLBuffer,
               _ uniformsBufferOffset: Int) {
 
-        print("GraphWireFreame.draw")
+        // print("GraphWireFreame.draw")
 
         if !(nodeCount > 0) {
             return

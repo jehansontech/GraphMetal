@@ -72,7 +72,7 @@ public class Renderer<G: Graph>: NSObject, MTKViewDelegate, UIGestureRecognizerD
 
     public init(_ parent: RendererView<G>) throws {
 
-        print("Renderer.init")
+        // print("Renderer.init")
         
         self.parent = parent
 
@@ -124,7 +124,7 @@ public class Renderer<G: Graph>: NSObject, MTKViewDelegate, UIGestureRecognizerD
     }
 
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        print("Renderer.mtkView size=\(size)")
+        // print("Renderer.mtkView size=\(size)")
         parent.updateProjection(viewSize: size)
 
         do {

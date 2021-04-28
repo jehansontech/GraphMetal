@@ -45,7 +45,7 @@ public struct POV: Codable, CustomStringConvertible {
     }
 
     public init(from decoder: Decoder) throws {
-        print("POV init(from decoder)")
+        // print("POV init(from decoder)")
         let values = try decoder.container(keyedBy: CodingKeys.self)
         
         do {
