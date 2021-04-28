@@ -6,13 +6,23 @@
 //
 
 import XCTest
+import GenericGraph
 @testable import GraphMetal
 
 final class GraphMetalTests: XCTestCase {
+
     func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
+
+        let graph = BaseGraph<TestNodeValue, TestEdgeValue>()
+
+        let controller = RenderableGraphController(
+            graph,
+            DispatchQueue(label: "graph", qos: .userInitiated))
+
+        let accessor = TestGraphAccessor()
+
+        controller.submitTask(accessor)
+
     }
 
     static var allTests = [

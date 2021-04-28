@@ -7,92 +7,18 @@
 
 import SwiftUI
 import MetalKit
+import GenericGraph
 
-
-public protocol RendererTapHandler {
-
-    /// location is in clip space: (-1, -1) to (+1, +1)
-    mutating func tap(at location: SIMD2<Float>)
-
-}
-
-
-public protocol RendererLongPressHandler {
-
-    /// location is in clip space: (-1, -1) to (+1, +1)
-    mutating func longPressBegan(at location: SIMD2<Float>)
-
-    mutating func longPressEnded()
-}
-
-
-public protocol RendererDragHandler {
-
-    /// location is in clip space: (-1, -1) to (+1, +1)
-    mutating func dragBegan(at location: SIMD2<Float>)
-
-    /// pan is fraction of view width; negative means "to the left"
-    /// scroll is fraction of view height; negative means "down"
-    mutating func dragChanged(pan: Float, scroll: Float)
-
-    mutating func dragEnded()
-
-}
-
-
-public protocol RendererPinchHandler {
-
-    /// center is midpoint between two fingers
-    mutating func pinchBegan(at center: SIMD2<Float>)
-
-    /// scale goes like 1 -> 0.1 when squeezing,  1 -> 10 when stretching
-    mutating func pinchChanged(by scale: Float)
-
-    mutating func pinchEnded()
-
-}
-
-
-public protocol RendererRotationHandler {
-
-    /// center is midpoint between two fingers
-    mutating func rotationBegan(at center: SIMD2<Float>)
-
-    mutating func rotationChanged(by radians: Float)
-
-    mutating func rotationEnded()
-}
-
-
-class WidgetUpdateTask: GraphAccessTask {
-
-    var updates: [GraphAccessTask]
-
-    init(_ updates: [GraphAccessTask]) {
-        self.updates = updates
-    }
-
-    func accessGraph<N, E>(_ holder: GraphHolder<N, E>) where N : RenderableNodeValue, E : RenderableEdgeValue {
-        for update in updates {
-            update.accessGraph(holder)
-        }
-    }
-
-    func afterAccess() {
-        for update in updates {
-            update.afterAccess()
-        }
-    }
-
-}
 ///
 ///
 ///
-public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIViewRepresentable {
+public struct RendererView<G: Graph>: UIViewRepresentable where
+    G.NodeType.ValueType: RenderableNodeValue,
+    G.EdgeType.ValueType: RenderableEdgeValue {
 
     public typealias UIViewType = MTKView
 
-    var graphController: GraphController<N, E>
+    var graphController: RenderableGraphController<G>
 
     var povController: POVController
 
@@ -108,7 +34,7 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
 
     let longPressHandler: RendererLongPressHandler?
 
-    public init(_ graphController: GraphController<N, E>,
+    public init(_ graphController: RenderableGraphController<G>,
                 _ povController: POVController,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
@@ -118,9 +44,9 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
         self.longPressHandler = longPressHandler
     }
 
-    public func makeCoordinator() -> Renderer<N, E> {
+    public func makeCoordinator() -> Renderer<G> {
         do {
-            return try Renderer<N, E>(self)
+            return try Renderer<G>(self)
         }
         catch {
             fatalError("Problem creating renderer: \(error)")
@@ -191,9 +117,71 @@ public struct RendererView<N: RenderableNodeValue, E: RenderableEdgeValue>: UIVi
         povController.updateProjection(viewSize: viewSize)
     }
 
-    func prepareToDraw(_ widgetUpdates: [GraphAccessTask]) {
-        let currTime = Date()
-        povController.updateModelView(currTime)
-        graphController.submitTask(WidgetUpdateTask(widgetUpdates))
+    func updatePOV() {
+        povController.updateModelView(Date())
+    }
+
+    func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
+        W.NodeValueType == G.NodeType.ValueType,
+        W.EdgeValueType == G.EdgeType.ValueType {
+        graphController.submitTask(widget)
     }
 }
+
+
+
+public protocol RendererTapHandler {
+
+    /// location is in clip space: (-1, -1) to (+1, +1)
+    mutating func tap(at location: SIMD2<Float>)
+
+}
+
+
+public protocol RendererLongPressHandler {
+
+    /// location is in clip space: (-1, -1) to (+1, +1)
+    mutating func longPressBegan(at location: SIMD2<Float>)
+
+    mutating func longPressEnded()
+}
+
+
+public protocol RendererDragHandler {
+
+    /// location is in clip space: (-1, -1) to (+1, +1)
+    mutating func dragBegan(at location: SIMD2<Float>)
+
+    /// pan is fraction of view width; negative means "to the left"
+    /// scroll is fraction of view height; negative means "down"
+    mutating func dragChanged(pan: Float, scroll: Float)
+
+    mutating func dragEnded()
+
+}
+
+
+public protocol RendererPinchHandler {
+
+    /// center is midpoint between two fingers
+    mutating func pinchBegan(at center: SIMD2<Float>)
+
+    /// scale goes like 1 -> 0.1 when squeezing,  1 -> 10 when stretching
+    mutating func pinchChanged(by scale: Float)
+
+    mutating func pinchEnded()
+
+}
+
+
+public protocol RendererRotationHandler {
+
+    /// center is midpoint between two fingers
+    mutating func rotationBegan(at center: SIMD2<Float>)
+
+    mutating func rotationChanged(by radians: Float)
+
+    mutating func rotationEnded()
+}
+
+

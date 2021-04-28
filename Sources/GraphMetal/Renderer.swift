@@ -27,17 +27,14 @@ enum RendererError: Error {
     case bufferCreationFailed
 }
 
-protocol Widget: AnyObject {
-
-    func makeAccessTask() -> GraphAccessTask
-}
-
 ///
 ///
 ///
-public class Renderer<N: RenderableNodeValue, E: RenderableEdgeValue>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
+public class Renderer<G: Graph>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate where
+    G.NodeType.ValueType: RenderableNodeValue,
+    G.EdgeType.ValueType: RenderableEdgeValue {
 
-    let parent: RendererView<N, E>
+    let parent: RendererView<G>
 
     var tapHandler: RendererTapHandler? = nil
 
@@ -65,7 +62,7 @@ public class Renderer<N: RenderableNodeValue, E: RenderableEdgeValue>: NSObject,
     
     var depthState: MTLDepthStencilState
 
-    var graphWireFrame: GraphWireFrame
+    var graphWireFrame: GraphWireFrame<G.NodeType.ValueType, G.EdgeType.ValueType>
     
     /// This is a hardware factor that affects the visibie size of point primitives, independent of the
     /// screen bounds.
@@ -73,7 +70,7 @@ public class Renderer<N: RenderableNodeValue, E: RenderableEdgeValue>: NSObject,
     /// * Older displays have value 1
     var screenScaleFactor: Float = 1
 
-    public init(_ parent: RendererView<N, E>) throws {
+    public init(_ parent: RendererView<G>) throws {
 
         print("Renderer.init")
         
@@ -131,7 +128,7 @@ public class Renderer<N: RenderableNodeValue, E: RenderableEdgeValue>: NSObject,
         parent.updateProjection(viewSize: size)
 
         do {
-            try graphWireFrame.initializePipelines(view)
+            try graphWireFrame.setup(view)
         }
         catch {
             // TODO log it
@@ -450,11 +447,10 @@ public class Renderer<N: RenderableNodeValue, E: RenderableEdgeValue>: NSObject,
         uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
         // ======================================
-        // 2. Have RendererView update POV and update the wireframe
+        // 2. Have RendererView update POV and the wireframe
 
-        var widgetUpdates = [GraphAccessTask]()
-        widgetUpdates.append(graphWireFrame.makeAccessTask())
-        parent.prepareToDraw(widgetUpdates)
+        parent.updatePOV()
+        parent.updateWidget(graphWireFrame)
 
         // =====================================
         // 3. Update content of current uniforms buffer
@@ -462,7 +458,7 @@ public class Renderer<N: RenderableNodeValue, E: RenderableEdgeValue>: NSObject,
         uniforms[0].projectionMatrix = parent.projectionMatrix
         uniforms[0].modelViewMatrix = parent.modelViewMatrix
         uniforms[0].pointSize = screenScaleFactor * graphWireFrame.pointSize
-        uniforms[0].edgeColor = GraphWireFrame.edgeColor
+        uniforms[0].edgeColor = GraphWireFrameConstants.edgeColor
     }
 }
 
