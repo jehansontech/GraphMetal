@@ -183,26 +183,23 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     }
 
     func accessGraph<G>(_ holder: RenderableGraphHolder<G>) where G : Graph, E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-        // TODO
+        if  holder.hasTopologyChanged(since: lastTopologyUpdate) {
+            self.updateTopology(holder.graph)
+            self.lastTopologyUpdate = holder.topologyUpdate
+        }
+        else {
+
+            if holder.havePositionsChanged(since: lastPositionsUpdate) {
+                self.updatePositions(holder.graph)
+                self.lastPositionsUpdate = holder.positionsUpdate
+            }
+            // no 'else' here
+            if holder.haveColorsChanged(since: lastColorsUpdate) {
+                self.updateColors(holder.graph)
+                self.lastColorsUpdate = holder.colorsUpdate
+            }
+        }
     }
-
-
-//    func accessGraph(_ holder: RenderableGraphHolder<G>) where G.NodeType.ValueType == N{
-//
-//        if  holder.hasTopologyChanged(since: lastTopologyUpdate) {
-//            self.updateTopology(holder)
-//        }
-//        else {
-//
-//            if holder.havePositionsChanged(since: lastPositionsUpdate) {
-//                self.updatePositions(holder)
-//            }
-//            // no 'else' here
-//            if holder.haveColorsChanged(since: lastColorsUpdate) {
-//                self.updateColors(holder)
-//            }
-//        }
-//    }
 
     func afterAccess() {
         // NOP
@@ -233,76 +230,73 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.edgeIndexBuffer = nil
     }
 
-//    /// updates everything
-//    func updateTopology(_ holder: RenderableGraphHolder<G>) {
-//        // print("GraphWireFrame.updateTopology")
-//
-//        var newNodeIndices = [NodeID: Int]()
-//        var newNodePositions = [SIMD3<Float>]()
-//        var newEdgeIndexData = [UInt32]()
-//
-//        var nodeIndex: Int = 0
-//        for node in holder.graph.nodes {
-//            if let nodeValue = node.value,
-//               !nodeValue.hidden {
-//                newNodeIndices[node.id] = nodeIndex
-//                newNodePositions.insert(nodeValue.location, at: nodeIndex)
-//                nodeIndex += 1
-//            }
-//        }
-//
-//        var edgeIndex: Int = 0
-//        for node in holder.graph.nodes {
-//            for edge in node.outEdges {
-//                if let edgeValue = edge.value,
-//                   !edgeValue.hidden,
-//                   let sourceIndex = newNodeIndices[edge.source.id],
-//                   let targetIndex = newNodeIndices[edge.target.id] {
-//                    newEdgeIndexData.insert(UInt32(sourceIndex), at: edgeIndex)
-//                    edgeIndex += 1
-//                    newEdgeIndexData.insert(UInt32(targetIndex), at: edgeIndex)
-//                    edgeIndex += 1
-//                }
-//            }
-//        }
-//
-//        self.lastTopologyUpdate = holder.topologyUpdate
-//        self.nodeCount = newNodeIndices.count
-//        self.nodeIndices = newNodeIndices
-//
-//        updateNodePositions(holder.positionsUpdate, newNodePositions)
-//        updateNodeColors(holder.colorsUpdate, holder.graph.makeNodeColors())
-//
-//        self.edgeIndexCount = newEdgeIndexData.count
-//        if (edgeIndexCount > 0) {
-//            let bufLen = edgeIndexCount * MemoryLayout<UInt32>.size
-//            self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndexData, length: bufLen)
-//        }
-//        else {
-//            self.edgeIndexBuffer = nil
-//        }
-//    }
-//
-//    func updatePositions(_ holder: RenderableGraphHolder<G>) {
-//        var newNodePositions = [SIMD3<Float>]()
-//        for node in holder.graph.nodes {
-//            if let nodeIndex = nodeIndices[node.id],
-//               let nodeValue = node.value,
-//               !nodeValue.hidden {
-//                newNodePositions.insert(nodeValue.location, at: nodeIndex)
-//            }
-//        }
-//        updateNodePositions(holder.positionsUpdate, newNodePositions)
-//    }
-//
-//    func updateColors(_ holder: RenderableGraphHolder<GraphType>) {
-//        updateNodeColors(holder.colorsUpdate, holder.graph.makeNodeColors())
-//    }
+    /// updates everything
+    func updateTopology<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+        // print("GraphWireFrame.updateTopology")
 
-    private func updateNodePositions(_ positionsUpdate: Int,
-                        _ newNodePositions: [SIMD3<Float>]) {
+        var newNodeIndices = [NodeID: Int]()
+        var newNodePositions = [SIMD3<Float>]()
+        var newEdgeIndexData = [UInt32]()
+
+        var nodeIndex: Int = 0
+        for node in graph.nodes {
+            if let nodeValue = node.value,
+               !nodeValue.hidden {
+                newNodeIndices[node.id] = nodeIndex
+                newNodePositions.insert(nodeValue.location, at: nodeIndex)
+                nodeIndex += 1
+            }
+        }
+
+        var edgeIndex: Int = 0
+        for node in graph.nodes {
+            for edge in node.outEdges {
+                if let edgeValue = edge.value,
+                   !edgeValue.hidden,
+                   let sourceIndex = newNodeIndices[edge.source.id],
+                   let targetIndex = newNodeIndices[edge.target.id] {
+                    newEdgeIndexData.insert(UInt32(sourceIndex), at: edgeIndex)
+                    edgeIndex += 1
+                    newEdgeIndexData.insert(UInt32(targetIndex), at: edgeIndex)
+                    edgeIndex += 1
+                }
+            }
+        }
+
+        self.nodeCount = newNodeIndices.count
+        self.nodeIndices = newNodeIndices
+
+        updateNodePositions(newNodePositions)
+        updateNodeColors(graph.makeNodeColors())
+
+        self.edgeIndexCount = newEdgeIndexData.count
+        if (edgeIndexCount > 0) {
+            let bufLen = edgeIndexCount * MemoryLayout<UInt32>.size
+            self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndexData, length: bufLen)
+        }
+        else {
+            self.edgeIndexBuffer = nil
+        }
+    }
+
+    func updatePositions<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+        var newNodePositions = [SIMD3<Float>]()
+        for node in graph.nodes {
+            if let nodeIndex = nodeIndices[node.id],
+               let nodeValue = node.value,
+               !nodeValue.hidden {
+                newNodePositions.insert(nodeValue.location, at: nodeIndex)
+            }
+        }
+        updateNodePositions(newNodePositions)
+    }
+
+    func updateColors<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+        updateNodeColors(graph.makeNodeColors())
+    }
+
+    private func updateNodePositions(_ newNodePositions: [SIMD3<Float>]) {
         // print("GraphWireFrame.updateNodePositions")
-        lastPositionsUpdate = positionsUpdate
         if (self.nodeCount > 0) {
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
             nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
@@ -314,10 +308,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
     }
 
-    private func updateNodeColors(_ colorsUpdate: Int,
-                      _ newColors: [NodeID: SIMD4<Float>]) {
+    private func updateNodeColors(_ newColors: [NodeID: SIMD4<Float>]) {
         // print("GraphWireFrame.updateNodeColors")
-        lastColorsUpdate = colorsUpdate
         if (self.nodeCount > 0) {
             var nodeColors = [SIMD4<Float>](repeating: RenderingConstants.clearColor, count: nodeCount)
 
@@ -340,6 +332,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     func draw(_ renderEncoder: MTLRenderCommandEncoder,
               _ uniformsBuffer: MTLBuffer,
               _ uniformsBufferOffset: Int) {
+
+        // print("GraphWireFreame.draw")
 
         if !(nodeCount > 0) {
             return
