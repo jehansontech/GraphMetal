@@ -30,11 +30,11 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class Renderer<G: Graph>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate where
-    G.NodeType.ValueType: RenderableNodeValue,
-    G.EdgeType.ValueType: RenderableEdgeValue {
+public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate where
+    C.GraphType.NodeType.ValueType: RenderableNodeValue,
+    C.GraphType.EdgeType.ValueType: RenderableEdgeValue {
 
-    let parent: RendererView<G>
+    let parent: RendererView<C>
 
     var tapHandler: RendererTapHandler? = nil
 
@@ -62,7 +62,7 @@ public class Renderer<G: Graph>: NSObject, MTKViewDelegate, UIGestureRecognizerD
     
     var depthState: MTLDepthStencilState
 
-    var graphWireFrame: GraphWireFrame<G.NodeType.ValueType, G.EdgeType.ValueType>
+    var graphWireFrame: GraphWireFrame<C.GraphType.NodeType.ValueType, C.GraphType.EdgeType.ValueType>
     
     /// This is a hardware factor that affects the visibie size of point primitives, independent of the
     /// screen bounds.
@@ -70,7 +70,7 @@ public class Renderer<G: Graph>: NSObject, MTKViewDelegate, UIGestureRecognizerD
     /// * Older displays have value 1
     var screenScaleFactor: Float = 1
 
-    public init(_ parent: RendererView<G>) throws {
+    public init(_ parent: RendererView<C>) throws {
 
         // print("Renderer.init")
         
@@ -450,7 +450,7 @@ public class Renderer<G: Graph>: NSObject, MTKViewDelegate, UIGestureRecognizerD
         // 2. Have RendererView update POV and the wireframe
 
         parent.updatePOV()
-        parent.updateWidget(graphWireFrame)
+        parent.graphController.exec(graphWireFrame.update) // updateWidget(graphWireFrame)
 
         // =====================================
         // 3. Update content of current uniforms buffer

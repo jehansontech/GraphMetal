@@ -23,6 +23,7 @@ struct GraphWireFrameConstants {
 ///
 ///
 class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
+
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
@@ -60,22 +61,22 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.library = shaders.packageMetalLibrary
     }
 
-    func accessGraph<G>(_ holder: RenderableGraphHolder<G>) where G : Graph, E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+    func update<C>(_ controller: C) where C : RenderableGraphController, E == C.GraphType.EdgeType.ValueType, N == C.GraphType.NodeType.ValueType {
         // print("GraphWireFrame.accessGraph")
-        if  holder.hasTopologyChanged(since: lastTopologyUpdate) {
-            self.updateTopology(holder.graph)
-            self.lastTopologyUpdate = holder.topologyUpdate
+        if  controller.hasTopologyChanged(since: lastTopologyUpdate) {
+            self.updateTopology(controller.graph)
+            self.lastTopologyUpdate = controller.topologyUpdate
         }
         else {
 
-            if holder.havePositionsChanged(since: lastPositionsUpdate) {
-                self.updatePositions(holder.graph)
-                self.lastPositionsUpdate = holder.positionsUpdate
+            if controller.havePositionsChanged(since: lastPositionsUpdate) {
+                self.updatePositions(controller.graph)
+                self.lastPositionsUpdate = controller.positionsUpdate
             }
             // no 'else' here
-            if holder.haveColorsChanged(since: lastColorsUpdate) {
-                self.updateColors(holder.graph)
-                self.lastColorsUpdate = holder.colorsUpdate
+            if controller.haveColorsChanged(since: lastColorsUpdate) {
+                self.updateColors(controller.graph)
+                self.lastColorsUpdate = controller.colorsUpdate
             }
         }
     }

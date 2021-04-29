@@ -12,13 +12,16 @@ import GenericGraph
 ///
 ///
 ///
-public struct RendererView<G: Graph>: UIViewRepresentable where
-    G.NodeType.ValueType: RenderableNodeValue,
-    G.EdgeType.ValueType: RenderableEdgeValue {
+public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
+// where
+//    G.NodeType.ValueType: RenderableNodeValue,
+//    G.EdgeType.ValueType: RenderableEdgeValue,
+//    C.GraphType == G
+{
 
     public typealias UIViewType = MTKView
 
-    var graphController: RenderableGraphController<G>
+    var graphController: C // RenderableGraphController
 
     var povController: POVController
 
@@ -34,7 +37,7 @@ public struct RendererView<G: Graph>: UIViewRepresentable where
 
     let longPressHandler: RendererLongPressHandler?
 
-    public init(_ graphController: RenderableGraphController<G>,
+    public init(_ graphController: C, // RenderableGraphController<G>,
                 _ povController: POVController,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
@@ -44,9 +47,9 @@ public struct RendererView<G: Graph>: UIViewRepresentable where
         self.longPressHandler = longPressHandler
     }
 
-    public func makeCoordinator() -> Renderer<G> {
+    public func makeCoordinator() -> Renderer<C> {
         do {
-            return try Renderer<G>(self)
+            return try Renderer<C>(self)
         }
         catch {
             fatalError("Problem creating renderer: \(error)")
@@ -122,9 +125,9 @@ public struct RendererView<G: Graph>: UIViewRepresentable where
     }
 
     func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
-        W.NodeValueType == G.NodeType.ValueType,
-        W.EdgeValueType == G.EdgeType.ValueType {
-        graphController.submitTask(widget)
+        W.NodeValueType == C.GraphType.NodeType.ValueType,
+        W.EdgeValueType == C.GraphType.EdgeType.ValueType {
+        graphController.exec(widget.update)
     }
 }
 

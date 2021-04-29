@@ -23,17 +23,34 @@ struct TestEdgeValue: RenderableEdgeValue {
     var hidden: Bool { return false }
 }
 
-class TestGraphAccessor: RenderableGraphAccessor {
+class TestGraphController: RenderableGraphController {
 
-    typealias NodeValueType = TestNodeValue
-    typealias EdgeValueType = TestEdgeValue
+    typealias GraphType = BaseGraph<TestNodeValue, TestEdgeValue>
 
-    func accessGraph<G>(_ holder: RenderableGraphHolder<G>) where G : Graph, TestEdgeValue == G.EdgeType.ValueType, TestNodeValue == G.NodeType.ValueType {
-        print("graph has \(holder.graph.nodes.count) nodes")
+    var topologyUpdate: Int = 0
+
+    var positionsUpdate: Int = 0
+
+    var colorsUpdate: Int = 0
+
+    var dispatchQueue: DispatchQueue
+
+    var graph: BaseGraph<TestNodeValue, TestEdgeValue>
+
+    init(_ graph: BaseGraph<TestNodeValue, TestEdgeValue>, _ queue: DispatchQueue) {
+        self.graph = graph
+        self.dispatchQueue = queue
     }
 
-    func afterAccess() {
-        print("afterAccess")
-    }
+   //  typealias NodeValueType = TestNodeValue
+   //  typealias EdgeValueType = TestEdgeValue
+//
+//    func accessGraph<G>(_ holder: RenderableGraphHolder<G>) where G : Graph, TestEdgeValue == G.EdgeType.ValueType, TestNodeValue == G.NodeType.ValueType {
+//        print("graph has \(holder.graph.nodes.count) nodes")
+//    }
+//
+//    func afterAccess() {
+//        print("afterAccess")
+//    }
 
 }

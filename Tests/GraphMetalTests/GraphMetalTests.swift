@@ -15,13 +15,19 @@ final class GraphMetalTests: XCTestCase {
 
         let graph = BaseGraph<TestNodeValue, TestEdgeValue>()
 
-        let controller = RenderableGraphController(
+        let controller = TestGraphController(
             graph,
             DispatchQueue(label: "graph", qos: .userInitiated))
 
-        let accessor = TestGraphAccessor()
+        controller.exec(self.update, self.callback)
 
-        controller.submitTask(accessor)
+    }
+
+    func update(_ controller: TestGraphController) -> Bool {
+        return true
+    }
+
+    func callback(_ result: Bool) {
 
     }
 
