@@ -19,7 +19,7 @@ public protocol RenderableGraphHolder {
 
     var colorsUpdate: Int { get set }
 
-    var graph: GraphType { get }
+    var graph: GraphType { get set }
 }
 
 extension RenderableGraphHolder {
@@ -52,7 +52,7 @@ extension RenderableGraphHolder {
 public protocol RenderableGraphController {
     associatedtype HolderType: RenderableGraphHolder
 
-    var graphHolder: HolderType { get }
+    var graphHolder: HolderType { get set }
 
     var dispatchQueue: DispatchQueue { get }
 
