@@ -81,7 +81,7 @@ extension RenderableGraphController {
         }
     }
 
-    public func schedulee<T>(_ task: @escaping (HolderType) -> T, _ delay: Double, _ callback: @escaping (T) -> ()) {
+    public func schedule<T>(_ task: @escaping (HolderType) -> T, _ delay: Double, _ callback: @escaping (T) -> ()) {
         dispatchQueue.asyncAfter(deadline: .now() + delay) { [self] in
             let result = task(graphHolder)
             DispatchQueue.main.sync {
