@@ -65,40 +65,62 @@ public struct RenderableGraphHolder<G: Graph> where
     G.NodeType.ValueType: RenderableNodeValue,
     G.EdgeType.ValueType: RenderableEdgeValue {
 
-    var topologyUpdate: Int = 0
+    /// may be replaced
+    public var graph: G {
+        didSet {
+            _topologyUpdate += 1
+            _positionsUpdate += 1
+            _colorsUpdate += 1
+        }
+    }
 
-    var positionsUpdate: Int = 0
+    public var topologyUpdate: Int {
+        return _topologyUpdate
+    }
 
-    var colorsUpdate: Int = 0
+    public var positionsUpdate: Int {
+        return _positionsUpdate
+    }
 
-    public var graph: G
+    public var colorsUpdate: Int {
+        return _colorsUpdate
+    }
+
+    private var _topologyUpdate: Int = 0
+
+    private var _positionsUpdate: Int = 0
+
+    private var _colorsUpdate: Int = 0
 
     public init(_ graph: G) {
         self.graph = graph
     }
 
+    /// User MUST call this after every change to graph's topology
     mutating public func topologyHasChanged() {
-        topologyUpdate += 1
+        _topologyUpdate += 1
     }
 
     public func hasTopologyChanged(since update: Int) -> Bool {
-        return update < topologyUpdate
+        return update < _topologyUpdate
     }
 
+    /// User MUST call this after every change to graph's node positions
     mutating func positionsHaveChanged() {
-        positionsUpdate += 1
+        _positionsUpdate += 1
     }
 
     public func havePositionsChanged(since update: Int) -> Bool {
-        return update < positionsUpdate
+        return update < _positionsUpdate
     }
 
+    /// User MUST call this after every change to graph's node colors
     mutating func colorsHaveChanged() {
-        colorsUpdate += 1
+        _colorsUpdate += 1
     }
 
     public func haveColorsChanged(since update: Int) -> Bool {
-        return update < colorsUpdate
+        return update < _colorsUpdate
     }
 }
 
