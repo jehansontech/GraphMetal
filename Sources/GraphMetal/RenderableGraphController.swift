@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import GenericGraph
 
-public protocol RenderableGraphHolder {
+public protocol RenderableGraphHolder: AnyObject {
     associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
                                           GraphType.EdgeType.ValueType: RenderableEdgeValue
 
@@ -24,7 +24,7 @@ public protocol RenderableGraphHolder {
 
 extension RenderableGraphHolder {
 
-    public mutating func registerTopologyChange() {
+    public func registerTopologyChange() {
         topologyUpdate += 1
     }
 
@@ -32,7 +32,7 @@ extension RenderableGraphHolder {
         return update < topologyUpdate
     }
 
-    public mutating func registerPositionChange() {
+    public func registerPositionChange() {
         positionsUpdate += 1
     }
 
@@ -40,7 +40,7 @@ extension RenderableGraphHolder {
         return update < positionsUpdate
     }
 
-    public mutating func registerColorChange() {
+    public func registerColorChange() {
         colorsUpdate += 1
     }
 
@@ -76,7 +76,7 @@ extension RenderableGraphController {
     }
 }
 
-public struct BasicGraphHolder<G: Graph>: RenderableGraphHolder where
+public class BasicGraphHolder<G: Graph>: RenderableGraphHolder where
     G.NodeType.ValueType: RenderableNodeValue,
     G.EdgeType.ValueType: RenderableEdgeValue {
 
