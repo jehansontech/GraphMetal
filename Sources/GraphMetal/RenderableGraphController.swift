@@ -125,3 +125,96 @@ public struct RenderableGraphHolder<G: Graph> where
 }
 
 
+// ==================================================================================
+// MARK:- NEW VERSION
+// ==================================================================================
+
+public protocol NewGraphController: ObservableObject {
+    associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
+                                  GraphType.EdgeType.ValueType: RenderableEdgeValue
+
+    var topologyUpdate: Int { get }
+
+    var positionsUpdate: Int { get }
+
+    var colorsUpdate: Int { get }
+
+    var dispatchQueue: DispatchQueue { get }
+
+    var graph: GraphType { get }
+
+    /// User MUST call this after every change to graph's topology
+    func topologyHasChanged()
+
+    /// User MUST call this after every change to graph's node positions
+    func positionsHaveChanged()
+
+    /// User MUST call this after every change to graph's node colors
+    func colorsHaveChanged()
+
+}
+
+extension NewGraphController {
+
+    func exec(_ task: @escaping (Self) -> ()) {
+        dispatchQueue.async {
+            task(self)
+        }
+    }
+
+    func exec<T>(_ task: @escaping (Self) -> T, _ callback: @escaping (T) -> ()) {
+        dispatchQueue.async {
+            let result = task(self)
+            DispatchQueue.main.sync {
+                callback(result)
+            }
+        }
+    }
+
+    func hasTopologyChanged(since update: Int) -> Bool {
+        return update < topologyUpdate
+    }
+
+    func havePositionsChanged(since update: Int) -> Bool {
+        return update < positionsUpdate
+    }
+
+    func haveColorsChanged(since update: Int) -> Bool {
+        return update < colorsUpdate
+    }
+}
+
+class TestController<G>: NewGraphController where
+    G: Graph,
+    G.NodeType.ValueType: RenderableNodeValue,
+    G.EdgeType.ValueType: RenderableEdgeValue {
+
+    typealias GraphType = G
+
+    var topologyUpdate: Int = 0
+
+    var positionsUpdate: Int = 0
+
+    var colorsUpdate: Int = 0
+
+    var dispatchQueue: DispatchQueue
+
+    var graph: G
+
+    init(_ graph: G, _ queue: DispatchQueue) {
+        self.graph = graph
+        self.dispatchQueue = queue
+    }
+
+    func topologyHasChanged() {
+        topologyUpdate += 1
+    }
+
+    func positionsHaveChanged() {
+        positionsUpdate += 1
+    }
+
+    func colorsHaveChanged() {
+        colorsUpdate += 1
+    }
+}
