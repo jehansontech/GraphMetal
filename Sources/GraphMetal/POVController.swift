@@ -8,12 +8,13 @@
 
 import Foundation
 import CoreGraphics
+import SwiftUI
 import simd
 
 ///
 ///
 ///
-public class POVController: CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
+public class POVController: ObservableObject, CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
 
     /// EMPIRICAL
     public let fovyRadians = Float(65) * .pi / 180

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import GenericGraph
 
 public protocol RenderableGraphAccessor {
@@ -23,7 +24,7 @@ public protocol RenderableGraphAccessor {
 }
 
 
-public class RenderableGraphController<G: Graph> where
+public class RenderableGraphController<G: Graph>: ObservableObject where
     G.NodeType.ValueType: RenderableNodeValue,
     G.EdgeType.ValueType: RenderableEdgeValue {
 
