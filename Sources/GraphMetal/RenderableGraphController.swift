@@ -156,13 +156,13 @@ public protocol NewGraphController: ObservableObject {
 
 extension NewGraphController {
 
-    func exec(_ task: @escaping (Self) -> ()) {
+    public func exec(_ task: @escaping (Self) -> ()) {
         dispatchQueue.async {
             task(self)
         }
     }
 
-    func exec<T>(_ task: @escaping (Self) -> T, _ callback: @escaping (T) -> ()) {
+    public func exec<T>(_ task: @escaping (Self) -> T, _ callback: @escaping (T) -> ()) {
         dispatchQueue.async {
             let result = task(self)
             DispatchQueue.main.sync {
@@ -171,15 +171,15 @@ extension NewGraphController {
         }
     }
 
-    func hasTopologyChanged(since update: Int) -> Bool {
+    public func hasTopologyChanged(since update: Int) -> Bool {
         return update < topologyUpdate
     }
 
-    func havePositionsChanged(since update: Int) -> Bool {
+    public func havePositionsChanged(since update: Int) -> Bool {
         return update < positionsUpdate
     }
 
-    func haveColorsChanged(since update: Int) -> Bool {
+    public func haveColorsChanged(since update: Int) -> Bool {
         return update < colorsUpdate
     }
 }
