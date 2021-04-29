@@ -90,7 +90,7 @@ public struct BasicGraphHolder<G: Graph>: RenderableGraphHolder where
 
     public var graph: G
 
-    init(_ graph: G) {
+    public init(_ graph: G) {
         self.graph = graph
     }
 }
@@ -105,7 +105,7 @@ public struct BasicGraphController<G: Graph>: RenderableGraphController where
 
     public var dispatchQueue: DispatchQueue
 
-    init(_ graph: G, _ dispatchQueue: DispatchQueue) {
+    public init(_ graph: G, _ dispatchQueue: DispatchQueue) {
         self.graphHolder = BasicGraphHolder(graph)
         self.dispatchQueue = dispatchQueue
     }
