@@ -125,8 +125,8 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     }
 
     func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
-        W.NodeValueType == C.GraphType.NodeType.ValueType,
-        W.EdgeValueType == C.GraphType.EdgeType.ValueType {
+        W.NodeValueType == C.HolderType.GraphType.NodeType.ValueType,
+        W.EdgeValueType == C.HolderType.GraphType.EdgeType.ValueType {
         graphController.exec(widget.update)
     }
 }

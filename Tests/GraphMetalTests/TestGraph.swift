@@ -23,8 +23,32 @@ struct TestEdgeValue: RenderableEdgeValue {
     var hidden: Bool { return false }
 }
 
-class TestGraphController: RenderableGraphController {
+//
+//class TestController<G>: RenderableGraphController where
+//    G: Graph,
+//    G.NodeType.ValueType: RenderableNodeValue,
+//    G.EdgeType.ValueType: RenderableEdgeValue {
+//
+//    typealias GraphType = G
+//
+//    var topologyUpdate: Int = 0
+//
+//    var positionsUpdate: Int = 0
+//
+//    var colorsUpdate: Int = 0
+//
+//    var dispatchQueue: DispatchQueue
+//
+//    var graph: G
+//
+//    init(_ graph: G, _ queue: DispatchQueue) {
+//        self.graph = graph
+//        self.dispatchQueue = queue
+//    }
+//
+//}
 
+struct TestGraphHolder: GraphHolder {
     typealias GraphType = BaseGraph<TestNodeValue, TestEdgeValue>
 
     var topologyUpdate: Int = 0
@@ -33,24 +57,21 @@ class TestGraphController: RenderableGraphController {
 
     var colorsUpdate: Int = 0
 
-    var dispatchQueue: DispatchQueue
-
     var graph: BaseGraph<TestNodeValue, TestEdgeValue>
 
-    init(_ graph: BaseGraph<TestNodeValue, TestEdgeValue>, _ queue: DispatchQueue) {
+    init(_ graph: BaseGraph<TestNodeValue, TestEdgeValue>) {
         self.graph = graph
+    }
+}
+
+class TestGraphController: RenderableGraphController {
+    typealias HolderType = TestGraphHolder
+
+    var graphHolder: TestGraphHolder
+    var dispatchQueue: DispatchQueue
+
+    init(_ graph: BaseGraph<TestNodeValue, TestEdgeValue>, _ queue: DispatchQueue) {
+        self.graphHolder = TestGraphHolder(graph)
         self.dispatchQueue = queue
     }
-
-   //  typealias NodeValueType = TestNodeValue
-   //  typealias EdgeValueType = TestEdgeValue
-//
-//    func accessGraph<G>(_ holder: RenderableGraphHolder<G>) where G : Graph, TestEdgeValue == G.EdgeType.ValueType, TestNodeValue == G.NodeType.ValueType {
-//        print("graph has \(holder.graph.nodes.count) nodes")
-//    }
-//
-//    func afterAccess() {
-//        print("afterAccess")
-//    }
-
 }

@@ -30,9 +30,11 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate where
-    C.GraphType.NodeType.ValueType: RenderableNodeValue,
-    C.GraphType.EdgeType.ValueType: RenderableEdgeValue {
+public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate
+//where
+//    C.HolderType.GraphType.NodeType.ValueType: RenderableNodeValue,
+//    C.HolderType.GraphType.EdgeType.ValueType: RenderableEdgeValue
+{
 
     let parent: RendererView<C>
 
@@ -62,7 +64,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     
     var depthState: MTLDepthStencilState
 
-    var graphWireFrame: GraphWireFrame<C.GraphType.NodeType.ValueType, C.GraphType.EdgeType.ValueType>
+    var graphWireFrame: GraphWireFrame<C.HolderType.GraphType.NodeType.ValueType, C.HolderType.GraphType.EdgeType.ValueType>
     
     /// This is a hardware factor that affects the visibie size of point primitives, independent of the
     /// screen bounds.

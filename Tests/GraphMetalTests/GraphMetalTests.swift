@@ -23,12 +23,12 @@ final class GraphMetalTests: XCTestCase {
 
     }
 
-    func update(_ controller: TestGraphController) -> Bool {
-        return true
+    func update(_ holder: TestGraphHolder) -> Int {
+        return holder.graph.nodes.count
     }
 
-    func callback(_ result: Bool) {
-
+    func callback(_ result: Int) {
+        print("graph has \(result) nodes")
     }
 
     static var allTests = [
