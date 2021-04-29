@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import GenericGraph
 
-public protocol GraphHolder {
+public protocol RenderableGraphHolder {
     associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
                                           GraphType.EdgeType.ValueType: RenderableEdgeValue
 
@@ -22,7 +22,7 @@ public protocol GraphHolder {
     var graph: GraphType { get }
 }
 
-extension GraphHolder {
+extension RenderableGraphHolder {
 
     public mutating func registerTopologyChange() {
         topologyUpdate += 1
@@ -50,7 +50,7 @@ extension GraphHolder {
 }
 
 public protocol RenderableGraphController {
-    associatedtype HolderType: GraphHolder
+    associatedtype HolderType: RenderableGraphHolder
 
     var graphHolder: HolderType { get }
 
@@ -76,60 +76,38 @@ extension RenderableGraphController {
     }
 }
 
-//public protocol RenderableGraphController: ObservableObject {
-//    associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
-//                                  GraphType.EdgeType.ValueType: RenderableEdgeValue
-//
-//    var topologyUpdate: Int { get set }
-//
-//    var positionsUpdate: Int { get set }
-//
-//    var colorsUpdate: Int { get set }
-//
-//    var dispatchQueue: DispatchQueue { get }
-//
-//    var graph: GraphType { get }
-//
-//}
-//
-//extension RenderableGraphController {
-//
-//    public func exec(_ task: @escaping (Self) -> ()) {
-//        dispatchQueue.async {
-//            task(self)
-//        }
-//    }
-//
-//    public func exec<T>(_ task: @escaping (Self) -> T, _ callback: @escaping (T) -> ()) {
-//        dispatchQueue.async {
-//            let result = task(self)
-//            DispatchQueue.main.sync {
-//                callback(result)
-//            }
-//        }
-//    }
-//
-//    public func registerTopologyChange() {
-//        topologyUpdate += 1
-//    }
-//
-//    public func hasTopologyChanged(since update: Int) -> Bool {
-//        return update < topologyUpdate
-//    }
-//
-//    public func registerPositionChange() {
-//        positionsUpdate += 1
-//    }
-//
-//    public func havePositionsChanged(since update: Int) -> Bool {
-//        return update < positionsUpdate
-//    }
-//
-//    public func registerColorChange() {
-//        colorsUpdate += 1
-//    }
-//
-//    public func haveColorsChanged(since update: Int) -> Bool {
-//        return update < colorsUpdate
-//    }
-//}
+public struct BasicGraphHolder<G: Graph>: RenderableGraphHolder where
+    G.NodeType.ValueType: RenderableNodeValue,
+    G.EdgeType.ValueType: RenderableEdgeValue {
+
+    public typealias GraphType = G
+
+    public var topologyUpdate: Int = 0
+
+    public var positionsUpdate: Int = 0
+
+    public var colorsUpdate: Int = 0
+
+    public var graph: G
+
+    init(_ graph: G) {
+        self.graph = graph
+    }
+}
+
+public struct BasicGraphController<G: Graph>: RenderableGraphController where
+    G.NodeType.ValueType: RenderableNodeValue,
+    G.EdgeType.ValueType: RenderableEdgeValue {
+
+    public typealias HolderType = BasicGraphHolder<G>
+
+    public var graphHolder: BasicGraphHolder<G>
+
+    public var dispatchQueue: DispatchQueue
+
+    init(_ graph: G, _ dispatchQueue: DispatchQueue) {
+        self.graphHolder = BasicGraphHolder(graph)
+        self.dispatchQueue = dispatchQueue
+    }
+}
+

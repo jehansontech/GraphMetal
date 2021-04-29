@@ -61,7 +61,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.library = shaders.packageMetalLibrary
     }
 
-    func update<H>(_ holder: H) where H : GraphHolder, E == H.GraphType.EdgeType.ValueType, N == H.GraphType.NodeType.ValueType {
+    func update<H>(_ holder: H) where H : RenderableGraphHolder, E == H.GraphType.EdgeType.ValueType, N == H.GraphType.NodeType.ValueType {
         // print("GraphWireFrame.accessGraph")
         if  holder.hasTopologyChanged(since: lastTopologyUpdate) {
             self.updateTopology(holder.graph)

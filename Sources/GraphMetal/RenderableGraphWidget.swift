@@ -17,7 +17,7 @@ protocol RenderableGraphWidget {
     func teardown()
 
     /// update this widget's state using data found in the holder
-    func update<H: GraphHolder>(_ graphHolder: H) where
+    func update<H: RenderableGraphHolder>(_ graphHolder: H) where
         H.GraphType.NodeType.ValueType == NodeValueType,
         H.GraphType.EdgeType.ValueType == EdgeValueType
 
