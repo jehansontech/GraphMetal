@@ -52,7 +52,7 @@ extension RenderableGraphHolder {
 public protocol RenderableGraphController {
     associatedtype HolderType: RenderableGraphHolder
 
-    var graphHolder: HolderType { get set }
+    var graphHolder: HolderType { get }
 
     var dispatchQueue: DispatchQueue { get }
 
