@@ -41,9 +41,9 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     var nodePipelineState: MTLRenderPipelineState!
 
-    var nodeIndices = [NodeID: Int]()
-
     var nodeCount: Int = 0
+
+    var nodeIndices = [NodeID: Int]()
 
     var newNodePositions: [SIMD3<Float>]? = nil
 
@@ -168,7 +168,17 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         print("GraphWireFrame.draw[\(_drawCount)]")
         _drawCount += 1
 
-        if !(nodeCount > 0) {
+        guard
+            let nodePositionBuffer = nodePositionBuffer
+        else {
+            print("nodePositionBuffer = nil")
+            return
+        }
+
+        guard
+            let nodeColorBuffer = nodeColorBuffer
+        else {
+            print("nodeColorBuffer = nil")
             return
         }
 
@@ -192,6 +202,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         guard
             let edgeIndexBuffer = edgeIndexBuffer
         else {
+            print("edgeIndexBuffer = nil")
             return
         }
 
@@ -263,103 +274,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.newNodeColors = graph.makeNodeColors()
     }
 
-    //    func updateTopology<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-    //        // print("GraphWireFrame.updateTopology")
-    //
-    //        var newNodeIndices = [NodeID: Int]()
-    //        var newNodePositions = [SIMD3<Float>]()
-    //        var newEdgeIndexData = [UInt32]()
-    //
-    //        var nodeIndex: Int = 0
-    //        for node in graph.nodes {
-    //            if let nodeValue = node.value,
-    //               !nodeValue.hidden {
-    //                newNodeIndices[node.id] = nodeIndex
-    //                newNodePositions.insert(nodeValue.location, at: nodeIndex)
-    //                nodeIndex += 1
-    //            }
-    //        }
-    //
-    //        var edgeIndex: Int = 0
-    //        for node in graph.nodes {
-    //            for edge in node.outEdges {
-    //                if let edgeValue = edge.value,
-    //                   !edgeValue.hidden,
-    //                   let sourceIndex = newNodeIndices[edge.source.id],
-    //                   let targetIndex = newNodeIndices[edge.target.id] {
-    //                    newEdgeIndexData.insert(UInt32(sourceIndex), at: edgeIndex)
-    //                    edgeIndex += 1
-    //                    newEdgeIndexData.insert(UInt32(targetIndex), at: edgeIndex)
-    //                    edgeIndex += 1
-    //                }
-    //            }
-    //        }
-    //
-    //        self.nodeCount = newNodeIndices.count
-    //        self.nodeIndices = newNodeIndices
-    //
-    //        updateNodePositions(newNodePositions)
-    //        updateNodeColors(graph.makeNodeColors())
-    //
-    //        self.edgeIndexCount = newEdgeIndexData.count
-    //        if (edgeIndexCount > 0) {
-    //            let bufLen = edgeIndexCount * MemoryLayout<UInt32>.size
-    //            self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndexData, length: bufLen)
-    //        }
-    //        else {
-    //            self.edgeIndexBuffer = nil
-    //        }
-    //    }
-    //
-    //    func updatePositions<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-    //        var newNodePositions = [SIMD3<Float>]()
-    //        for node in graph.nodes {
-    //            if let nodeIndex = nodeIndices[node.id],
-    //               let nodeValue = node.value,
-    //               !nodeValue.hidden {
-    //                newNodePositions.insert(nodeValue.location, at: nodeIndex)
-    //            }
-    //        }
-    //        updateNodePositions(newNodePositions)
-    //    }
-    //
-    //    func updateColors<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-    //        updateNodeColors(graph.makeNodeColors())
-    //    }
-    //
-    //    private func updateNodePositions(_ newNodePositions: [SIMD3<Float>]) {
-    //        // print("GraphWireFrame.updateNodePositions")
-    //        if (self.nodeCount > 0) {
-    //            let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
-    //            nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
-    //                                                   length: nodePositionBufLen,
-    //                                                   options: [])
-    //        }
-    //        else {
-    //            nodePositionBuffer = nil
-    //        }
-    //    }
-    //
-    //    private func updateNodeColors(_ newColors: [NodeID: SIMD4<Float>]) {
-    //        // print("GraphWireFrame.updateNodeColors")
-    //        if (self.nodeCount > 0) {
-    //            var nodeColors = [SIMD4<Float>](repeating: RenderingConstants.clearColor, count: nodeCount)
-    //
-    //            for (nodeID, color) in newColors {
-    //                if let nodeIndex = nodeIndices[nodeID] {
-    //                    nodeColors[nodeIndex] = color
-    //                }
-    //            }
-    //
-    //            let nodeColorBufLen = nodeCount * MemoryLayout<SIMD4<Float>>.size
-    //            nodeColorBuffer = device.makeBuffer(bytes: nodeColors,
-    //                                                length: nodeColorBufLen,
-    //                                                options: [])
-    //        }
-    //        else {
-    //            nodeColorBuffer = nil
-    //        }
-    //    }
     private static func buildNodePipeline(_ device: MTLDevice, _ library: MTLLibrary, _ view: MTKView) throws -> MTLRenderPipelineState {
 
         let vertexFunction = library.makeFunction(name: "node_vertex")
