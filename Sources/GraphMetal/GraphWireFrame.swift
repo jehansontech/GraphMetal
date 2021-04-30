@@ -98,7 +98,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         E == H.GraphType.EdgeType.ValueType,
         N == H.GraphType.NodeType.ValueType {
 
-        print("GraphWireFrame.prepareUpdate")
+        // print("GraphWireFrame.prepareUpdate")
 
         if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
             self.prepareTopologyUpdate(graphHolder.graph)
@@ -120,13 +120,13 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     func applyUpdate() {
 
-        print("GraphWireFrame.applyUpdate")
+        // print("GraphWireFrame.applyUpdate")
 
         if nodeCount == 0 {
             nodePositionBuffer = nil
         }
         else if let nodePositions = self.newNodePositions {
-            print("GraphWireFrame: creating nodePositionBuffer")
+            // print("GraphWireFrame: creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
             nodePositionBuffer = device.makeBuffer(bytes: nodePositions,
                                                    length: nodePositionBufLen,
@@ -138,7 +138,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             nodeColorBuffer = nil
         }
         else if let nodeColors = self.newNodeColors {
-            print("GraphWireFrame: creating nodeColorBuffer")
+            // print("GraphWireFrame: creating nodeColorBuffer")
             var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.clearColor, count: nodeCount)
             for (nodeID, color) in nodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
@@ -157,7 +157,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             self.edgeIndexBuffer = nil
         }
         else if let edgeIndices = self.newEdgeIndices {
-            print("GraphWireFrame: creating edgeIndexBuffer")
+            // print("GraphWireFrame: creating edgeIndexBuffer")
             let bufLen = edgeIndices.count * MemoryLayout<UInt32>.size
             self.edgeIndexBuffer = device.makeBuffer(bytes: edgeIndices, length: bufLen)
         }
@@ -168,20 +168,20 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
               _ uniformsBuffer: MTLBuffer,
               _ uniformsBufferOffset: Int) {
 
-        print("GraphWireFrame.draw[\(_drawCount)]")
         _drawCount += 1
+        // print("GraphWireFrame.draw[\(_drawCount)]")
 
         guard
             let nodePositionBuffer = nodePositionBuffer
         else {
-            print("nodePositionBuffer = nil")
+            print("GraphWireFrame.draw[\(_drawCount)]: nodePositionBuffer = nil")
             return
         }
 
         guard
             let nodeColorBuffer = nodeColorBuffer
         else {
-            print("nodeColorBuffer = nil")
+            print("GraphWireFrame.draw[\(_drawCount)]: nodeColorBuffer = nil")
             return
         }
 
@@ -205,7 +205,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         guard
             let edgeIndexBuffer = edgeIndexBuffer
         else {
-            print("edgeIndexBuffer = nil")
+            print("GraphWireFrame.draw[\(_drawCount)]: edgeIndexBuffer = nil")
             return
         }
 
