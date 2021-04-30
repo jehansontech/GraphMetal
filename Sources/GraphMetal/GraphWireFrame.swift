@@ -61,54 +61,29 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.library = shaders.packageMetalLibrary
     }
 
-    func update<H>(_ holder: H) where H : RenderableGraphHolder, E == H.GraphType.EdgeType.ValueType, N == H.GraphType.NodeType.ValueType {
+    func update<H>(_ graphHolder: H) where H : RenderableGraphHolder, E == H.GraphType.EdgeType.ValueType, N == H.GraphType.NodeType.ValueType {
         // print("GraphWireFrame.accessGraph")
-        if  holder.hasTopologyChanged(since: lastTopologyUpdate) {
-            self.updateTopology(holder.graph)
-            self.lastTopologyUpdate = holder.topologyUpdate
+        if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
+            self.updateTopology(graphHolder.graph)
+            self.lastTopologyUpdate = graphHolder.topologyUpdate
         }
         else {
 
-            if holder.havePositionsChanged(since: lastPositionsUpdate) {
-                self.updatePositions(holder.graph)
-                self.lastPositionsUpdate = holder.positionsUpdate
+            if graphHolder.havePositionsChanged(since: lastPositionsUpdate) {
+                self.updatePositions(graphHolder.graph)
+                self.lastPositionsUpdate = graphHolder.positionsUpdate
             }
             // no 'else' here
-            if holder.haveColorsChanged(since: lastColorsUpdate) {
-                self.updateColors(holder.graph)
-                self.lastColorsUpdate = holder.colorsUpdate
+            if graphHolder.haveColorsChanged(since: lastColorsUpdate) {
+                self.updateColors(graphHolder.graph)
+                self.lastColorsUpdate = graphHolder.colorsUpdate
             }
         }
-    }
-
-//    func update<C>(_ controller: C) where C : RenderableGraphController, E == C.HolderType.GraphType.EdgeType.ValueType, N == C.HolderType.GraphType.NodeType.ValueType {
-//        // print("GraphWireFrame.accessGraph")
-//        if  controller.hasTopologyChanged(since: lastTopologyUpdate) {
-//            self.updateTopology(controller.graph)
-//            self.lastTopologyUpdate = controller.topologyUpdate
-//        }
-//        else {
-//
-//            if controller.havePositionsChanged(since: lastPositionsUpdate) {
-//                self.updatePositions(controller.graph)
-//                self.lastPositionsUpdate = controller.positionsUpdate
-//            }
-//            // no 'else' here
-//            if controller.haveColorsChanged(since: lastColorsUpdate) {
-//                self.updateColors(controller.graph)
-//                self.lastColorsUpdate = controller.colorsUpdate
-//            }
-//        }
-//    }
-
-    func afterAccess() {
-        // NOP
     }
 
     func setup(_ view: MTKView) throws {
 
-        // print("library functions:")
-        print(library.functionNames)
+        // print("library functions: \(library.functionNames)")
 
         if (nodePipelineState == nil) {
             // print("building node pipeline")
