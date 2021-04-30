@@ -98,7 +98,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         E == H.GraphType.EdgeType.ValueType,
         N == H.GraphType.NodeType.ValueType {
 
-        print("GraphWireFrame.prepareUpdate[\(_drawCount)]")
+        print("GraphWireFrame.prepareUpdate")
 
         if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
             self.prepareTopologyUpdate(graphHolder.graph)
@@ -120,12 +120,13 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     func applyUpdate() {
 
-        print("GraphWireFrame.applyUpdate[\(_drawCount)]")
+        print("GraphWireFrame.applyUpdate")
 
         if nodeCount == 0 {
             nodePositionBuffer = nil
         }
         else if let nodePositions = self.newNodePositions {
+            print("GraphWireFrame: creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
             nodePositionBuffer = device.makeBuffer(bytes: nodePositions,
                                                    length: nodePositionBufLen,
@@ -137,6 +138,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             nodeColorBuffer = nil
         }
         else if let nodeColors = self.newNodeColors {
+            print("GraphWireFrame: creating nodeColorBuffer")
             var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.clearColor, count: nodeCount)
             for (nodeID, color) in nodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
@@ -155,8 +157,9 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             self.edgeIndexBuffer = nil
         }
         else if let edgeIndices = self.newEdgeIndices {
-                let bufLen = edgeIndices.count * MemoryLayout<UInt32>.size
-                self.edgeIndexBuffer = device.makeBuffer(bytes: edgeIndices, length: bufLen)
+            print("GraphWireFrame: creating edgeIndexBuffer")
+            let bufLen = edgeIndices.count * MemoryLayout<UInt32>.size
+            self.edgeIndexBuffer = device.makeBuffer(bytes: edgeIndices, length: bufLen)
         }
         self.newEdgeIndices = nil
     }
