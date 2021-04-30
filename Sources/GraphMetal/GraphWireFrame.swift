@@ -98,7 +98,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         E == H.GraphType.EdgeType.ValueType,
         N == H.GraphType.NodeType.ValueType {
 
-        print("GraphWireFrame.prepareUpdate: graphHolder = \(graphHolder)")
+        // print("GraphWireFrame.prepareUpdate")
 
         if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
             self.prepareTopologyUpdate(graphHolder.graph)
