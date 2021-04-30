@@ -30,11 +30,7 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate
-//where
-//    C.HolderType.GraphType.NodeType.ValueType: RenderableNodeValue,
-//    C.HolderType.GraphType.EdgeType.ValueType: RenderableEdgeValue
-{
+public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
 
     let parent: RendererView<C>
 
@@ -452,7 +448,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         // 2. Have RendererView update POV and the wireframe
 
         parent.updatePOV()
-        parent.graphController.exec(graphWireFrame.update) // updateWidget(graphWireFrame)
+        parent.updateWidget(graphWireFrame)
 
         // =====================================
         // 3. Update content of current uniforms buffer

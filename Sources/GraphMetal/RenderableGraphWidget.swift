@@ -16,15 +16,12 @@ protocol RenderableGraphWidget {
 
     func teardown()
 
-    /// update this widget's state using data found in the holder
-    func update<H: RenderableGraphHolder>(_ graphHolder: H) where
+    /// prepare to update this widget's state by reading data found in the holder
+    func prepareUpdate<H: RenderableGraphHolder>(_ graphHolder: H) where
         H.GraphType.NodeType.ValueType == NodeValueType,
         H.GraphType.EdgeType.ValueType == EdgeValueType
 
-//    /// update this widget's state using data found in the controller
-//    func update<C: RenderableGraphController>(_ controller: C) where
-//        C.GraphType.NodeType.ValueType == NodeValueType,
-//        C.GraphType.EdgeType.ValueType == EdgeValueType
+    func applyUpdate()
 
     // TODO rename to 'encode'
     // TODO remove uniforms
