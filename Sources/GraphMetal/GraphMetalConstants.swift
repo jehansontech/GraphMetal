@@ -17,7 +17,7 @@ public struct GraphMetalConstants {
 
     public static let defaultEdgeColor = SIMD4<Float>(0.5, 0.5, 0.5, 1)
 
-    static let rendererClearColor = MTLClearColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1)
+    public static let defaultBackgroundColor = SIMD4<Double>(0.12, 0.12, 0.12, 1)
 
     static let edgeIndexType = MTLIndexType.uint32
 
