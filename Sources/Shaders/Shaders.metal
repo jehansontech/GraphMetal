@@ -103,8 +103,8 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
                               float2 pointCoord                    [[point_coord]],
                               const device Uniforms&  uniforms     [[ buffer(2) ]]) {
 
-    // transparent nodes?
-    if (interpolated.color[4] < 0.1) {
+    // transparent nodes
+    if (interpolated.color.a == 0) {
         discard_fragment();
     }
 

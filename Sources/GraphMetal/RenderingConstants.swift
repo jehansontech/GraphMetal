@@ -13,7 +13,7 @@ public struct RenderingConstants {
     
     public static let defaultNodeSize: Float = 25
 
-    public static let defaultNodeColor = SIMD4<Float>(1, 1, 1, 0)
+    public static let defaultNodeColor = SIMD4<Float>(0, 0, 0, 0)
 
     public static let defaultEdgeColor = SIMD4<Float>(0.25, 0.25, 0.25, 1)
 
