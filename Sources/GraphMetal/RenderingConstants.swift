@@ -9,18 +9,14 @@
 import Foundation
 import MetalKit
 
-struct RenderingConstants {
+public struct RenderingConstants {
     
-    static let defaultPointSize: Float = 12
+    public static let defaultNodeSize: Float = 12
 
-    static let clearColor = SIMD4<Float>(0, 0, 0, 0)
+    public static let defaultNodeColor = SIMD4<Float>(0, 0, 0, 0)
 
-    static let whiteColor = SIMD4<Float>(1, 1, 1, 1)
-    
-    static let defaultNodeColor = SIMD4<Float>(0, 0, 0, 0)
-    
-    static let edgeColor = SIMD4<Float>(20/255, 20/255, 20/255, 1)
+    public static let edgeColor = SIMD4<Float>(80/255, 80/255, 80/255, 1)
 
-    static let rendererBackground = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+    public static let rendererBackground = MTLClearColor(red: 30/255, green: 30/255, blue: 30/255, alpha: 1)
 
 }

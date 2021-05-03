@@ -27,7 +27,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
-    public var pointSize: Float = RenderingConstants.defaultPointSize
+    public var pointSize: Float = RenderingConstants.defaultNodeSize
 
     var device: MTLDevice
 
@@ -139,7 +139,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         }
         else if let nodeColors = self.newNodeColors {
             // print("GraphWireFrame: creating nodeColorBuffer")
-            var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.clearColor, count: nodeCount)
+            var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.defaultNodeColor, count: nodeCount)
             for (nodeID, color) in nodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
                     colorsArray[nodeIndex] = color
