@@ -35,7 +35,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     public init(_ graphController: C, // RenderableGraphController<G>,
                 _ povController: POVController,
-                _ rendererHook: ((Renderer<C>) -> ())? = nil,
+                rendererHook: ((Renderer<C>) -> ())? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
         self.graphController = graphController
