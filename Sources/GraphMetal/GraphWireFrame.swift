@@ -340,16 +340,16 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
 
-        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
+        // pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
 
         // These are guesses
-        //        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        //        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .max
-        //        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        //        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .destinationAlpha
-        //        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .max
-        //        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .one
-        //        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .one
+        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .max
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .destinationAlpha
+        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .max
+        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .one
+        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .one
 
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat

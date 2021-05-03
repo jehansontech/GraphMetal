@@ -11,7 +11,7 @@ import MetalKit
 
 public struct RenderingConstants {
     
-    public static let defaultNodeSize: Float = 12
+    public static let defaultNodeSize: Float = 25
 
     public static let defaultNodeColor = SIMD4<Float>(0, 0, 0, 0)
 
