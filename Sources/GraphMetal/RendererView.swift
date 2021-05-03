@@ -9,14 +9,8 @@ import SwiftUI
 import MetalKit
 import GenericGraph
 
-///
-///
-///
+
 public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
-// where
-//    G.NodeType.ValueType: RenderableNodeValue,
-//    G.EdgeType.ValueType: RenderableEdgeValue,
-//    C.GraphType == G
 {
 
     public typealias UIViewType = MTKView
@@ -37,19 +31,27 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     let longPressHandler: RendererLongPressHandler?
 
+    var rendererHook: ((Renderer<C>) -> ())? = nil
+
     public init(_ graphController: C, // RenderableGraphController<G>,
                 _ povController: POVController,
+                _ rendererHook: ((Renderer<C>) -> ())? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
         self.graphController = graphController
         self.povController = povController
+        self.rendererHook = rendererHook
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
     }
 
     public func makeCoordinator() -> Renderer<C> {
         do {
-            return try Renderer<C>(self)
+            let renderer = try Renderer<C>(self)
+            if let hook = rendererHook {
+                hook(renderer)
+            }
+            return renderer
         }
         catch {
             fatalError("Problem creating renderer: \(error)")
@@ -65,7 +67,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
             mtkView.device = metalDevice
         }
         mtkView.framebufferOnly = false
-        mtkView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        mtkView.clearColor = RenderingConstants.rendererBackground
         mtkView.drawableSize = mtkView.frame.size
         mtkView.enableSetNeedsDisplay = true
 
