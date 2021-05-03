@@ -22,12 +22,12 @@ struct GraphWireFrameConstants {
 ///
 ///
 ///
-class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
+public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
-    var pointSize: Float = RenderingConstants.defaultPointSize
+    public var pointSize: Float = RenderingConstants.defaultPointSize
 
     var device: MTLDevice
 
