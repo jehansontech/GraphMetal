@@ -67,7 +67,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
             mtkView.device = metalDevice
         }
         mtkView.framebufferOnly = false
-        mtkView.clearColor = RenderingConstants.rendererBackground
+        mtkView.clearColor = GraphMetalConstants.rendererClearColor
         mtkView.drawableSize = mtkView.frame.size
         mtkView.enableSetNeedsDisplay = true
 

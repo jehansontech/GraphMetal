@@ -456,7 +456,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         uniforms[0].projectionMatrix = parent.projectionMatrix
         uniforms[0].modelViewMatrix = parent.modelViewMatrix
         uniforms[0].pointSize = screenScaleFactor * graphWireFrame.pointSize
-        uniforms[0].edgeColor = GraphWireFrameConstants.edgeColor
+        uniforms[0].edgeColor = graphWireFrame.edgeColor
     }
 }
 

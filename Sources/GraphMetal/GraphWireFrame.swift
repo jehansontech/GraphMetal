@@ -12,22 +12,13 @@ import MetalKit
 import GenericGraph
 import Shaders
 
-struct GraphWireFrameConstants {
 
-    static let edgeColor = RenderingConstants.edgeColor
-
-    static let edgeIndexType = MTLIndexType.uint32
-}
-
-///
-///
-///
 public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
-    public var pointSize: Float = RenderingConstants.defaultNodeSize
+    public var pointSize: Float = GraphMetalConstants.defaultNodeSize
 
     var device: MTLDevice
 
@@ -53,6 +44,8 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
 
     var nodeColorBuffer: MTLBuffer? = nil
 
+    var edgeColor = GraphMetalConstants.defaultEdgeColor
+    
     var edgePipelineState: MTLRenderPipelineState!
 
     var edgeIndexCount: Int = 0
@@ -139,7 +132,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         }
         else if let nodeColors = self.newNodeColors {
             // print("GraphWireFrame: creating nodeColorBuffer")
-            var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.defaultNodeColor, count: nodeCount)
+            var colorsArray = [SIMD4<Float>](repeating: GraphMetalConstants.defaultNodeColor, count: nodeCount)
             for (nodeID, color) in nodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
                     colorsArray[nodeIndex] = color
@@ -213,7 +206,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         renderEncoder.setRenderPipelineState(edgePipelineState)
         renderEncoder.drawIndexedPrimitives(type: .line,
                                             indexCount: edgeIndexCount,
-                                            indexType: GraphWireFrameConstants.edgeIndexType,
+                                            indexType: GraphMetalConstants.edgeIndexType,
                                             indexBuffer: edgeIndexBuffer,
                                             indexBufferOffset: 0)
         renderEncoder.popDebugGroup()
