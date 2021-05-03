@@ -1,5 +1,5 @@
 //
-//  GraphMetalConstants.swift
+//  RenderingConstants.swift
 //  ArcWorld
 //
 //  Created by James Hanson on 9/12/20.
@@ -9,7 +9,7 @@
 import Foundation
 import MetalKit
 
-public struct GraphMetalConstants {
+public struct RenderingConstants {
     
     public static let defaultNodeSize: Float = 12
 
@@ -17,7 +17,7 @@ public struct GraphMetalConstants {
 
     public static let defaultEdgeColor = SIMD4<Float>(0.5, 0.5, 0.5, 1)
 
-    public static let defaultBackgroundColor = SIMD4<Double>(0.12, 0.12, 0.12, 1)
+    public static let defaultBackgroundColor = SIMD4<Double>(0.05, 0.05, 0.05, 1)
 
     static let edgeIndexType = MTLIndexType.uint32
 

@@ -18,7 +18,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
-    public var pointSize: Float = GraphMetalConstants.defaultNodeSize
+    public var pointSize: Float = RenderingConstants.defaultNodeSize
 
     var device: MTLDevice
 
@@ -44,7 +44,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
 
     var nodeColorBuffer: MTLBuffer? = nil
 
-    var edgeColor = GraphMetalConstants.defaultEdgeColor
+    var edgeColor = RenderingConstants.defaultEdgeColor
     
     var edgePipelineState: MTLRenderPipelineState!
 
@@ -132,7 +132,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         }
         else if let nodeColors = self.newNodeColors {
             // print("GraphWireFrame: creating nodeColorBuffer")
-            var colorsArray = [SIMD4<Float>](repeating: GraphMetalConstants.defaultNodeColor, count: nodeCount)
+            var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.defaultNodeColor, count: nodeCount)
             for (nodeID, color) in nodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
                     colorsArray[nodeIndex] = color
@@ -206,7 +206,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         renderEncoder.setRenderPipelineState(edgePipelineState)
         renderEncoder.drawIndexedPrimitives(type: .line,
                                             indexCount: edgeIndexCount,
-                                            indexType: GraphMetalConstants.edgeIndexType,
+                                            indexType: RenderingConstants.edgeIndexType,
                                             indexBuffer: edgeIndexBuffer,
                                             indexBufferOffset: 0)
         renderEncoder.popDebugGroup()

@@ -67,10 +67,10 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
             mtkView.device = metalDevice
         }
         mtkView.framebufferOnly = false
-        mtkView.clearColor = MTLClearColorMake(GraphMetalConstants.defaultBackgroundColor.x,
-                                               GraphMetalConstants.defaultBackgroundColor.y,
-                                               GraphMetalConstants.defaultBackgroundColor.z,
-                                               GraphMetalConstants.defaultBackgroundColor.w)
+        mtkView.clearColor = MTLClearColorMake(RenderingConstants.defaultBackgroundColor.x,
+                                               RenderingConstants.defaultBackgroundColor.y,
+                                               RenderingConstants.defaultBackgroundColor.z,
+                                               RenderingConstants.defaultBackgroundColor.w)
         mtkView.drawableSize = mtkView.frame.size
         mtkView.enableSetNeedsDisplay = true
 
