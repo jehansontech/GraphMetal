@@ -60,6 +60,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     public func makeUIView(context: Context) -> MTKView {
         let mtkView = MTKView()
+
         mtkView.delegate = context.coordinator
         mtkView.preferredFramesPerSecond = 60
         mtkView.enableSetNeedsDisplay = true
