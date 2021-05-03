@@ -15,9 +15,9 @@ public struct RenderingConstants {
 
     public static let defaultNodeColor = SIMD4<Float>(0, 0, 0, 0)
 
-    public static let defaultEdgeColor = SIMD4<Float>(0.5, 0.5, 0.5, 1)
+    public static let defaultEdgeColor = SIMD4<Float>(0.25, 0.25, 0.25, 1)
 
-    public static let defaultBackgroundColor = SIMD4<Double>(0, 0, 0, 1)
+    public static let defaultBackgroundColor = SIMD4<Double>(0.01, 0.01, 0.01, 1)
 
     static let edgeIndexType = MTLIndexType.uint32
 
