@@ -176,7 +176,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
             return
         }
         let provider = CGDataProvider(dataInfo: nil, data: p!, size: selftureSize, releaseData: releaseMaskImagePixelData)
-        let cgImageRef = CGImage(width: texture.width,
+        let cgImage = CGImage(width: texture.width,
                                  height: texture.height,
                                  bitsPerComponent: 8,
                                  bitsPerPixel: 32,
@@ -186,9 +186,12 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
                                  provider: provider!,
                                  decode: nil,
                                  shouldInterpolate: true,
-                                 intent: CGColorRenderingIntent.defaultIntent)!
+                                 intent: CGColorRenderingIntent.defaultIntent)
 
-        // UIImageWriteToSavedPhotosAlbum(...., nil, nil, nil)
+        if let cgImage = cgImage {
+            let uiImage = UIImage(cgImage: cgImage)
+            UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
+        }
     }
 
     public func draw(in view: MTKView) {
