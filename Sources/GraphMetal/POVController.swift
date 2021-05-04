@@ -50,7 +50,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     
     public var modelViewMatrix: float4x4
 
-    private weak var _renderingParameters: RenderingParameters? = nil
+    weak var renderingParameters: RenderingParameters? = nil
 
     private var _motionEnabled: Bool = false
 
@@ -212,7 +212,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     func updateRenderingParameters() {
-        if let params = _renderingParameters,
+        if let params = renderingParameters,
            params.autoAdjust {
             let newSize = RenderingConstants.nodeSizeScaleFactor / simd_length(self.location - self.center)
             params.nodeSize = newSize.clamp(1, RenderingConstants.nodeSizeMax)
