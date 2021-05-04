@@ -156,56 +156,12 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         }
     }
 
-
-    public func takeScreenshot(_ view: MTKView) {
-
-        // Adapted from
-        // https://stackoverflow.com/questions/33844130/take-a-snapshot-of-current-screen-with-metal-in-swift
-        // [accessed 04/2021]
-
-        guard
-            let texture = view.currentDrawable?.texture
-        else {
-            return
-        }
-
-        let width = texture.width
-        let height   = texture.height
-        let rowBytes = texture.width * 4
-        let p = malloc(width * height * 4)
-        texture.getBytes(p!, bytesPerRow: rowBytes, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
-
-        let pColorSpace = CGColorSpaceCreateDeviceRGB()
-
-        let rawBitmapInfo = CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
-        let bitmapInfo:CGBitmapInfo = CGBitmapInfo(rawValue: rawBitmapInfo)
-
-        let selftureSize = texture.width * texture.height * 4
-        let releaseMaskImagePixelData: CGDataProviderReleaseDataCallback = { (info: UnsafeMutableRawPointer?, data: UnsafeRawPointer, size: Int) -> () in
-            return
-        }
-        let provider = CGDataProvider(dataInfo: nil, data: p!, size: selftureSize, releaseData: releaseMaskImagePixelData)
-        let cgImage = CGImage(width: texture.width,
-                                 height: texture.height,
-                                 bitsPerComponent: 8,
-                                 bitsPerPixel: 32,
-                                 bytesPerRow: rowBytes,
-                                 space: pColorSpace,
-                                 bitmapInfo: bitmapInfo,
-                                 provider: provider!,
-                                 decode: nil,
-                                 shouldInterpolate: true,
-                                 intent: CGColorRenderingIntent.defaultIntent)
-
-        if let cgImage = cgImage {
-            let uiImage = UIImage(cgImage: cgImage)
-            UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
-        }
-    }
-
     public func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
         
+        // Q: does it work here?
+        self.beginDraw(view)
+
         if let commandBuffer = commandQueue.makeCommandBuffer() {
             
             let semaphore = inFlightSemaphore
@@ -213,10 +169,10 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
                 semaphore.signal()
             }
 
-            self.beginDraw(view)
+            // beginDraw was here before I move it
 
-            /// Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
-            ///   holding onto the drawable and blocking the display pipeline any longer than necessary
+            // Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
+            //   holding onto the drawable and blocking the display pipeline any longer than necessary
             
             // OLD:
             let renderPassDescriptor = view.currentRenderPassDescriptor
