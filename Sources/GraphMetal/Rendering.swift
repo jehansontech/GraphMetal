@@ -25,7 +25,7 @@ public struct RenderingConstants {
     static let nodeSizeMax: GLfloat = 32
 
     // EMPIRICAL
-    static let nodeSizeScaleFactor: GLfloat = 350
+    static let nodeSizeScaleFactor: GLfloat = 1000 //350
 }
 
 public protocol RenderingParameters: AnyObject {
