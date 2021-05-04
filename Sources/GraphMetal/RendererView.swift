@@ -124,52 +124,6 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         // print("RendererView.updateUIView")
     }
 
-    public func takeScreenshot(_ view: MTKView) {
-
-        // Adapted from
-        // https://stackoverflow.com/questions/33844130/take-a-snapshot-of-current-screen-with-metal-in-swift
-        // [accessed 04/2021]
-
-        guard
-            let texture = view.currentDrawable?.texture
-        else {
-            return
-        }
-
-        let width = texture.width
-        let height   = texture.height
-        let rowBytes = texture.width * 4
-        let p = malloc(width * height * 4)
-        texture.getBytes(p!, bytesPerRow: rowBytes, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
-
-        let pColorSpace = CGColorSpaceCreateDeviceRGB()
-
-        let rawBitmapInfo = CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
-        let bitmapInfo:CGBitmapInfo = CGBitmapInfo(rawValue: rawBitmapInfo)
-
-        let selftureSize = texture.width * texture.height * 4
-        let releaseMaskImagePixelData: CGDataProviderReleaseDataCallback = { (info: UnsafeMutableRawPointer?, data: UnsafeRawPointer, size: Int) -> () in
-            return
-        }
-        let provider = CGDataProvider(dataInfo: nil, data: p!, size: selftureSize, releaseData: releaseMaskImagePixelData)
-        let cgImage = CGImage(width: texture.width,
-                              height: texture.height,
-                              bitsPerComponent: 8,
-                              bitsPerPixel: 32,
-                              bytesPerRow: rowBytes,
-                              space: pColorSpace,
-                              bitmapInfo: bitmapInfo,
-                              provider: provider!,
-                              decode: nil,
-                              shouldInterpolate: true,
-                              intent: CGColorRenderingIntent.defaultIntent)
-
-        if let cgImage = cgImage {
-            let uiImage = UIImage(cgImage: cgImage)
-            UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
-        }
-    }
-
     func updateProjection(viewSize: CGSize) {
         povController.updateProjection(viewSize: viewSize)
     }

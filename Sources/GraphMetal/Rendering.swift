@@ -1,5 +1,5 @@
 //
-//  RenderingConstants.swift
+//  Rendering.swift
 //  ArcWorld
 //
 //  Created by James Hanson on 9/12/20.
@@ -25,7 +25,7 @@ public struct RenderingConstants {
     static let nodeSizeMax: GLfloat = 32
 
     // EMPIRICAL
-    static let nodeSizeScaleFactor: GLfloat = 1000 //350
+    static let nodeSizeScaleFactor: GLfloat = 800
 }
 
 public protocol RenderingParameters: AnyObject {
@@ -36,6 +36,8 @@ public protocol RenderingParameters: AnyObject {
     var nodeSize: Float { get set }
 
     var edgeColor: SIMD4<Float> { get set }
-}
 
+    /// Setting this to true causes renderer to take a screenshot at the earliest opportunity
+    var screenshotRequested: Bool { get set }
+}
 
