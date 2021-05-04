@@ -13,12 +13,14 @@ import GenericGraph
 import Shaders
 
 
-public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
+class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
-    public var pointSize: Float = RenderingConstants.defaultNodeSize
+    var nodeSize: Float = RenderingConstants.defaultNodeSize
+
+    var edgeColor = RenderingConstants.defaultEdgeColor
 
     var device: MTLDevice
 
@@ -44,8 +46,6 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
 
     var nodeColorBuffer: MTLBuffer? = nil
 
-    var edgeColor = RenderingConstants.defaultEdgeColor
-    
     var edgePipelineState: MTLRenderPipelineState!
 
     var edgeIndexCount: Int = 0

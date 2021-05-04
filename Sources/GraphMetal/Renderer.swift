@@ -30,7 +30,29 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate {
+public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderingParameters {
+
+    public var autoAdjust: Bool = true
+
+    public var nodeSize: Float {
+        get {
+            return graphWireFrame.nodeSize
+        }
+
+        set(newValue) {
+            graphWireFrame.nodeSize = newValue
+        }
+    }
+
+    public var edgeColor: SIMD4<Float> {
+        get {
+            return graphWireFrame.edgeColor
+        }
+
+        set(newValue) {
+            graphWireFrame.edgeColor = newValue
+        }
+    }
 
     let parent: RendererView<C>
 
@@ -60,7 +82,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     
     var depthState: MTLDepthStencilState
 
-    public var graphWireFrame: GraphWireFrame<C.HolderType.GraphType.NodeType.ValueType, C.HolderType.GraphType.EdgeType.ValueType>
+    var graphWireFrame: GraphWireFrame<C.HolderType.GraphType.NodeType.ValueType, C.HolderType.GraphType.EdgeType.ValueType>
     
     /// This is a hardware factor that affects the visibie size of point primitives, independent of the
     /// screen bounds.
@@ -70,7 +92,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     public init(_ parent: RendererView<C>) throws {
 
-        // print("Renderer.init")
+        print("Renderer.init")
         
         self.parent = parent
 
@@ -137,22 +159,9 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     public func takeScreenshot(_ view: MTKView) {
 
-        // taking a screen shot
-        //
-        // 1. camera button sets flag on AppModel
-        // 2. renderer.draw() calls parent.prepareToDraw()
-        //    gotta pass the view up tho . . . .
-        // 3. parent, aka rendererView, checks appmodel flag, calls rendrere method, and unsets appmodel flag
-        //
-        // draw() should check a flag that is set by the camera button.
-        // camera button can set flag in AppModel
-        // renderer calls RendereView.beforeDraw
-        // RendererView can read the flag
-
-
-
-        // adapted from
+        // Adapted from
         // https://stackoverflow.com/questions/33844130/take-a-snapshot-of-current-screen-with-metal-in-swift
+        // [accessed 04/2021]
 
         guard
             let texture = view.currentDrawable?.texture
@@ -204,7 +213,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
                 semaphore.signal()
             }
 
-            self.beginDraw()
+            self.beginDraw(view)
 
             /// Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
             ///   holding onto the drawable and blocking the display pipeline any longer than necessary
@@ -436,7 +445,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         return "\(grName) \(stateString)"
     }
 
-    private func beginDraw() {
+    private func beginDraw(_ view: MTKView) {
 
         // ======================================
         // 1. Rotate the uniforms buffers.
@@ -458,7 +467,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
         uniforms[0].projectionMatrix = parent.projectionMatrix
         uniforms[0].modelViewMatrix = parent.modelViewMatrix
-        uniforms[0].pointSize = screenScaleFactor * graphWireFrame.pointSize
+        uniforms[0].pointSize = screenScaleFactor * graphWireFrame.nodeSize
         uniforms[0].edgeColor = graphWireFrame.edgeColor
     }
 }

@@ -50,6 +50,8 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     
     public var modelViewMatrix: float4x4
 
+    private weak var _renderingParameters: RenderingParameters? = nil
+
     private var _motionEnabled: Bool = false
 
     private var _velocityRTP: SIMD3<Float> = Geometry.zero
@@ -80,6 +82,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
             self.center = newValue.center
             self.up = normalize(newValue.up)
             self.modelViewMatrix = Self.makeModelViewMatrix(location: self.location, center: self.center, up: self.up)
+            updateRenderingParameters()
         }
     }
 
@@ -208,6 +211,14 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         // _modelViewStale = true
     }
 
+    func updateRenderingParameters() {
+        if let params = _renderingParameters,
+           params.autoAdjust {
+            let newSize = RenderingConstants.nodeSizeScaleFactor / simd_length(self.location - self.center)
+            params.nodeSize = newSize.clamp(1, RenderingConstants.nodeSizeMax)
+        }
+    }
+
     func updateModelView(_ timestamp: Date) {
 
         // if we're flying, ignore pov.velocity
@@ -218,19 +229,19 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         else {
             self.flyPOV = nil
 
-//            if (_motionEnabled && self._velocityRTP != Geometry.zero) {
-//                // FIXME Doesn't work...
-//                if let t0 = _lastUpdateTimestamp {
-//                    let dt = timestamp.timeIntervalSince(t0)
-//
-//                    // FIXME this is wrong
-//                    let locationRTP = Geometry.cartesianToSpherical(xyz: self.location)
-//                    let newLocationRTP = locationRTP + Float(dt) * _velocityRTP
-//                    self.location = Geometry.sphericalToCartesian(rtp: newLocationRTP)
-//
-//                    self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
-//                }
-//            }
+            // FIXME Doesn't work...
+            //            if (_motionEnabled && self._velocityRTP != Geometry.zero) {
+            //                if let t0 = _lastUpdateTimestamp {
+            //                    let dt = timestamp.timeIntervalSince(t0)
+            //
+            //                    // FIXME this is wrong
+            //                    let locationRTP = Geometry.cartesianToSpherical(xyz: self.location)
+            //                    let newLocationRTP = locationRTP + Float(dt) * _velocityRTP
+            //                    self.location = Geometry.sphericalToCartesian(rtp: newLocationRTP)
+            //
+            //                    self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
+            //                }
+            //            }
         }
         _lastUpdateTimestamp = timestamp
     }

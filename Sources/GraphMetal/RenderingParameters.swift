@@ -21,4 +21,21 @@ public struct RenderingConstants {
 
     static let edgeIndexType = MTLIndexType.uint32
 
+    // EMPIRICAL
+    static let nodeSizeMax: GLfloat = 32
+
+    // EMPIRICAL
+    static let nodeSizeScaleFactor: GLfloat = 350
 }
+
+public protocol RenderingParameters: AnyObject {
+
+    /// Indicates whether the nodeSize and edgeColor should be automatically adjusted when the POV changes
+    var autoAdjust: Bool { get set }
+
+    var nodeSize: Float { get set }
+
+    var edgeColor: SIMD4<Float> { get set }
+}
+
+

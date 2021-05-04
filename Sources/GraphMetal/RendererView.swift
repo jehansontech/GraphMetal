@@ -15,7 +15,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     public typealias UIViewType = MTKView
 
-    var graphController: C // RenderableGraphController
+    var graphController: C 
 
     var povController: POVController
 
@@ -31,16 +31,17 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     let longPressHandler: RendererLongPressHandler?
 
-    var rendererHook: ((Renderer<C>) -> ())? = nil
+    // optional func gets called when we create the renderer. We pass the new renderer as arg.
+    var renderingHook: ((RenderingParameters) -> ())? = nil
 
     public init(_ graphController: C, // RenderableGraphController<G>,
                 _ povController: POVController,
-                rendererHook: ((Renderer<C>) -> ())? = nil,
+                renderingHook: ((RenderingParameters) -> ())? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
         self.graphController = graphController
         self.povController = povController
-        self.rendererHook = rendererHook
+        self.renderingHook = renderingHook
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
     }
@@ -48,7 +49,8 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     public func makeCoordinator() -> Renderer<C> {
         do {
             let renderer = try Renderer<C>(self)
-            if let hook = rendererHook {
+            povController.renderingParameters = renderer
+            if let hook = renderingHook {
                 hook(renderer)
             }
             return renderer
