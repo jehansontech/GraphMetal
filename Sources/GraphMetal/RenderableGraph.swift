@@ -9,13 +9,10 @@ import GenericGraph
 import simd
 
 
-public protocol RenderableNodeValue {
+public protocol RenderableNodeValue: EmbeddableNodeValue {
 
     /// if true, the node will not be rendered
     var hidden: Bool { get }
-
-    /// Point in world coordinates where the node is located
-    var location: SIMD3<Float> { get }
 
     /// Color of the node
     var color: SIMD4<Float>? { get }
@@ -30,21 +27,6 @@ public protocol RenderableEdgeValue {
 
 extension Graph where
     NodeType.ValueType: RenderableNodeValue {
-
-    func makeBoundingBox() -> BoundingBox {
-        var bbox: BoundingBox? = nil
-        for node in nodes {
-            if let p = node.value?.location {
-                if bbox == nil {
-                    bbox = BoundingBox(p)
-                }
-                else {
-                    bbox!.cover(p)
-                }
-            }
-        }
-        return bbox ?? BoundingBox(SIMD3<Float>(0,0,0))
-    }
 
     func makeNodeColors() -> [NodeID: SIMD4<Float>] {
         var nodeColors = [NodeID: SIMD4<Float>]()
