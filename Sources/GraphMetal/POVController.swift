@@ -215,7 +215,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         if let params = renderingParameters,
            params.autoAdjust {
             let newSize = RenderingConstants.nodeSizeScaleFactor / simd_length(self.location - self.center)
-            params.nodeSize = newSize.clamp(1, RenderingConstants.nodeSizeMax)
+            params.nodeSize = newSize.clamp(1, params.nodeSizeMax)
         }
     }
 
