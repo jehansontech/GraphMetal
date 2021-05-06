@@ -8,11 +8,12 @@
 
 // Our platform independent renderer class
 
-import GenericGraph
 import Metal
 import MetalKit
 import simd
+import GenericGraph
 import Shaders
+import Taconic
 
 // The 256 byte aligned size of our uniform structure
 let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
@@ -94,7 +95,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     public init(_ parent: RendererView<C>) throws {
 
-        print("Renderer.init")
+        debug("Renderer", "init")
         
         self.parent = parent
 

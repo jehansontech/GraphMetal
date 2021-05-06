@@ -11,7 +11,7 @@ import Metal
 import MetalKit
 import GenericGraph
 import Shaders
-
+import Taconic
 
 class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 
@@ -64,17 +64,17 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     func setup(_ view: MTKView) throws {
 
-        // print("library functions: \(library.functionNames)")
+        debug("GraphWireFrame", "library functions: \(library.functionNames)")
 
         if (nodePipelineState == nil) {
-            // print("building node pipeline")
+            // debug("building node pipeline")
             self.nodePipelineState = try Self.buildNodePipeline(device, library, view)
-            // print("done building node pipeline")
+            // debug("done building node pipeline")
         }
         if (edgePipelineState == nil) {
-            // print("building edge pipeline")
+            // debug("building edge pipeline")
             self.edgePipelineState = try Self.buildEdgePipeline(device, library, view)
-            // print("done building edge pipeline")
+            // debug("done building edge pipeline")
         }
     }
 
@@ -91,7 +91,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         E == H.GraphType.EdgeType.ValueType,
         N == H.GraphType.NodeType.ValueType {
 
-        // print("GraphWireFrame.prepareUpdate")
+        // debug("GraphWireFrame.prepareUpdate")
 
         if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
             self.prepareTopologyUpdate(graphHolder.graph)
@@ -113,13 +113,16 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     func applyUpdate() {
 
-        // print("GraphWireFrame.applyUpdate")
+        // debug("GraphWireFrame.applyUpdate")
 
         if nodeCount == 0 {
             nodePositionBuffer = nil
         }
         else if let nodePositions = self.newNodePositions {
-            print("GraphWireFrame: creating nodePositionBuffer")
+            if nodePositions.count != nodeCount {
+                fatalError("Failed sanity check: nodeCount=\(nodeCount) but nodePositions.count=\(nodePositions.count)")
+            }
+            debug("GraphWireFrame", "creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
             nodePositionBuffer = device.makeBuffer(bytes: nodePositions,
                                                    length: nodePositionBufLen,
@@ -131,7 +134,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             nodeColorBuffer = nil
         }
         else if let nodeColors = self.newNodeColors {
-            print("GraphWireFrame: creating nodeColorBuffer")
+            debug("GraphWireFrame", "creating nodeColorBuffer")
             var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.defaultNodeColor, count: nodeCount)
             for (nodeID, color) in nodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
@@ -150,7 +153,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             self.edgeIndexBuffer = nil
         }
         else if let edgeIndices = self.newEdgeIndices {
-            print("GraphWireFrame: creating edgeIndexBuffer")
+            debug("GraphWireFrame", "creating edgeIndexBuffer")
             let bufLen = edgeIndices.count * MemoryLayout<UInt32>.size
             self.edgeIndexBuffer = device.makeBuffer(bytes: edgeIndices, length: bufLen)
         }
@@ -162,19 +165,19 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
               _ uniformsBufferOffset: Int) {
 
         _drawCount += 1
-        // print("GraphWireFrame.draw[\(_drawCount)]")
+        // debug("GraphWireFrame.draw[\(_drawCount)]")
 
         guard
             let nodePositionBuffer = nodePositionBuffer
         else {
-            print("GraphWireFrame.draw[\(_drawCount)]: nodePositionBuffer = nil")
+            debug("GraphWireFrame.draw \(_drawCount)", "nodePositionBuffer = nil")
             return
         }
 
         guard
             let nodeColorBuffer = nodeColorBuffer
         else {
-            print("GraphWireFrame.draw[\(_drawCount)]: nodeColorBuffer = nil")
+            debug("GraphWireFrame.draw \(_drawCount)", "nodeColorBuffer = nil")
             return
         }
 
@@ -198,7 +201,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         guard
             let edgeIndexBuffer = edgeIndexBuffer
         else {
-            print("GraphWireFrame.draw[\(_drawCount)]: edgeIndexBuffer = nil")
+            debug("GraphWireFrame.draw \(_drawCount)", "edgeIndexBuffer = nil")
             return
         }
 
@@ -357,8 +360,4 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
-}
-
-struct BufferData {
-
 }
