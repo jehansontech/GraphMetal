@@ -232,7 +232,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             return
         }
 
-        debug("GraphWireFrame", "draw \(_drawCount): starting on nodes")
+        // debug("GraphWireFrame", "draw \(_drawCount): starting on nodes")
 
         renderEncoder.pushDebugGroup("Draw Nodes")
         renderEncoder.setRenderPipelineState(nodePipelineState)
@@ -258,7 +258,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             return
         }
 
-        debug("GraphWireFrame", "draw \(_drawCount): starting on edges")
+        // debug("GraphWireFrame", "draw \(_drawCount): starting on edges")
 
 
         renderEncoder.pushDebugGroup("Draw Edges")
