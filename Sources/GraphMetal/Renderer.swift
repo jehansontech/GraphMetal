@@ -146,6 +146,10 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         super.init()
     }
 
+    deinit {
+        debug("Renderer", "deinit")
+    }
+    
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         // print("Renderer.mtkView size=\(size)")
         parent.updateProjection(viewSize: size)

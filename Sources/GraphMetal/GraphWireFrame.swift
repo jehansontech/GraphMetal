@@ -75,6 +75,10 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.library = shaders.packageMetalLibrary
     }
 
+    deinit {
+        debug("GraphWireFrame", "deinit")
+    }
+
     func setup(_ view: MTKView) throws {
 
         debug("GraphWireFrame", "setup. library functions: \(library.functionNames)")
@@ -156,8 +160,10 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
 
         if nodeCount == 0 {
-            debug("GraphWireFrame", "discarding nodePositionBuffer")
-            nodePositionBuffer = nil
+            if nodePositionBuffer != nil {
+                debug("GraphWireFrame", "discarding nodePositionBuffer")
+                nodePositionBuffer = nil
+            }
         }
         else if let newNodePositions = update.nodePositions {
             if newNodePositions.count != nodeCount {
@@ -172,8 +178,10 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
 
         if nodeCount == 0 {
-            debug("GraphWireFrame", "discarding nodeColorBuffer")
-            nodeColorBuffer = nil
+            if nodeColorBuffer != nil {
+                debug("GraphWireFrame", "discarding nodeColorBuffer")
+                nodeColorBuffer = nil
+            }
         }
         else if let newNodeColors = update.nodeColors {
 
@@ -197,8 +205,10 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
 
         if edgeIndexCount == 0 {
-            debug("GraphWireFrame", "discarding edgeIndexBuffer")
-            self.edgeIndexBuffer = nil
+            if edgeIndexBuffer != nil {
+                debug("GraphWireFrame", "discarding edgeIndexBuffer")
+                self.edgeIndexBuffer = nil
+            }
         }
         else if let newEdgeIndices = update.edgeIndices {
             if newEdgeIndices.count != edgeIndexCount {
