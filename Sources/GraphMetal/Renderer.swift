@@ -166,7 +166,8 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
             takeScreenshot(view)
             screenshotRequested = false
         }
-        self.beginDraw(view)
+
+        // was getting segv's because of bad node count when beginDraw was here
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
             
@@ -174,6 +175,9 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
             commandBuffer.addCompletedHandler { (_ commandBuffer)-> Swift.Void in
                 semaphore.signal()
             }
+
+            // put beginDraw inside here to see if it will help with segv's
+            self.beginDraw(view)
 
             // Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
             //   holding onto the drawable and blocking the display pipeline any longer than necessary
