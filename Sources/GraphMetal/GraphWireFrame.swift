@@ -18,43 +18,56 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
+    // Access this only on rendering thread
     var nodeSize: Float = RenderingConstants.defaultNodeSize
 
+    // Access this only on rendering thread
     var edgeColor = RenderingConstants.defaultEdgeColor
 
+    // Access this only on rendering thread
     var device: MTLDevice
 
+    // Access this only on rendering thread
     var library: MTLLibrary
 
-    var lastTopologyUpdate: Int = -1
-
-    var lastPositionsUpdate: Int = -1
-
-    var lastColorsUpdate: Int = -1
-
+    // Access this only on rendering thread
     var nodePipelineState: MTLRenderPipelineState!
 
+    // Access this only on rendering thread
     var nodeCount: Int = 0
 
-    var nodeIndices = [NodeID: Int]()
-
-    var newNodePositions: [SIMD3<Float>]? = nil
-
+    // Access this only on rendering thread
     var nodePositionBuffer: MTLBuffer? = nil
 
-    var newNodeColors: [NodeID: SIMD4<Float>]? = nil
-
+    // Access this only on rendering thread
     var nodeColorBuffer: MTLBuffer? = nil
 
+    // Access this only on rendering thread
     var edgePipelineState: MTLRenderPipelineState!
 
+    // Access this only on rendering thread
     var edgeIndexCount: Int = 0
 
-    var newEdgeIndices: [UInt32]? = nil
-
+    // Access this only on rendering thread
     var edgeIndexBuffer: MTLBuffer? = nil
 
+    // Access this only on rendering thread
     var _drawCount: Int = 0
+
+
+    // Access this only on background thread
+    var lastTopologyUpdate: Int = -1
+
+    // Access this only on background thread
+    var lastPositionsUpdate: Int = -1
+
+    // Access this only on background thread
+    var lastColorsUpdate: Int = -1
+
+    // Access this only on background thread
+    private var nodeIndices = [NodeID: Int]()
+
+    private var bufferUpdate: BufferUpdate? = nil
 
     init(_ device: MTLDevice) {
         let shaders = Shaders()
@@ -87,83 +100,115 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.edgeIndexBuffer = nil
     }
 
+    // Runs on background thread
     func prepareUpdate<H>(_ graphHolder: H) where
         H : RenderableGraphHolder,
         E == H.GraphType.EdgeType.ValueType,
         N == H.GraphType.NodeType.ValueType {
 
-
         if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
             debug("GraphWireFrame", "prepareUpdate: topology has changed")
-            self.prepareTopologyUpdate(graphHolder.graph)
             self.lastTopologyUpdate = graphHolder.topologyUpdate
             self.lastPositionsUpdate = graphHolder.positionsUpdate
             self.lastColorsUpdate = graphHolder.colorsUpdate
+            self.bufferUpdate = self.prepareTopologyUpdate(graphHolder.graph)
         }
         else {
+            var newPositions: [SIMD3<Float>]? = nil
+            var newColors: [NodeID : SIMD4<Float>]? = nil
 
             if graphHolder.havePositionsChanged(since: lastPositionsUpdate) {
                 debug("GraphWireFrame", "prepareUpdate: positions have changed")
-                self.preparePositionsUpdate(graphHolder.graph)
+                newPositions = self.makeNodePositions(graphHolder.graph)
                 self.lastPositionsUpdate = graphHolder.positionsUpdate
             }
-            // no 'else' here
+
             if graphHolder.haveColorsChanged(since: lastColorsUpdate) {
                 debug("GraphWireFrame", "prepareUpdate: colors have changed")
-                self.prepareColorsUpdate(graphHolder.graph)
+                newColors = graphHolder.graph.makeNodeColors()
                 self.lastColorsUpdate = graphHolder.colorsUpdate
             }
+
+            if (newPositions != nil || newColors != nil) {
+                self.bufferUpdate = BufferUpdate(nodeCount: self.nodeCount,
+                                                 nodePositions: newPositions,
+                                                 nodeColors: newColors,
+                                                 edgeIndexCount: self.edgeIndexCount,
+                                                 edgeIndices: nil)
+            }
         }
+
     }
 
     func applyUpdate() {
 
+        guard
+            let update = self.bufferUpdate
+        else {
+            return
+        }
+
+        self.bufferUpdate = nil
+
+        if self.nodeCount != update.nodeCount {
+            debug("GraphWireFrame", "updating nodeCount: \(nodeCount) -> \(update.nodeCount)")
+                nodeCount = update.nodeCount
+        }
+
         if nodeCount == 0 {
+            debug("GraphWireFrame", "discarding nodePositionBuffer")
             nodePositionBuffer = nil
         }
-        else if let nodePositions = self.newNodePositions {
-            debug("GraphWireFrame", "creating nodePositionBuffer")
-
-            if nodePositions.count != nodeCount {
-                fatalError("Failed sanity check: nodeCount=\(nodeCount) but nodePositions.count=\(nodePositions.count)")
+        else if let newNodePositions = update.nodePositions {
+            if newNodePositions.count != nodeCount {
+                fatalError("Failed sanity check: nodeCount=\(nodeCount) but newNodePositions.count=\(newNodePositions.count)")
             }
+
+            debug("GraphWireFrame", "creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
-            nodePositionBuffer = device.makeBuffer(bytes: nodePositions,
+            nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
                                                    length: nodePositionBufLen,
                                                    options: [])
         }
-        self.newNodePositions = nil
 
         if nodeCount == 0 {
+            debug("GraphWireFrame", "discarding nodeColorBuffer")
             nodeColorBuffer = nil
         }
-        else if let nodeColors = self.newNodeColors {
-            debug("GraphWireFrame", "creating nodeColorBuffer")
+        else if let newNodeColors = update.nodeColors {
 
             var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.defaultNodeColor, count: nodeCount)
-            for (nodeID, color) in nodeColors {
+            for (nodeID, color) in newNodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
                     colorsArray[nodeIndex] = color
                 }
             }
 
+            debug("GraphWireFrame", "creating nodeColorBuffer")
             let nodeColorBufLen = nodeCount * MemoryLayout<SIMD4<Float>>.size
             nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
                                                 length: nodeColorBufLen,
                                                 options: [])
         }
-        self.newNodeColors = nil
+
+        if self.edgeIndexCount != update.edgeIndexCount {
+            debug("GraphWireFrame", "updating edgeIndexCount: \(edgeIndexCount) -> \(update.edgeIndexCount)")
+            self.edgeIndexCount = update.edgeIndexCount
+        }
 
         if edgeIndexCount == 0 {
+            debug("GraphWireFrame", "discarding edgeIndexBuffer")
             self.edgeIndexBuffer = nil
         }
-        else if let edgeIndices = self.newEdgeIndices {
-            debug("GraphWireFrame", "creating edgeIndexBuffer")
+        else if let newEdgeIndices = update.edgeIndices {
+            if newEdgeIndices.count != edgeIndexCount {
+                fatalError("Failed sanity check: edgeIndexCount=\(edgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
+            }
 
-            let bufLen = edgeIndices.count * MemoryLayout<UInt32>.size
-            self.edgeIndexBuffer = device.makeBuffer(bytes: edgeIndices, length: bufLen)
+            debug("GraphWireFrame", "creating edgeIndexBuffer")
+            let bufLen = newEdgeIndices.count * MemoryLayout<UInt32>.size
+            self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices, length: bufLen)
         }
-        self.newEdgeIndices = nil
     }
 
     func draw(_ renderEncoder: MTLRenderCommandEncoder,
@@ -174,18 +219,20 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         // debug("GraphWireFrame.draw[\(_drawCount)]")
 
         guard
-            let nodePositionBuffer = nodePositionBuffer
+            let nodePositionBuffer = self.nodePositionBuffer
         else {
             debug("GraphWireFrame", "draw \(_drawCount): nodePositionBuffer = nil")
             return
         }
 
         guard
-            let nodeColorBuffer = nodeColorBuffer
+            let nodeColorBuffer = self.nodeColorBuffer
         else {
             debug("GraphWireFrame", "draw \(_drawCount): nodeColorBuffer = nil")
             return
         }
+
+        debug("GraphWireFrame", "draw \(_drawCount): starting on nodes")
 
         renderEncoder.pushDebugGroup("Draw Nodes")
         renderEncoder.setRenderPipelineState(nodePipelineState)
@@ -205,11 +252,14 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         renderEncoder.popDebugGroup()
 
         guard
-            let edgeIndexBuffer = edgeIndexBuffer
+            let edgeIndexBuffer = self.edgeIndexBuffer
         else {
             debug("GraphWireFrame", "draw \(_drawCount): edgeIndexBuffer = nil")
             return
         }
+
+        debug("GraphWireFrame", "draw \(_drawCount): starting on edges")
+
 
         renderEncoder.pushDebugGroup("Draw Edges")
         renderEncoder.setRenderPipelineState(edgePipelineState)
@@ -222,7 +272,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     }
 
-    private func prepareTopologyUpdate<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+    private func prepareTopologyUpdate<G: Graph>(_ graph: G) -> BufferUpdate where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
 
         var newNodeIndices = [NodeID: Int]()
         var newNodePositions = [SIMD3<Float>]()
@@ -237,6 +287,9 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
                 nodeIndex += 1
             }
         }
+
+        // OK
+        self.nodeIndices = newNodeIndices
 
         var edgeIndex: Int = 0
         for node in graph.nodes {
@@ -253,16 +306,16 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             }
         }
 
-        self.nodeCount = newNodeIndices.count
-        self.nodeIndices = newNodeIndices
-        self.newNodePositions = newNodePositions
-        self.newNodeColors = graph.makeNodeColors()
-        self.edgeIndexCount = newEdgeIndexData.count
-        self.newEdgeIndices = newEdgeIndexData
-
+        return BufferUpdate(
+            nodeCount: newNodePositions.count,
+            nodePositions: newNodePositions,
+            nodeColors: graph.makeNodeColors(),
+            edgeIndexCount: newEdgeIndexData.count,
+            edgeIndices: newEdgeIndexData
+        )
     }
 
-    private func preparePositionsUpdate<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+    private func makeNodePositions<G: Graph>(_ graph: G) -> [SIMD3<Float>] where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
         var newNodePositions = [SIMD3<Float>]()
         for node in graph.nodes {
             if let nodeIndex = nodeIndices[node.id],
@@ -271,12 +324,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
                 newNodePositions.insert(nodeValue.location, at: nodeIndex)
             }
         }
-
-        self.newNodePositions = newNodePositions
-    }
-
-    private func prepareColorsUpdate<G: Graph>(_ graph: G) where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-        self.newNodeColors = graph.makeNodeColors()
+        return newNodePositions
     }
 
     private static func buildNodePipeline(_ device: MTLDevice, _ library: MTLLibrary, _ view: MTKView) throws -> MTLRenderPipelineState {
@@ -356,4 +404,12 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
+}
+
+struct BufferUpdate {
+    let nodeCount: Int
+    let nodePositions: [SIMD3<Float>]?
+    let nodeColors: [NodeID: SIMD4<Float>]?
+    let edgeIndexCount: Int
+    let edgeIndices: [UInt32]?
 }
