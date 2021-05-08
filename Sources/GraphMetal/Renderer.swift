@@ -91,6 +91,8 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     /// * Older displays have value 1
     var screenScaleFactor: Double = 1
 
+    private var _drawCount: Int = 0
+
     public init(_ parent: RendererView<C>) throws {
 
         debug("Renderer", "init")
@@ -188,6 +190,8 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     public func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
+
+        _drawCount += 1
 
         if screenshotRequested {
             takeScreenshot(view)
@@ -416,11 +420,11 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         // =====================================
         // 3. Update content of current uniforms buffer
 
-        uniforms[uniformBufferIndex].projectionMatrix = parent.projectionMatrix
-        uniforms[uniformBufferIndex].modelViewMatrix = parent.modelViewMatrix
-        debug("Renderer", "predraw: updating uniforms. nodeSize=\(nodeSize)")
-        uniforms[uniformBufferIndex].pointSize = Float(screenScaleFactor * nodeSize)
-        uniforms[uniformBufferIndex].edgeColor = SIMD4<Float>(Float(edgeColor.x),
+        uniforms[0].projectionMatrix = parent.projectionMatrix
+        uniforms[0].modelViewMatrix = parent.modelViewMatrix
+        debug("Renderer \(_drawCount)", "predraw: updating uniforms. nodeSize=\(nodeSize)")
+        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
+        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
