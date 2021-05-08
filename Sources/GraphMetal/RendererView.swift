@@ -7,13 +7,30 @@
 
 import SwiftUI
 import MetalKit
+import Taconic
 import GenericGraph
+
+// https://stackoverflow.com/questions/65461516/how-do-i-trigger-updateuiview-of-a-uiviewrepresentable#:~:text=1%20Answer&text=You%20need%20to%20create%20UIKit,should%20update%20your%20UIKit%20view.
+// sez
+// @Binding var backgroundColor in my UIViewRepresentable
+//
+// https://github.com/nalexn/ViewInspector/issues/6
+// sez
+// "For UIViewRepresentable, you have to wrap that into a standalone native SwiftUI view,
+// using a @State to pass to the actual test view's @Binding. And it should have a closure
+// that receive Self and send it outside. Because the structure is copied or you'll lost
+// the @State status."
+//
+// which suggests to me that I can create a @State in view containing this guy
+// and pass it in to this guy's init as a Binding.
 
 
 public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 {
 
     public typealias UIViewType = MTKView
+
+    @Binding var rendering: Rendering
 
     var graphController: C 
 
@@ -34,11 +51,13 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     // optional func gets called when we create the renderer. We pass the new renderer as arg.
     var renderingHook: ((RenderingParameters) -> ())? = nil
 
-    public init(_ graphController: C, // RenderableGraphController<G>,
+    public init(_ rendering: Binding<Rendering>,
+                _ graphController: C, // RenderableGraphController<G>,
                 _ povController: POVController,
                 renderingHook: ((RenderingParameters) -> ())? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
+        self._rendering = rendering
         self.graphController = graphController
         self.povController = povController
         self.renderingHook = renderingHook
@@ -61,19 +80,20 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     }
 
     public func makeUIView(context: Context) -> MTKView {
+        debug("RendererView", "makeUIView")
+
         let mtkView = MTKView()
 
         mtkView.delegate = context.coordinator
         mtkView.preferredFramesPerSecond = 60
         mtkView.enableSetNeedsDisplay = true
-        if let metalDevice = MTLCreateSystemDefaultDevice() {
-            mtkView.device = metalDevice
-        }
+        mtkView.device = context.coordinator.device
         mtkView.framebufferOnly = false
-        mtkView.clearColor = MTLClearColorMake(RenderingConstants.defaultBackgroundColor.x,
-                                               RenderingConstants.defaultBackgroundColor.y,
-                                               RenderingConstants.defaultBackgroundColor.z,
-                                               RenderingConstants.defaultBackgroundColor.w)
+        mtkView.clearColor = MTLClearColorMake(rendering.backgroundColor.x,
+                                               rendering.backgroundColor.y,
+                                               rendering.backgroundColor.z,
+                                               rendering.backgroundColor.w)
+        
         mtkView.drawableSize = mtkView.frame.size
         mtkView.enableSetNeedsDisplay = true
 
@@ -120,8 +140,13 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         return mtkView
     }
 
-    public func updateUIView(_ view: MTKView, context: Context) {
-        // print("RendererView.updateUIView")
+    public func updateUIView(_ mtkView: MTKView, context: Context) {
+        debug("RendererView", "updateUIView")
+
+        mtkView.clearColor = MTLClearColorMake(rendering.backgroundColor.x,
+                                               rendering.backgroundColor.y,
+                                               rendering.backgroundColor.z,
+                                               rendering.backgroundColor.w)
     }
 
     func updateProjection(viewSize: CGSize) {

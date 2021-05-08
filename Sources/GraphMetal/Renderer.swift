@@ -47,6 +47,26 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     public var nodeSizeMax: Float = RenderingConstants.defaultNodeSizeMax
 
+    public var nodeColorDefault: SIMD4<Float> {
+        get {
+            return graphWireFrame.nodeColorDefault
+        }
+
+        set(newValue) {
+            graphWireFrame.nodeColorDefault = newValue
+        }
+    }
+
+    public var backgroundColor: SIMD4<Float> {
+        get {
+            return SIMD4<Float>(0,0,0,1)
+        }
+
+        set(newValue) {
+
+        }
+    }
+
     public var edgeColor: SIMD4<Float> {
         get {
             return graphWireFrame.edgeColor

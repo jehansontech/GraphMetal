@@ -18,58 +18,54 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     typealias NodeValueType = N
     typealias EdgeValueType = E
 
-    // Access this only on rendering thread
+    // ==============================================================
+    // Rendering properties -- Access these only on rendering thread
+
+    var nodeColorDefault: SIMD4<Float> = RenderingConstants.defaultNodeColorDefault
+
     var nodeSize: Float = RenderingConstants.defaultNodeSize
 
-    // Access this only on rendering thread
     var edgeColor = RenderingConstants.defaultEdgeColor
 
-    // Access this only on rendering thread
     var device: MTLDevice
 
-    // Access this only on rendering thread
     var library: MTLLibrary
 
-    // Access this only on rendering thread
     var nodePipelineState: MTLRenderPipelineState!
 
-    // Access this only on rendering thread
     var nodeCount: Int = 0
 
-    // Access this only on rendering thread
     var nodePositionBuffer: MTLBuffer? = nil
 
-    // Access this only on rendering thread
     var nodeColorBuffer: MTLBuffer? = nil
 
-    // Access this only on rendering thread
     var edgePipelineState: MTLRenderPipelineState!
 
-    // Access this only on rendering thread
     var edgeIndexCount: Int = 0
 
-    // Access this only on rendering thread
     var edgeIndexBuffer: MTLBuffer? = nil
 
-    // Access this only on rendering thread
     var _drawCount: Int = 0
 
 
-    // Access this only on background thread
+    // ==============================================================
+    // Data properties -- Access these only on background thread
+
     var lastTopologyUpdate: Int = -1
 
-    // Access this only on background thread
     var lastPositionsUpdate: Int = -1
 
-    // Access this only on background thread
     var lastColorsUpdate: Int = -1
 
-    // Access this only on background thread
     private var nodeIndices = [NodeID: Int]()
 
     private var bufferUpdate: BufferUpdate? = nil
 
+
+    // ==============================================================
+
     init(_ device: MTLDevice) {
+        debug("GraphWireFrame", "init")
         let shaders = Shaders()
         self.device = shaders.metalDevice
         self.library = shaders.packageMetalLibrary
@@ -80,7 +76,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     }
 
     func setup(_ view: MTKView) throws {
-
         debug("GraphWireFrame", "setup. library functions: \(library.functionNames)")
 
         if (nodePipelineState == nil) {
@@ -104,7 +99,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.edgeIndexBuffer = nil
     }
 
-    // Runs on background thread
+    /// Runs on background thread
     func prepareUpdate<H>(_ graphHolder: H) where
         H : RenderableGraphHolder,
         E == H.GraphType.EdgeType.ValueType,
@@ -144,6 +139,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     }
 
+    /// Runs on rendering thread
     func applyUpdate() {
 
         guard
@@ -185,7 +181,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
         else if let newNodeColors = update.nodeColors {
 
-            var colorsArray = [SIMD4<Float>](repeating: RenderingConstants.defaultNodeColor, count: nodeCount)
+            var colorsArray = [SIMD4<Float>](repeating: self.nodeColorDefault, count: nodeCount)
             for (nodeID, color) in newNodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
                     colorsArray[nodeIndex] = color
