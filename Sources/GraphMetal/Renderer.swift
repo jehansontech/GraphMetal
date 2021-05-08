@@ -152,7 +152,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     public func adjustNodeSize(povDistance: Double) {
         if nodeSizeAutomatic {
             let newSize = RenderingConstants.nodeSizeScaleFactor / povDistance
-            nodeSize = newSize.clamp(1, nodeSizeMaximum)
+            self.nodeSize = newSize.clamp(1, nodeSizeMaximum)
             debug("Renderer", "adjustNodeSize: newSize = \(nodeSize)")
         }
         else {
@@ -399,13 +399,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     private func preDraw(_ view: MTKView) {
 
         // ======================================
-        // 1. update POV and widget
-
-        parent.updatePOV()
-        parent.updateWidget(graphWireFrame)
-
-        // ======================================
-        // 2. Rotate the uniforms buffers
+        // 1. Rotate the uniforms buffers
 
         uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
 
@@ -413,13 +407,20 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
         uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
+        // ======================================
+        // 2. update POV and widget
+
+        parent.updatePOV()
+        parent.updateWidget(graphWireFrame)
+
         // =====================================
         // 3. Update content of current uniforms buffer
 
-        uniforms[0].projectionMatrix = parent.projectionMatrix
-        uniforms[0].modelViewMatrix = parent.modelViewMatrix
-        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
-        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
+        uniforms[uniformBufferIndex].projectionMatrix = parent.projectionMatrix
+        uniforms[uniformBufferIndex].modelViewMatrix = parent.modelViewMatrix
+        debug("Renderer", "predraw: updating uniforms. nodeSize=\(nodeSize)")
+        uniforms[uniformBufferIndex].pointSize = Float(screenScaleFactor * nodeSize)
+        uniforms[uniformBufferIndex].edgeColor = SIMD4<Float>(Float(edgeColor.x),
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
