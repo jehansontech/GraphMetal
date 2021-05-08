@@ -85,11 +85,6 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         mtkView.enableSetNeedsDisplay = true
         mtkView.device = context.coordinator.device
         mtkView.framebufferOnly = false
-        mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
-                                               rendererSettings.backgroundColor.y,
-                                               rendererSettings.backgroundColor.z,
-                                               rendererSettings.backgroundColor.w)
-        
         mtkView.drawableSize = mtkView.frame.size
         mtkView.enableSetNeedsDisplay = true
 
@@ -133,6 +128,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         rotationGR.delegate = context.coordinator
         mtkView.addGestureRecognizer(rotationGR)
 
+        self.updateUIView(mtkView, context: context)
         return mtkView
     }
 
