@@ -150,8 +150,10 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     }
 
     public func adjustNodeSize(povDistance: Double) {
-        let newSize = RenderingConstants.nodeSizeScaleFactor / povDistance
-        nodeSize = newSize.clamp(1, nodeSizeMaximum)
+        if nodeSizeAutomatic {
+            let newSize = RenderingConstants.nodeSizeScaleFactor / povDistance
+            nodeSize = newSize.clamp(1, nodeSizeMaximum)
+        }
     }
     
     public func requestScreenshot() {
