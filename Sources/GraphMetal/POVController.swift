@@ -108,6 +108,11 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
     }
 
+    public func requestScreenshot() {
+        if let renderControls = renderControls {
+            renderControls.requestScreenshot()
+        }
+    }
     public func markPOV() {
         self._povMark = pov
         // print("POV mark: \(pov)")

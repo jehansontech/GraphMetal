@@ -190,11 +190,11 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
             screenshotRequested = false
         }
 
-        self.beginDraw(view)
 
-        // was getting segv's because of bad node count
+        // before I fixed wireframe update
+        // I was getting segv's because of bad node count
         // when beginDraw was here
-        // but that was before I fixed wireframe update
+        self.preDraw(view)
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
             
@@ -392,21 +392,22 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         return true
     }
 
-    private func beginDraw(_ view: MTKView) {
+    private func preDraw(_ view: MTKView) {
 
         // ======================================
-        // 1. Rotate the uniforms buffers.
+        // 1. update POV and widget
+
+        parent.updatePOV()
+        parent.updateWidget(graphWireFrame)
+
+        // ======================================
+        // 2. Rotate the uniforms buffers
 
         uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
 
         uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
 
         uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
-
-        // ======================================
-        // 2. have parent do its thing
-
-        parent.beginDraw(view, self)
 
         // =====================================
         // 3. Update content of current uniforms buffer

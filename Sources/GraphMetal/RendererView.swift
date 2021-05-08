@@ -32,7 +32,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     @Binding var rendererSettings: RenderSettings
 
-    var graphController: C 
+    var graphController: C
 
     var povController: POVController
 
@@ -143,23 +143,15 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         context.coordinator.applySettings(rendererSettings)
     }
 
-    func beginDraw(_ mtkView: MTKView, _ renderer: Renderer<C>) {
-//        if self.snapshotRequested {
-//            takeSnapshot(mtkView)
-//        }
-        updatePOV()
-        updateWidget(renderer.graphWireFrame)
-    }
-
     func updateProjection(viewSize: CGSize) {
         povController.updateProjection(viewSize: viewSize)
     }
 
-    private func updatePOV() {
+    func updatePOV() {
         povController.updateModelView(Date())
     }
 
-    private func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
+    func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
         W.NodeValueType == C.HolderType.GraphType.NodeType.ValueType,
         W.EdgeValueType == C.HolderType.GraphType.EdgeType.ValueType {
         graphController.exec(widget.prepareUpdate, widget.applyUpdate)
