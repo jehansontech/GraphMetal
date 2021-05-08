@@ -48,8 +48,9 @@ public protocol RenderingParameters: AnyObject {
     var screenshotRequested: Bool { get set }
 }
 
-public struct Rendering {
+public struct RendererSettings {
 
     var backgroundColor: SIMD4<Double> = RenderingConstants.defaultBackgroundColor
 
+    public init() {}
 }

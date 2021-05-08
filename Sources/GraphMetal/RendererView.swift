@@ -30,7 +30,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     public typealias UIViewType = MTKView
 
-    @Binding var rendering: Rendering
+    @Binding var rendererSettings: RendererSettings
 
     var graphController: C 
 
@@ -51,13 +51,13 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     // optional func gets called when we create the renderer. We pass the new renderer as arg.
     var renderingHook: ((RenderingParameters) -> ())? = nil
 
-    public init(_ rendering: Binding<Rendering>,
+    public init(_ settings: Binding<RendererSettings>,
                 _ graphController: C, // RenderableGraphController<G>,
                 _ povController: POVController,
                 renderingHook: ((RenderingParameters) -> ())? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
-        self._rendering = rendering
+        self._rendererSettings = settings
         self.graphController = graphController
         self.povController = povController
         self.renderingHook = renderingHook
@@ -89,10 +89,10 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         mtkView.enableSetNeedsDisplay = true
         mtkView.device = context.coordinator.device
         mtkView.framebufferOnly = false
-        mtkView.clearColor = MTLClearColorMake(rendering.backgroundColor.x,
-                                               rendering.backgroundColor.y,
-                                               rendering.backgroundColor.z,
-                                               rendering.backgroundColor.w)
+        mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
+                                               rendererSettings.backgroundColor.y,
+                                               rendererSettings.backgroundColor.z,
+                                               rendererSettings.backgroundColor.w)
         
         mtkView.drawableSize = mtkView.frame.size
         mtkView.enableSetNeedsDisplay = true
@@ -143,10 +143,10 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     public func updateUIView(_ mtkView: MTKView, context: Context) {
         debug("RendererView", "updateUIView")
 
-        mtkView.clearColor = MTLClearColorMake(rendering.backgroundColor.x,
-                                               rendering.backgroundColor.y,
-                                               rendering.backgroundColor.z,
-                                               rendering.backgroundColor.w)
+        mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
+                                               rendererSettings.backgroundColor.y,
+                                               rendererSettings.backgroundColor.z,
+                                               rendererSettings.backgroundColor.w)
     }
 
     func updateProjection(viewSize: CGSize) {
