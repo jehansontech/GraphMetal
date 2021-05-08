@@ -152,6 +152,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     public func adjustNodeSize(povDistance: Double) {
         if nodeSizeAutomatic {
             let newSize = RenderingConstants.nodeSizeScaleFactor / povDistance
+            debug("adjustNodeSize: newSize=\(newSize) (before clamp)")
             nodeSize = newSize.clamp(1, nodeSizeMaximum)
         }
     }
