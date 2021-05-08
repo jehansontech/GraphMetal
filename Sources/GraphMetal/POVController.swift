@@ -78,7 +78,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
                        up: self.up)
         }
         set {
-            // debug("NEW POV: \(newValue)")
+            debug("NEW POV: \(newValue)")
             self.location = newValue.location
             self.center = newValue.center
             self.up = normalize(newValue.up)
@@ -100,7 +100,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public init() {
-        print("POVController", "init")
+        debug("POVController", "init")
 
         // Dummy values
         self.location = POV.defaultLocation
@@ -221,7 +221,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     func updateRenderingParameters() {
         let povDistance = Double(simd_length(self.location - self.center))
-        debug("POVController: new povDistance = \(povDistance)")
+        print("POVController: new povDistance = \(povDistance)")
         if let controls = renderControls {
             controls.adjustNodeSize(povDistance: povDistance)
         }
