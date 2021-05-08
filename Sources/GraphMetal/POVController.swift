@@ -10,6 +10,7 @@ import Foundation
 import CoreGraphics
 import SwiftUI
 import simd
+import Taconic
 
 ///
 ///
@@ -217,8 +218,10 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     func updateRenderingParameters() {
+        let povDistance = Double(simd_length(self.location - self.center))
+        debug("POVController: new povDistance = \(povDistance)")
         if let controls = renderControls {
-            controls.adjustNodeSize(povDistance: Double(simd_length(self.location - self.center)))
+            controls.adjustNodeSize(povDistance: povDistance)
         }
     }
 
