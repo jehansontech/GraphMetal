@@ -78,7 +78,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
                        up: self.up)
         }
         set {
-            // print("NEW POV: \(newValue)")
+            debug("NEW POV: \(newValue)")
             self.location = newValue.location
             self.center = newValue.center
             self.up = normalize(newValue.up)
@@ -100,6 +100,8 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public init() {
+        debug("POVController", "init")
+
         // Dummy values
         self.location = POV.defaultLocation
         self.center = POV.defaultCenter
