@@ -143,15 +143,23 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         context.coordinator.applySettings(rendererSettings)
     }
 
+    func beginDraw(_ mtkView: MTKView, _ renderer: Renderer<C>) {
+//        if self.snapshotRequested {
+//            takeSnapshot(mtkView)
+//        }
+        updatePOV()
+        updateWidget(renderer.graphWireFrame)
+    }
+
     func updateProjection(viewSize: CGSize) {
         povController.updateProjection(viewSize: viewSize)
     }
 
-    func updatePOV() {
+    private func updatePOV() {
         povController.updateModelView(Date())
     }
 
-    func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
+    private func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
         W.NodeValueType == C.HolderType.GraphType.NodeType.ValueType,
         W.EdgeValueType == C.HolderType.GraphType.EdgeType.ValueType {
         graphController.exec(widget.prepareUpdate, widget.applyUpdate)

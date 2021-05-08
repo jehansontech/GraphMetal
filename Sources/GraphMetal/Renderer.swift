@@ -190,7 +190,11 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
             screenshotRequested = false
         }
 
-        // was getting segv's because of bad node count when beginDraw was here
+        self.beginDraw(view)
+
+        // was getting segv's because of bad node count
+        // when beginDraw was here
+        // but that was before I fixed wireframe update
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
             
@@ -199,8 +203,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
                 semaphore.signal()
             }
 
-            // put beginDraw inside here to see if it will help with segv's
-            self.beginDraw(view)
+            // If beginDraw goes here, I don't get segvs
 
             // Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
             //   holding onto the drawable and blocking the display pipeline any longer than necessary
@@ -401,10 +404,9 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
         // ======================================
-        // 2. Have RendererView update POV and the wireframe
+        // 2. have parent do its thing
 
-        parent.updatePOV()
-        parent.updateWidget(graphWireFrame)
+        parent.beginDraw(view, self)
 
         // =====================================
         // 3. Update content of current uniforms buffer
