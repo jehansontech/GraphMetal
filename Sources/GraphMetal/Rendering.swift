@@ -54,8 +54,8 @@ public struct RendererSettings {
 
     public var backgroundColor: SIMD4<Double>
 
-    public init(_ nodeSize: Double = 25,
-                _ backgroundColor: SIMD4<Double> = RenderingConstants.defaultBackgroundColor) {
+    public init(nodeSize: Double = 25,
+                backgroundColor: SIMD4<Double> = RenderingConstants.defaultBackgroundColor) {
         self.nodeSize = nodeSize
         self.backgroundColor = backgroundColor
     }
