@@ -221,7 +221,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     func updateRenderingParameters() {
         let povDistance = Double(simd_length(self.location - self.center))
-        print("POVController: new povDistance = \(povDistance)")
+        debug("POVController", "new povDistance = \(povDistance)")
         if let controls = renderControls {
             controls.adjustNodeSize(povDistance: povDistance)
         }
