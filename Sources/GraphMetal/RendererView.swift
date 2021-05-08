@@ -30,7 +30,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     public typealias UIViewType = MTKView
 
-    @Binding var rendererSettings: RendererSettings
+    @Binding var rendererSettings: RenderSettings
 
     var graphController: C 
 
@@ -49,18 +49,16 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     let longPressHandler: RendererLongPressHandler?
 
     // optional func gets called when we create the renderer. We pass the new renderer as arg.
-    var renderingHook: ((RenderingParameters) -> ())? = nil
+    // var renderingHook: ((RenderingParameters) -> ())? = nil
 
-    public init(_ settings: Binding<RendererSettings>,
+    public init(_ settings: Binding<RenderSettings>,
                 _ graphController: C, // RenderableGraphController<G>,
                 _ povController: POVController,
-                renderingHook: ((RenderingParameters) -> ())? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
         self._rendererSettings = settings
         self.graphController = graphController
         self.povController = povController
-        self.renderingHook = renderingHook
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
     }
@@ -68,10 +66,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
     public func makeCoordinator() -> Renderer<C> {
         do {
             let renderer = try Renderer<C>(self)
-            povController.renderingParameters = renderer
-            if let hook = renderingHook {
-                hook(renderer)
-            }
+            povController.renderControls = renderer
             return renderer
         }
         catch {
@@ -145,9 +140,11 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
         debug("RendererView", "updateUIView")
 
         mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
-                                               rendererSettings.backgroundColor.y,
-                                               rendererSettings.backgroundColor.z,
-                                               rendererSettings.backgroundColor.w)
+        rendererSettings.backgroundColor.y,
+        rendererSettings.backgroundColor.z,
+        rendererSettings.backgroundColor.w)
+
+        context.coordinator.applySettings(rendererSettings)
     }
 
     func updateProjection(viewSize: CGSize) {

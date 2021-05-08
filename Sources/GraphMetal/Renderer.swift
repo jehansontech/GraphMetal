@@ -31,23 +31,19 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderingParameters {
+public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderControls {
 
-    public var autoAdjust: Bool = true
+    public var backgroundColor: SIMD4<Double> = RenderSettings.defaults.backgroundColor
 
-    public var nodeSize: Float {
-        get {
-            return graphWireFrame.nodeSize
-        }
+    public var nodeSizeAutomatic: Bool = RenderSettings.defaults.nodeSizeAutomatic
 
-        set(newValue) {
-            graphWireFrame.nodeSize = newValue
-        }
-    }
+    public var nodeSize = RenderSettings.defaults.nodeSize
 
-    public var nodeSizeMax: Float = RenderingConstants.defaultNodeSizeMax
+    public var nodeSizeMaximum: Double = RenderSettings.defaults.nodeSizeMaximum
 
-    public var nodeColorDefault: SIMD4<Float> {
+    public var edgeColor = RenderSettings.defaults.edgeColor
+
+    public var nodeColorDefault: SIMD4<Double> {
         get {
             return graphWireFrame.nodeColorDefault
         }
@@ -57,27 +53,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         }
     }
 
-    public var backgroundColor: SIMD4<Float> {
-        get {
-            return SIMD4<Float>(0,0,0,1)
-        }
-
-        set(newValue) {
-
-        }
-    }
-
-    public var edgeColor: SIMD4<Float> {
-        get {
-            return graphWireFrame.edgeColor
-        }
-
-        set(newValue) {
-            graphWireFrame.edgeColor = newValue
-        }
-    }
-
-    public var screenshotRequested: Bool = false
+    var screenshotRequested: Bool = false
 
     let parent: RendererView<C>
 
@@ -113,7 +89,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     /// screen bounds.
     /// * Retina displays have value 2
     /// * Older displays have value 1
-    var screenScaleFactor: Float = 1
+    var screenScaleFactor: Double = 1
 
     public init(_ parent: RendererView<C>) throws {
 
@@ -166,14 +142,33 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         graphWireFrame = GraphWireFrame(self.device)
 
         super.init()
+        self.applySettings(parent.rendererSettings)
     }
 
     deinit {
         debug("Renderer", "deinit")
     }
+
+    public func adjustNodeSize(povDistance: Double) {
+        let newSize = RenderingConstants.nodeSizeScaleFactor / povDistance
+        nodeSize = newSize.clamp(1, nodeSizeMaximum)
+    }
     
+    public func requestScreenshot() {
+        self.screenshotRequested = true
+    }
+    
+    func applySettings(_ settings: RenderSettings) {
+        self.backgroundColor = settings.backgroundColor
+        self.nodeSizeAutomatic = settings.nodeSizeAutomatic
+        self.nodeSize = settings.nodeSize
+        self.nodeSizeMaximum = settings.nodeSizeMaximum
+        self.nodeColorDefault = settings.nodeColorDefault
+        self.edgeColor = settings.edgeColor
+    }
+
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        // print("Renderer.mtkView size=\(size)")
+        debug("Renderer", "mtkView size=\(size)")
         parent.updateProjection(viewSize: size)
 
         do {
@@ -414,8 +409,11 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
         uniforms[0].projectionMatrix = parent.projectionMatrix
         uniforms[0].modelViewMatrix = parent.modelViewMatrix
-        uniforms[0].pointSize = screenScaleFactor * graphWireFrame.nodeSize
-        uniforms[0].edgeColor = graphWireFrame.edgeColor
+        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
+        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
+                                             Float(edgeColor.y),
+                                             Float(edgeColor.z),
+                                             Float(edgeColor.w))
     }
 
     private func takeScreenshot(_ view: MTKView) {

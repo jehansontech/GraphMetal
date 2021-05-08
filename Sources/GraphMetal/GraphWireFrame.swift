@@ -21,11 +21,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     // ==============================================================
     // Rendering properties -- Access these only on rendering thread
 
-    var nodeColorDefault: SIMD4<Float> = RenderingConstants.defaultNodeColorDefault
-
-    var nodeSize: Float = RenderingConstants.defaultNodeSize
-
-    var edgeColor = RenderingConstants.defaultEdgeColor
+    var nodeColorDefault = RenderSettings.defaults.nodeColorDefault
 
     var device: MTLDevice
 
@@ -181,7 +177,11 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
         else if let newNodeColors = update.nodeColors {
 
-            var colorsArray = [SIMD4<Float>](repeating: self.nodeColorDefault, count: nodeCount)
+            let defaultColor = SIMD4<Float>(Float(self.nodeColorDefault.x),
+                                  Float(self.nodeColorDefault.y),
+                                  Float(self.nodeColorDefault.z),
+                                  Float(self.nodeColorDefault.w))
+            var colorsArray = [SIMD4<Float>](repeating: defaultColor, count: nodeCount)
             for (nodeID, color) in newNodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
                     colorsArray[nodeIndex] = color

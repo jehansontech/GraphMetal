@@ -50,7 +50,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     
     public var modelViewMatrix: float4x4
 
-    weak var renderingParameters: RenderingParameters? = nil
+    weak var renderControls: RenderControls? = nil
 
     private var _motionEnabled: Bool = false
 
@@ -212,10 +212,8 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     func updateRenderingParameters() {
-        if let params = renderingParameters,
-           params.autoAdjust {
-            let newSize = RenderingConstants.nodeSizeScaleFactor / simd_length(self.location - self.center)
-            params.nodeSize = newSize.clamp(1, params.nodeSizeMax)
+        if let controls = renderControls {
+            controls.adjustNodeSize(povDistance: Double(simd_length(self.location - self.center)))
         }
     }
 
