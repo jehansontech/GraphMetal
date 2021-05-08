@@ -81,6 +81,7 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     public func makeUIView(context: Context) -> MTKView {
         debug("RendererView", "makeUIView")
+        debug("RendererView", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
 
         let mtkView = MTKView()
 
