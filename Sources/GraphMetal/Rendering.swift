@@ -50,7 +50,9 @@ public protocol RenderingParameters: AnyObject {
 
 public struct RendererSettings {
 
-    var backgroundColor: SIMD4<Double> = RenderingConstants.defaultBackgroundColor
+    public var nodeSize: Float = RenderingConstants.defaultNodeSize
+    
+    public var backgroundColor: SIMD4<Double> = RenderingConstants.defaultBackgroundColor
 
     public init() {}
 }
