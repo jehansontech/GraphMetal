@@ -50,9 +50,13 @@ public protocol RenderingParameters: AnyObject {
 
 public struct RendererSettings {
 
-    public var nodeSize: Double = 25 // RenderingConstants.defaultNodeSize
-    
-    public var backgroundColor: SIMD4<Double> = RenderingConstants.defaultBackgroundColor
+    public var nodeSize: Double
 
-    public init() {}
+    public var backgroundColor: SIMD4<Double>
+
+    public init(_ nodeSize: Double = 25,
+                _ backgroundColor: SIMD4<Double> = RenderingConstants.defaultBackgroundColor) {
+        self.nodeSize = nodeSize
+        self.backgroundColor = backgroundColor
+    }
 }
