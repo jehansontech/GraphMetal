@@ -169,7 +169,11 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     func applySettings(_ settings: RenderSettings) {
         self.backgroundColor = settings.backgroundColor
         self.nodeSizeAutomatic = settings.nodeSizeAutomatic
-        self.nodeSize = settings.nodeSize
+
+        if !nodeSizeAutomatic {
+            self.nodeSize = settings.nodeSize
+        }
+        
         self.nodeSizeMaximum = settings.nodeSizeMaximum
         self.nodeColorDefault = settings.nodeColorDefault
         self.edgeColor = settings.edgeColor
@@ -422,7 +426,6 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
         uniforms[0].projectionMatrix = parent.projectionMatrix
         uniforms[0].modelViewMatrix = parent.modelViewMatrix
-        debug("Renderer \(_drawCount)", "predraw: updating uniforms. nodeSize=\(nodeSize)")
         uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
         uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
                                              Float(edgeColor.y),
