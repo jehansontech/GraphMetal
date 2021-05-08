@@ -100,7 +100,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public init() {
-        debug("POVController", "init")
+        print("POVController.init")
 
         // Dummy values
         self.location = POV.defaultLocation
