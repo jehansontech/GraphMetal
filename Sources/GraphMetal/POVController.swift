@@ -55,7 +55,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     private var _motionEnabled: Bool = false
 
-    private var _velocityRTP: SIMD3<Float> = Geometry.zero
+    private var _velocityRTP: SIMD3<Float> = .zero
 
     private var _lastUpdateTimestamp: Date? = nil
 
