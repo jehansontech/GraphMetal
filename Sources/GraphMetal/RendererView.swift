@@ -7,7 +7,7 @@
 
 import SwiftUI
 import MetalKit
-import Taconic
+import Wacoma
 import GenericGraph
 
 // https://stackoverflow.com/questions/65461516/how-do-i-trigger-updateuiview-of-a-uiviewrepresentable#:~:text=1%20Answer&text=You%20need%20to%20create%20UIKit,should%20update%20your%20UIKit%20view.

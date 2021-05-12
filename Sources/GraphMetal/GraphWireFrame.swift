@@ -11,7 +11,7 @@ import Metal
 import MetalKit
 import GenericGraph
 import Shaders
-import Taconic
+import Wacoma
 
 class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 

@@ -23,7 +23,9 @@ let package = Package(
     targets: [
         .target(
             name: "GraphMetal",
-            dependencies: ["Shaders", "GenericGraph", "UIStuffForSwift"]),
+            dependencies: ["Shaders",
+                           "GenericGraph",
+                           .product(name: "WacomaUI", package: "UIStuffForSwift")]),
         .testTarget(
             name: "GraphMetalTests",
             dependencies: ["GraphMetal"]),
