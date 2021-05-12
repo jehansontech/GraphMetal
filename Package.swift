@@ -10,11 +10,11 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "GraphMetal",
-            targets: ["GraphMetal"]),
-        .library(
             name: "Shaders",
             targets: ["Shaders"]),
+        .library(
+            name: "GraphMetal",
+            targets: ["GraphMetal"])
     ],
     dependencies: [
         .package(url: "git@github.com:jehansontech/GenericGraph.git", .branch("dev")),
@@ -22,18 +22,18 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "Shaders",
+            dependencies: []),
+        .testTarget(
+            name: "ShadersTests",
+            dependencies: ["Shaders"]),
+        .target(
             name: "GraphMetal",
             dependencies: ["Shaders",
                            "GenericGraph",
                            .product(name: "WacomaUI", package: "Wacoma")]),
         .testTarget(
             name: "GraphMetalTests",
-            dependencies: ["GraphMetal"]),
-        .target(
-            name: "Shaders",
-            dependencies: []),
-        .testTarget(
-            name: "ShadersTests",
-            dependencies: ["Shaders"]),
+            dependencies: ["GraphMetal"])
     ]
 )
