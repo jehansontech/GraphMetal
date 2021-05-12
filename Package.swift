@@ -18,14 +18,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "git@github.com:jehansontech/GenericGraph.git", .branch("dev")),
-        .package(url: "git@github.com:jehansontech/UIStuffForSwift.git", .branch("dev")),
+        .package(url: "git@github.com:jehansontech/Wacoma.git", .branch("dev")),
     ],
     targets: [
         .target(
             name: "GraphMetal",
             dependencies: ["Shaders",
                            "GenericGraph",
-                           .product(name: "WacomaUI", package: "UIStuffForSwift")]),
+                           .product(name: "WacomaUI", package: "Wacoma")]),
         .testTarget(
             name: "GraphMetalTests",
             dependencies: ["GraphMetal"]),
