@@ -203,10 +203,6 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         }
 
 
-        // when preDraw was here
-        // I was getting segv's because of bad node count
-        // before I fixed wireframe update.
-        // haven't seen them after fix.
         self.preDraw(view)
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
@@ -216,47 +212,21 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
                 semaphore.signal()
             }
 
-            // If beginDraw goes here, I don't get segvs
-
             // Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
             //   holding onto the drawable and blocking the display pipeline any longer than necessary
-            
-            // OLD:
-            // let renderPassDescriptor = view.currentRenderPassDescriptor
             
             if let renderPassDescriptor = view.currentRenderPassDescriptor,
                let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor),
                let drawable = view.currentDrawable {
-                
-                // NEW . . . and broken
-                // if  let drawable = view.currentDrawable {
-                //
-                //    let renderPassDescriptor = MTLRenderPassDescriptor()
-                //
-                //    renderPassDescriptor.colorAttachments[0].texture = drawable.texture
-                //    renderPassDescriptor.colorAttachments[0].loadAction = .clear
-                //    renderPassDescriptor.colorAttachments[0].clearColor = AppDefaults.backgroundColor
-                //    renderPassDescriptor.colorAttachments[0].storeAction = .store
-                //
-                //    let renderEncoder = commandBuffer.makeRenderCommandEncoder(
-                //         descriptor: renderPassDescriptor)!
-                
-                renderEncoder.setDepthStencilState(depthState)
 
+                renderEncoder.setDepthStencilState(depthState)
 
                 graphWireFrame.draw(renderEncoder,
                                     dynamicUniformBuffer,
                                     uniformBufferOffset)
 
                 renderEncoder.endEncoding()
-                
-                // OLD, WORKING
-               // if let drawable = view.currentDrawable {
-                    commandBuffer.present(drawable)
-               // }
-                
-                // NEW, BROKEN
-                // commandBuffer.present(drawable)
+                commandBuffer.present(drawable)
             }
             
             commandBuffer.commit()
