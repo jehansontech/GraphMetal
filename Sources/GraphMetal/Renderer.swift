@@ -225,7 +225,8 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
             // let renderPassDescriptor = view.currentRenderPassDescriptor
             
             if let renderPassDescriptor = view.currentRenderPassDescriptor,
-               let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
+               let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor),
+               let drawable = view.currentDrawable {
                 
                 // NEW . . . and broken
                 // if  let drawable = view.currentDrawable {
@@ -250,9 +251,9 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
                 renderEncoder.endEncoding()
                 
                 // OLD, WORKING
-                if let drawable = view.currentDrawable {
+               // if let drawable = view.currentDrawable {
                     commandBuffer.present(drawable)
-                }
+               // }
                 
                 // NEW, BROKEN
                 // commandBuffer.present(drawable)
