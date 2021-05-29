@@ -203,9 +203,10 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         }
 
 
-        // before I fixed wireframe update
+        // when preDraw was here
         // I was getting segv's because of bad node count
-        // when beginDraw was here
+        // before I fixed wireframe update.
+        // haven't seen them after fix.
         self.preDraw(view)
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
@@ -221,9 +222,9 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
             //   holding onto the drawable and blocking the display pipeline any longer than necessary
             
             // OLD:
-            let renderPassDescriptor = view.currentRenderPassDescriptor
+            // let renderPassDescriptor = view.currentRenderPassDescriptor
             
-            if let renderPassDescriptor = renderPassDescriptor,
+            if let renderPassDescriptor = view.currentRenderPassDescriptor,
                let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
                 
                 // NEW . . . and broken
