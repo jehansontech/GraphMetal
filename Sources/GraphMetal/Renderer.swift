@@ -378,6 +378,8 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     private func preDraw(_ view: MTKView) {
 
+        let t0 = Date()
+
         // ======================================
         // 1. Rotate the uniforms buffers
 
@@ -403,6 +405,12 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
+
+        let dt = Date().timeIntervalSince(t0)
+        if (dt > 1/30) {
+            debug("Renderer", "predraw: elapsed time \(dt)")
+        }
+
     }
 
     private func takeScreenshot(_ view: MTKView) {
