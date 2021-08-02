@@ -9,17 +9,19 @@ import Foundation
 import SwiftUI
 import GenericGraph
 
-public protocol RenderableGraphHolder: AnyObject {
+public protocol RenderSource: AnyObject {
     associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
                                           GraphType.EdgeType.ValueType: RenderableEdgeValue
 
+    var graph: GraphType { get set }
+}
+
+public protocol RenderableGraphHolder: RenderSource {
     var topologyUpdate: Int { get set }
 
     var positionsUpdate: Int { get set }
 
     var colorsUpdate: Int { get set }
-
-    var graph: GraphType { get set }
 }
 
 extension RenderableGraphHolder {
@@ -89,7 +91,6 @@ extension RenderableGraphController {
             }
         }
     }
-
 }
 
 public class BasicGraphHolder<G: Graph>: RenderableGraphHolder where

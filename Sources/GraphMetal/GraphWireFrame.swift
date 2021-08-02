@@ -101,6 +101,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         E == H.GraphType.EdgeType.ValueType,
         N == H.GraphType.NodeType.ValueType {
 
+        debug("GraphWireFrame", "prepareUpdate: started")
+        
         if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
             debug("GraphWireFrame", "prepareUpdate: topology has changed")
             self.lastTopologyUpdate = graphHolder.topologyUpdate
@@ -132,7 +134,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
                                                  edgeIndices: nil)
             }
         }
-
     }
 
     /// Runs on rendering thread
@@ -144,6 +145,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             return
         }
 
+        debug("GraphWireFrame", "applying bufferUpdate")
         self.bufferUpdate = nil
 
         if self.nodeCount != update.nodeCount {
@@ -223,6 +225,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
         _drawCount += 1
         // debug("GraphWireFrame.draw[\(_drawCount)]")
+        applyUpdate()
 
         guard
             let nodePositionBuffer = self.nodePositionBuffer
