@@ -17,6 +17,7 @@ public protocol RenderSource: AnyObject {
 }
 
 public protocol RenderableGraphHolder: RenderSource {
+    
     var topologyUpdate: Int { get set }
 
     var positionsUpdate: Int { get set }
