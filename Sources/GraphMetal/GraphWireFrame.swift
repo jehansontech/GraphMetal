@@ -174,11 +174,11 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         guard
             let update = self.bufferUpdate
         else {
-            debug("GraphWireFrame", "No bufferUpdate to apply")
+            // debug("GraphWireFrame", "No bufferUpdate to apply")
             return
         }
 
-        debug("GraphWireFrame", "applying bufferUpdate")
+        debug("GraphWireFrame", "[\(_drawCount)] applying bufferUpdate")
         self.bufferUpdate = nil
 
         if self.nodeCount != update.nodeCount {
