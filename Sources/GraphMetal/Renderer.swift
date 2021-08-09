@@ -31,10 +31,10 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderControls {
+public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderControls {
 
-    typealias NodeValueType = C.HolderType.GraphType.NodeType.ValueType
-    typealias EdgeValueType = C.HolderType.GraphType.EdgeType.ValueType
+    typealias NodeValueType = S.GraphType.NodeType.ValueType
+    typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
     public var backgroundColor: SIMD4<Double> = RenderSettings.defaults.backgroundColor
 
@@ -58,7 +58,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     var screenshotRequested: Bool = false
 
-    let parent: RendererView<C>
+    let parent: RendererView<S>
 
     var tapHandler: RendererTapHandler? = nil
 
@@ -96,7 +96,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     private var _drawCount: Int = 0
 
-    public init(_ parent: RendererView<C>) throws {
+    public init(_ parent: RendererView<S>) throws {
 
         debug("Renderer", "init")
         
@@ -192,7 +192,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
     public func graphHasChanged(_ graphChange: GraphChange) {
         debug("Renderer", "graphHasChanged")
-        graphWireFrame.graphHasChanged(parent.graphController.graphHolder.graph, graphChange)
+        graphWireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {

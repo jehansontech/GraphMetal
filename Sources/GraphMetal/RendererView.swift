@@ -25,14 +25,14 @@ import GenericGraph
 // and pass it in to this guy's init as a Binding.
 
 
-public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
+public struct RendererView<S: RenderSource>: UIViewRepresentable
 {
 
     public typealias UIViewType = MTKView
 
     @Binding var rendererSettings: RenderSettings
 
-    var graphController: C
+    var graphHolder: S
 
     var povController: POVController
 
@@ -48,24 +48,22 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     let longPressHandler: RendererLongPressHandler?
 
-    // optional func gets called when we create the renderer. We pass the new renderer as arg.
-    // var renderingHook: ((RenderingParameters) -> ())? = nil
 
     public init(_ settings: Binding<RenderSettings>,
-                _ graphController: C, // RenderableGraphController<G>,
+                _ graphHolder: S, // RenderableGraphController<G>,
                 _ povController: POVController,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
         self._rendererSettings = settings
-        self.graphController = graphController
+        self.graphHolder = graphHolder
         self.povController = povController
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
     }
 
-    public func makeCoordinator() -> Renderer<C> {
+    public func makeCoordinator() -> Renderer<S> {
         do {
-            let renderer = try Renderer<C>(self)
+            let renderer = try Renderer<S>(self)
             povController.renderControls = renderer
             return renderer
         }
@@ -149,13 +147,6 @@ public struct RendererView<C: RenderableGraphController>: UIViewRepresentable
 
     func updatePOV() {
         povController.updateModelView(Date())
-    }
-
-    func updateWidget<W: RenderableGraphWidget>(_ widget: W) where
-        W.NodeValueType == C.HolderType.GraphType.NodeType.ValueType,
-        W.EdgeValueType == C.HolderType.GraphType.EdgeType.ValueType {
-        // WAS: graphController.exec(widget.prepareUpdate, widget.applyUpdate)
-        graphController.exec(widget.prepareUpdate)
     }
 }
 
