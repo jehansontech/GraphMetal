@@ -406,10 +406,10 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
         // ======================================
-        // 2. update POV and widget
+        // 2. update POV //and widget
 
         parent.updatePOV()
-        parent.updateWidget(graphWireFrame)
+        // parent.updateWidget(graphWireFrame)
 
         // =====================================
         // 3. Update content of current uniforms buffer
