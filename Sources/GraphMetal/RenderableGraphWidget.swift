@@ -23,10 +23,10 @@ protocol RenderableGraphWidget {
         G.NodeType.ValueType == NodeValueType,
         G.EdgeType.ValueType == EdgeValueType
     
-    /// prepare to update this widget's state by reading data found in the holder
-    func prepareUpdate<H: RenderableGraphHolder>(_ graphHolder: H) where
-        H.GraphType.NodeType.ValueType == NodeValueType,
-        H.GraphType.EdgeType.ValueType == EdgeValueType
+//    /// prepare to update this widget's state by reading data found in the holder
+//    func prepareUpdate<H: RenderableGraphHolder>(_ graphHolder: H) where
+//        H.GraphType.NodeType.ValueType == NodeValueType,
+//        H.GraphType.EdgeType.ValueType == EdgeValueType
 
 
     // TODO rename to 'encode'

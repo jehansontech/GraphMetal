@@ -128,45 +128,45 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
     }
 
-    func prepareUpdate<H>(_ graphHolder: H) where
-        H : RenderableGraphHolder,
-        E == H.GraphType.EdgeType.ValueType,
-        N == H.GraphType.NodeType.ValueType {
-
-        debug("GraphWireFrame", "prepareUpdate: started")
-        
-        if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
-            debug("GraphWireFrame", "prepareUpdate: topology has changed")
-            self.lastTopologyUpdate = graphHolder.topologyUpdate
-            self.lastPositionsUpdate = graphHolder.positionsUpdate
-            self.lastColorsUpdate = graphHolder.colorsUpdate
-            self.bufferUpdate = self.prepareTopologyUpdate(graphHolder.graph)
-        }
-        else {
-            var newPositions: [SIMD3<Float>]? = nil
-            var newColors: [NodeID : SIMD4<Float>]? = nil
-
-            if graphHolder.havePositionsChanged(since: lastPositionsUpdate) {
-                debug("GraphWireFrame", "prepareUpdate: positions have changed")
-                newPositions = self.makeNodePositions(graphHolder.graph)
-                self.lastPositionsUpdate = graphHolder.positionsUpdate
-            }
-
-            if graphHolder.haveColorsChanged(since: lastColorsUpdate) {
-                debug("GraphWireFrame", "prepareUpdate: colors have changed")
-                newColors = graphHolder.graph.makeNodeColors()
-                self.lastColorsUpdate = graphHolder.colorsUpdate
-            }
-
-            if (newPositions != nil || newColors != nil) {
-                self.bufferUpdate = BufferUpdate(nodeCount: self.nodeCount,
-                                                 nodePositions: newPositions,
-                                                 nodeColors: newColors,
-                                                 edgeIndexCount: self.edgeIndexCount,
-                                                 edgeIndices: nil)
-            }
-        }
-    }
+//    func prepareUpdate<H>(_ graphHolder: H) where
+//        H : RenderableGraphHolder,
+//        E == H.GraphType.EdgeType.ValueType,
+//        N == H.GraphType.NodeType.ValueType {
+//
+//        debug("GraphWireFrame", "prepareUpdate: started")
+//        
+//        if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
+//            debug("GraphWireFrame", "prepareUpdate: topology has changed")
+//            self.lastTopologyUpdate = graphHolder.topologyUpdate
+//            self.lastPositionsUpdate = graphHolder.positionsUpdate
+//            self.lastColorsUpdate = graphHolder.colorsUpdate
+//            self.bufferUpdate = self.prepareTopologyUpdate(graphHolder.graph)
+//        }
+//        else {
+//            var newPositions: [SIMD3<Float>]? = nil
+//            var newColors: [NodeID : SIMD4<Float>]? = nil
+//
+//            if graphHolder.havePositionsChanged(since: lastPositionsUpdate) {
+//                debug("GraphWireFrame", "prepareUpdate: positions have changed")
+//                newPositions = self.makeNodePositions(graphHolder.graph)
+//                self.lastPositionsUpdate = graphHolder.positionsUpdate
+//            }
+//
+//            if graphHolder.haveColorsChanged(since: lastColorsUpdate) {
+//                debug("GraphWireFrame", "prepareUpdate: colors have changed")
+//                newColors = graphHolder.graph.makeNodeColors()
+//                self.lastColorsUpdate = graphHolder.colorsUpdate
+//            }
+//
+//            if (newPositions != nil || newColors != nil) {
+//                self.bufferUpdate = BufferUpdate(nodeCount: self.nodeCount,
+//                                                 nodePositions: newPositions,
+//                                                 nodeColors: newColors,
+//                                                 edgeIndexCount: self.edgeIndexCount,
+//                                                 edgeIndices: nil)
+//            }
+//        }
+//    }
 
     /// Runs on rendering thread
     func applyUpdate() {
