@@ -17,17 +17,27 @@ public struct GraphChange {
                                         edgeSetChanged: true,
                                         edgeColorChanged: true)
 
-    public static let NODE_COLORS = GraphChange(nodeColorChanged: true)
+    public var nodeSetChanged: Bool
 
-    public var nodeSetChanged: Bool = false
+    public var nodeColorChanged: Bool
 
-    public var nodeColorChanged: Bool = false
+    public var nodePositionChanged: Bool
 
-    public var nodePositionChanged: Bool = false
+    public var edgeSetChanged: Bool
 
-    public var edgeSetChanged: Bool = false
+    public var edgeColorChanged: Bool
 
-    public var edgeColorChanged: Bool = false
+    public init(nodeSetChanged: Bool = false,
+                nodeColorChanged: Bool = false,
+                nodePositionChanged: Bool = false,
+                edgeSetChanged: Bool = false,
+                edgeColorChanged: Bool = false) {
+        self.nodeSetChanged = nodeSetChanged
+        self.nodeColorChanged = nodeColorChanged
+        self.nodePositionChanged = nodePositionChanged
+        self.edgeSetChanged = edgeSetChanged
+        self.edgeColorChanged = edgeColorChanged
+    }
 }
 
 extension Notification.Name {
