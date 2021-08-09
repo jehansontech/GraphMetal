@@ -17,6 +17,8 @@ public struct GraphChange {
                                         edgeSetChanged: true,
                                         edgeColorChanged: true)
 
+    public static let NODE_COLORS = GraphChange(nodeColorChanged: true)
+
     public var nodeSetChanged: Bool = false
 
     public var nodeColorChanged: Bool = false
@@ -41,7 +43,7 @@ public protocol RenderSource: AnyObject {
 
 extension RenderSource {
 
-    func fireGraphChange(_ change: GraphChange) {
+    public func fireGraphChange(_ change: GraphChange) {
         NotificationCenter.default.post(name: .graphHasChanged, object: change)
     }
 }
