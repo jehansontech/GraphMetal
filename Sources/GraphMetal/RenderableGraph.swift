@@ -64,7 +64,7 @@ extension Graph where
                     continue
                 }
 
-                /// square of the distance from ray to the node
+                /// nodeD2 is the square of the distance from ray to the node
                 let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
                 // print("\(node) distance to ray: \(sqrt(nodeD2))")
 
@@ -76,6 +76,7 @@ extension Graph where
             }
         }
         if let nn = nearestNode {
+            // FIXME the 2nd elem is incurrect
             return (nn, (projectionMatrix * (modelViewMatrix * SIMD4<Float>(nn.value!.location,1))).xy)
         }
         else {

@@ -33,6 +33,9 @@ enum RendererError: Error {
 ///
 public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderControls {
 
+    typealias NodeValueType = C.HolderType.GraphType.NodeType.ValueType
+    typealias EdgeValueType = C.HolderType.GraphType.EdgeType.ValueType
+
     public var backgroundColor: SIMD4<Double> = RenderSettings.defaults.backgroundColor
 
     public var nodeSizeAutomatic: Bool = RenderSettings.defaults.nodeSizeAutomatic
@@ -83,7 +86,7 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
     
     var depthState: MTLDepthStencilState
 
-    var graphWireFrame: GraphWireFrame<C.HolderType.GraphType.NodeType.ValueType, C.HolderType.GraphType.EdgeType.ValueType>
+    var graphWireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
     
     /// This is a hardware factor that affects the visibie size of point primitives, independent of the
     /// screen bounds.
@@ -145,6 +148,8 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
 
         super.init()
         self.applySettings(parent.rendererSettings)
+        self.graphHasChanged(GraphChange.ALL)
+        NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
     }
 
     deinit {
@@ -179,6 +184,17 @@ public class Renderer<C: RenderableGraphController>: NSObject, MTKViewDelegate, 
         self.edgeColor = settings.edgeColor
     }
 
+    @objc public func notifyGraphHasChanged(_ notification: Notification) {
+        if let graphChange = notification.object as? GraphChange {
+            graphHasChanged(graphChange)
+        }
+    }
+
+    public func graphHasChanged(_ graphChange: GraphChange) {
+        debug("Renderer", "graphHasChanged")
+        graphWireFrame.graphHasChanged(parent.graphController.graphHolder.graph, graphChange)
+    }
+    
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         debug("Renderer", "mtkView size=\(size)")
         parent.updateProjection(viewSize: size)

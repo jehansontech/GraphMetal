@@ -9,11 +9,41 @@ import Foundation
 import SwiftUI
 import GenericGraph
 
+public struct GraphChange {
+
+    public static let ALL = GraphChange(nodeSetChanged: true,
+                                        nodeColorChanged: true,
+                                        nodePositionChanged: true,
+                                        edgeSetChanged: true,
+                                        edgeColorChanged: true)
+
+    public var nodeSetChanged: Bool = false
+
+    public var nodeColorChanged: Bool = false
+
+    public var nodePositionChanged: Bool = false
+
+    public var edgeSetChanged: Bool = false
+
+    public var edgeColorChanged: Bool = false
+}
+
+extension Notification.Name {
+    static var graphHasChanged: Notification.Name { return .init("graphHasChanged") }
+}
+
 public protocol RenderSource: AnyObject {
     associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
                                           GraphType.EdgeType.ValueType: RenderableEdgeValue
 
     var graph: GraphType { get set }
+}
+
+extension RenderSource {
+
+    func fireGraphChange(_ change: GraphChange) {
+        NotificationCenter.default.post(name: .graphHasChanged, object: change)
+    }
 }
 
 public protocol RenderableGraphHolder: RenderSource {

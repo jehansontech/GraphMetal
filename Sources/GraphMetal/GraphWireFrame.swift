@@ -16,7 +16,12 @@ import Wacoma
 class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 
     typealias NodeValueType = N
+
     typealias EdgeValueType = E
+
+    // DOES NOT WORK
+    //    typealias GraphType = Graph where GraphType.NodeType.ValueType == N,  // : RenderableNodeValue,
+    //                                      GraphType.EdgeType.ValueType == E   //: RenderableEdgeValue
 
     // ==============================================================
     // Rendering properties -- Access these only on rendering thread
@@ -88,14 +93,41 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     func teardown() {
         debug("GraphWireFrame", "teardown")
-        // TODO: maybe nodePipelineState
-        // TODO: maybe edgePipelineState
+        // TODO: maybe nodePipelineState ... if so change its declaration from ! to ?
+        // TODO: maybe edgePipelineState ... ditto
         self.nodePositionBuffer = nil
         self.nodeColorBuffer = nil
         self.edgeIndexBuffer = nil
     }
 
-    /// Runs on background thread
+    func graphHasChanged<G: Graph>(_ graph: G, _ change: GraphChange) where
+        G.NodeType.ValueType == NodeValueType,
+        G.EdgeType.ValueType == EdgeValueType {
+        if change.nodeSetChanged {
+            self.bufferUpdate = self.prepareTopologyUpdate(graph)
+        }
+        else {
+            var newPositions: [SIMD3<Float>]? = nil
+            var newColors: [NodeID : SIMD4<Float>]? = nil
+
+            if change.nodePositionChanged {
+                newPositions = self.makeNodePositions(graph)
+            }
+
+            if change.nodeColorChanged {
+                newColors = graph.makeNodeColors()
+            }
+
+            if (newPositions != nil || newColors != nil) {
+                self.bufferUpdate = BufferUpdate(nodeCount: self.nodeCount,
+                                                 nodePositions: newPositions,
+                                                 nodeColors: newColors,
+                                                 edgeIndexCount: self.edgeIndexCount,
+                                                 edgeIndices: nil)
+            }
+        }
+    }
+
     func prepareUpdate<H>(_ graphHolder: H) where
         H : RenderableGraphHolder,
         E == H.GraphType.EdgeType.ValueType,
@@ -142,6 +174,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         guard
             let update = self.bufferUpdate
         else {
+            debug("GraphWireFrame", "No bufferUpdate to apply")
             return
         }
 

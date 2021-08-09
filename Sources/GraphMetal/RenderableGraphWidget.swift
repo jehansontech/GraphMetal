@@ -6,6 +6,7 @@
 //
 
 import MetalKit
+import GenericGraph
 
 protocol RenderableGraphWidget {
 
@@ -18,8 +19,10 @@ protocol RenderableGraphWidget {
 
     func teardown()
 
-    // TODO replace prepareUpdate with setGraph and graphHasChanged
-
+    func graphHasChanged<G: Graph>(_ graph: G, _ change: GraphChange) where
+        G.NodeType.ValueType == NodeValueType,
+        G.EdgeType.ValueType == EdgeValueType
+    
     /// prepare to update this widget's state by reading data found in the holder
     func prepareUpdate<H: RenderableGraphHolder>(_ graphHolder: H) where
         H.GraphType.NodeType.ValueType == NodeValueType,
