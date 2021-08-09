@@ -103,18 +103,18 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     func graphHasChanged<G: Graph>(_ graph: G, _ change: GraphChange) where
         G.NodeType.ValueType == NodeValueType,
         G.EdgeType.ValueType == EdgeValueType {
-        if change.nodeSetChanged {
+        if change.nodes {
             self.bufferUpdate = self.prepareTopologyUpdate(graph)
         }
         else {
             var newPositions: [SIMD3<Float>]? = nil
             var newColors: [NodeID : SIMD4<Float>]? = nil
 
-            if change.nodePositionChanged {
+            if change.nodePositions {
                 newPositions = self.makeNodePositions(graph)
             }
 
-            if change.nodeColorChanged {
+            if change.nodeColors {
                 newColors = graph.makeNodeColors()
             }
 

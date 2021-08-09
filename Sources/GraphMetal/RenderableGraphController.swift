@@ -11,32 +11,37 @@ import GenericGraph
 
 public struct GraphChange {
 
-    public static let ALL = GraphChange(nodeSetChanged: true,
-                                        nodeColorChanged: true,
-                                        nodePositionChanged: true,
-                                        edgeSetChanged: true,
-                                        edgeColorChanged: true)
+    public static let ALL = GraphChange(nodes: true,
+                                        nodeColors: true,
+                                        nodePositions: true,
+                                        edges: true,
+                                        edgeColors: true)
 
-    public var nodeSetChanged: Bool
+    /// indicates whether nodes have been added and/or removed
+    public var nodes: Bool
 
-    public var nodeColorChanged: Bool
+    /// indicates whether one or more nodes have changed color
+    public var nodeColors: Bool
 
-    public var nodePositionChanged: Bool
+    /// indicates whether one or more nodes have changed position
+    public var nodePositions: Bool
 
-    public var edgeSetChanged: Bool
+    /// indicates whether edges have been added and/or removed
+    public var edges: Bool
 
-    public var edgeColorChanged: Bool
+    /// indicates whether one or more edges have changed color
+    public var edgeColors: Bool
 
-    public init(nodeSetChanged: Bool = false,
-                nodeColorChanged: Bool = false,
-                nodePositionChanged: Bool = false,
-                edgeSetChanged: Bool = false,
-                edgeColorChanged: Bool = false) {
-        self.nodeSetChanged = nodeSetChanged
-        self.nodeColorChanged = nodeColorChanged
-        self.nodePositionChanged = nodePositionChanged
-        self.edgeSetChanged = edgeSetChanged
-        self.edgeColorChanged = edgeColorChanged
+    public init(nodes: Bool = false,
+                nodeColors: Bool = false,
+                nodePositions: Bool = false,
+                edges: Bool = false,
+                edgeColors: Bool = false) {
+        self.nodes = nodes
+        self.nodeColors = nodeColors
+        self.nodePositions = nodePositions
+        self.edges = edges
+        self.edgeColors = edgeColors
     }
 }
 
