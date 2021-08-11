@@ -146,13 +146,8 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 //
 //        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
 
-        if let library = Shaders.makeDefaultLibrary(device) {
-            graphWireFrame = GraphWireFrame(device, library, self.screenScaleFactor)
-        }
-        else {
-            throw RendererError.noDefaultLibrary
-        }
-
+        graphWireFrame = try GraphWireFrame(device, self.screenScaleFactor)
+        
         super.init()
         self.applySettings(parent.rendererSettings)
         self.graphHasChanged(GraphChange.ALL)

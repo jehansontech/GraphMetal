@@ -25,14 +25,14 @@ public struct Uniforms {
 
 public struct Shaders {
 
-    public var defaultDevice: MTLDevice!
-
-    public var defaultLibrary: MTLLibrary!
-    
-    public init() {
-        defaultDevice = MTLCreateSystemDefaultDevice()
-        defaultLibrary = try? defaultDevice.makeDefaultLibrary(bundle: Bundle.module)
-    }
+//    public var defaultDevice: MTLDevice!
+//
+//    public var defaultLibrary: MTLLibrary!
+//    
+//    public init() {
+//        defaultDevice = MTLCreateSystemDefaultDevice()
+//        defaultLibrary = try? defaultDevice.makeDefaultLibrary(bundle: Bundle.module)
+//    }
 
     public static func makeDefaultLibrary(_ device: MTLDevice) -> MTLLibrary? {
         return try? device.makeDefaultLibrary(bundle: Bundle.module)
