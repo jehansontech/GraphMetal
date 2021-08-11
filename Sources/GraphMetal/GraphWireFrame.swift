@@ -80,11 +80,13 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     // ==============================================================
 
-    init(_ device: MTLDevice, _ screenScaleFactor: Double) {
+    init(_ device: MTLDevice, _ library: MTLLibrary, _ screenScaleFactor: Double) {
         debug("GraphWireFrame", "init")
-        let shaders = Shaders()
-        self.device = shaders.defaultDevice
-        self.library = shaders.defaultLibrary
+        self.device = device
+        self.library = library
+//        let shaders = Shaders()
+//        self.device = shaders.defaultDevice
+//        self.library = shaders.defaultLibrary
         self.screenScaleFactor = screenScaleFactor
     }
 

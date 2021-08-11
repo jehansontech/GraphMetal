@@ -3,10 +3,11 @@ import XCTest
 
 final class ShadersTests: XCTestCase {
     func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(Shaders().text, "Hello, World!")
+
+        let shaders = Shaders()
+        XCTAssertNotNil(shaders.defaultDevice)
+        XCTAssertNotNil(shaders.defaultLibrary)
+        
     }
 
     func testSetup() {

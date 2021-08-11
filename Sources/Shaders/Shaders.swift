@@ -33,4 +33,8 @@ public struct Shaders {
         defaultDevice = MTLCreateSystemDefaultDevice()
         defaultLibrary = try? defaultDevice.makeDefaultLibrary(bundle: Bundle.module)
     }
+
+    public static func makeDefaultLibrary(_ device: MTLDevice) -> MTLLibrary? {
+        return try? device.makeDefaultLibrary(bundle: Bundle.module)
+    }
 }

@@ -145,8 +145,13 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 //        self.dynamicUniformBuffer.label = "UniformBuffer"
 //
 //        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
-        
-        graphWireFrame = GraphWireFrame(device, self.screenScaleFactor)
+
+        if let library = Shaders.makeDefaultLibrary(device) {
+            graphWireFrame = GraphWireFrame(device, library, self.screenScaleFactor)
+        }
+        else {
+            throw RendererError.noDefaultLibrary
+        }
 
         super.init()
         self.applySettings(parent.rendererSettings)
