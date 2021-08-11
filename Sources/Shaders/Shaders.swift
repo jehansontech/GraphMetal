@@ -25,14 +25,12 @@ public struct Uniforms {
 
 public struct Shaders {
 
-    var text = "Hello, World!"
+    public var defaultDevice: MTLDevice!
 
-    public var metalDevice: MTLDevice!
-
-    public var packageMetalLibrary: MTLLibrary!
+    public var defaultLibrary: MTLLibrary!
     
     public init() {
-        metalDevice = MTLCreateSystemDefaultDevice()
-        packageMetalLibrary = try? metalDevice.makeDefaultLibrary(bundle: Bundle.module)
+        defaultDevice = MTLCreateSystemDefaultDevice()
+        defaultLibrary = try? defaultDevice.makeDefaultLibrary(bundle: Bundle.module)
     }
 }

@@ -72,12 +72,13 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
     let device: MTLDevice!
 
-    let commandQueue: MTLCommandQueue
-    
-//    var dynamicUniformBuffer: MTLBuffer
-    
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
-    
+
+    let commandQueue: MTLCommandQueue
+
+// MOVED to GraphWireFrame
+//    var dynamicUniformBuffer: MTLBuffer
+//
 //    var uniformBufferOffset = 0
 //
 //    var uniformBufferIndex = 0
@@ -94,7 +95,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
     /// * Older displays have value 1
     var screenScaleFactor: Double = 1
 
-    private var _drawCount: Int = 0
+    // private var _drawCount: Int = 0
 
     public init(_ parent: RendererView<S>) throws {
 
@@ -145,7 +146,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 //
 //        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
         
-        graphWireFrame = GraphWireFrame(self.device)
+        graphWireFrame = GraphWireFrame(device, self.screenScaleFactor)
 
         super.init()
         self.applySettings(parent.rendererSettings)
@@ -212,7 +213,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
     public func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
 
-        _drawCount += 1
+        // _drawCount += 1
 
         if screenshotRequested {
             takeScreenshot(view)
@@ -225,7 +226,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
         if let commandBuffer = commandQueue.makeCommandBuffer() {
             
             let semaphore = inFlightSemaphore
-            commandBuffer.addCompletedHandler { (_ commandBuffer)-> Swift.Void in
+            commandBuffer.addCompletedHandler { (_ commandBuffer) -> Swift.Void in
                 semaphore.signal()
             }
 
@@ -399,7 +400,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
 // MOVED to GraphWireFrame
 //        // ======================================
-//        // 1. Rotate the uniforms buffers
+//        // Rotate the uniforms buffers
 //
 //        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
 //
@@ -407,13 +408,14 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 //
 //        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
+        // Update POV based on current time, in case it's moving on its own
         parent.povController.updateModelView(t0)
 
         graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, screenScaleFactor, nodeSize, edgeColor)
 
         // MOVED to GraphWireFrame
 //        // =====================================
-//        // 3. Update content of current uniforms buffer
+//        // Update content of current uniforms buffer
 //
 //        uniforms[0].projectionMatrix = parent.projectionMatrix
 //        uniforms[0].modelViewMatrix = parent.modelViewMatrix

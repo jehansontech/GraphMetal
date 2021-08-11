@@ -15,10 +15,6 @@ import Wacoma
 
 class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 
-    func draw(_ renderEncoder: MTLRenderCommandEncoder, _ uniformsBuffer: MTLBuffer, _ uniformsBufferOffset: Int) {
-       // NOP
-    }
-
 
     typealias NodeValueType = N
 
@@ -36,6 +32,12 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     var device: MTLDevice
 
     var library: MTLLibrary
+
+    /// This is a hardware factor that affects the visibie size of point primitives, independent of the
+    /// screen bounds.
+    /// * Retina displays have value 2
+    /// * Older displays have value 1
+    var screenScaleFactor: Double = 1
 
     var nodePipelineState: MTLRenderPipelineState!
 
@@ -59,11 +61,11 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     var uniforms: UnsafeMutablePointer<Uniforms>!
 
-    var _drawCount: Int = 0
+    // var _drawCount: Int = 0
 
 
     // ==============================================================
-    // Data properties -- Access these only on background thread
+    // Data properties -- Access these only on graph-update thread
 
     var lastTopologyUpdate: Int = -1
 
@@ -78,11 +80,12 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     // ==============================================================
 
-    init(_ device: MTLDevice) {
+    init(_ device: MTLDevice, _ screenScaleFactor: Double) {
         debug("GraphWireFrame", "init")
         let shaders = Shaders()
-        self.device = shaders.metalDevice
-        self.library = shaders.packageMetalLibrary
+        self.device = shaders.defaultDevice
+        self.library = shaders.defaultLibrary
+        self.screenScaleFactor = screenScaleFactor
     }
 
     deinit {
@@ -193,7 +196,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
             return
         }
 
-        debug("GraphWireFrame", "[\(_drawCount)] applying bufferUpdate")
+        debug("GraphWireFrame", "applying bufferUpdate")
         self.bufferUpdate = nil
 
         if self.nodeCount != update.nodeCount {
@@ -294,25 +297,26 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     }
     
-    func draw(_ renderEncoder: MTLRenderCommandEncoder) { //},
-//              _ uniformsBuffer: MTLBuffer,
-//              _ uniformsBufferOffset: Int) {
+//    func draw(_ renderEncoder: MTLRenderCommandEncoder, _ uniformsBuffer: MTLBuffer, _ uniformsBufferOffset: Int) {
+//    }
 
-        _drawCount += 1
+    func draw(_ renderEncoder: MTLRenderCommandEncoder) {
+
+        // _drawCount += 1
         // debug("GraphWireFrame.draw[\(_drawCount)]")
         applyUpdate()
 
         guard
             let nodePositionBuffer = self.nodePositionBuffer
         else {
-            debug("GraphWireFrame", "draw \(_drawCount): nodePositionBuffer = nil")
+            debug("GraphWireFrame", "draw: nodePositionBuffer = nil")
             return
         }
 
         guard
             let nodeColorBuffer = self.nodeColorBuffer
         else {
-            debug("GraphWireFrame", "draw \(_drawCount): nodeColorBuffer = nil")
+            debug("GraphWireFrame", "draw: nodeColorBuffer = nil")
             return
         }
 
@@ -344,12 +348,9 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         guard
             let edgeIndexBuffer = self.edgeIndexBuffer
         else {
-            debug("GraphWireFrame", "draw \(_drawCount): edgeIndexBuffer = nil")
+            debug("GraphWireFrame", "draw: edgeIndexBuffer = nil")
             return
         }
-
-        // debug("GraphWireFrame", "draw \(_drawCount): starting on edges")
-
 
         renderEncoder.pushDebugGroup("Draw Edges")
         renderEncoder.setRenderPipelineState(edgePipelineState)

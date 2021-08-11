@@ -31,7 +31,8 @@ protocol RenderableGraphWidget {
 
     // TODO rename to 'encode'
     // TODO remove uniforms; move it into the impl's
-    func draw(_ renderEncoder: MTLRenderCommandEncoder,
-              _ uniformsBuffer: MTLBuffer,
-              _ uniformsBufferOffset: Int)
+    func draw(_ renderEncoder: MTLRenderCommandEncoder)
+        //,
+        //      _ uniformsBuffer: MTLBuffer,
+        //      _ uniformsBufferOffset: Int)
 }

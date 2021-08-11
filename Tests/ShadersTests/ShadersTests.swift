@@ -11,7 +11,7 @@ final class ShadersTests: XCTestCase {
 
     func testSetup() {
         let shaders = Shaders()
-        print(shaders.packageMetalLibrary.functionNames)
+        print(shaders.defaultLibrary.functionNames)
     }
 
     static var allTests = [

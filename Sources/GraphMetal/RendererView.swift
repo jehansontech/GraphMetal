@@ -25,8 +25,7 @@ import GenericGraph
 // and pass it in to this guy's init as a Binding.
 
 
-public struct RendererView<S: RenderSource>: UIViewRepresentable
-{
+public struct RendererView<S: RenderSource>: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
 
@@ -36,7 +35,7 @@ public struct RendererView<S: RenderSource>: UIViewRepresentable
 
     var povController: POVController
 
-var projectionMatrix: float4x4 {
+    var projectionMatrix: float4x4 {
         return povController.projectionMatrix
     }
 
@@ -50,7 +49,7 @@ var projectionMatrix: float4x4 {
 
 
     public init(_ settings: Binding<RenderSettings>,
-                _ graphHolder: S, // RenderableGraphController<G>,
+                _ graphHolder: S,
                 _ povController: POVController,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
@@ -134,9 +133,9 @@ var projectionMatrix: float4x4 {
         debug("RendererView", "updateUIView")
 
         mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
-        rendererSettings.backgroundColor.y,
-        rendererSettings.backgroundColor.z,
-        rendererSettings.backgroundColor.w)
+                                               rendererSettings.backgroundColor.y,
+                                               rendererSettings.backgroundColor.z,
+                                               rendererSettings.backgroundColor.w)
 
         context.coordinator.applySettings(rendererSettings)
     }
