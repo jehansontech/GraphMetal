@@ -74,15 +74,15 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
     let commandQueue: MTLCommandQueue
     
-    var dynamicUniformBuffer: MTLBuffer
+//    var dynamicUniformBuffer: MTLBuffer
     
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     
-    var uniformBufferOffset = 0
-    
-    var uniformBufferIndex = 0
-    
-    var uniforms: UnsafeMutablePointer<Uniforms>
+//    var uniformBufferOffset = 0
+//
+//    var uniformBufferIndex = 0
+//
+//    var uniforms: UnsafeMutablePointer<Uniforms>
     
     var depthState: MTLDepthStencilState
 
@@ -130,19 +130,20 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
         //                                      Float(metalKitView.drawableSize.height),
         //                                      frustumDepth)
         //        AppModel.instance.povController.updateProjection(viewBounds: viewBounds)
-        
-        let uniformBufferSize = alignedUniformsSize * maxBuffersInFlight
-        
-        if let buffer = self.device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
-            self.dynamicUniformBuffer = buffer
-        }
-        else {
-            throw RendererError.bufferCreationFailed
-        }
 
-        self.dynamicUniformBuffer.label = "UniformBuffer"
-        
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+// MOVED TO GraphWireFrame
+//        let uniformBufferSize = alignedUniformsSize * maxBuffersInFlight
+//
+//        if let buffer = self.device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
+//            self.dynamicUniformBuffer = buffer
+//        }
+//        else {
+//            throw RendererError.bufferCreationFailed
+//        }
+//
+//        self.dynamicUniformBuffer.label = "UniformBuffer"
+//
+//        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
         
         graphWireFrame = GraphWireFrame(self.device)
 
@@ -237,9 +238,9 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
                 renderEncoder.setDepthStencilState(depthState)
 
-                graphWireFrame.draw(renderEncoder,
-                                    dynamicUniformBuffer,
-                                    uniformBufferOffset)
+                graphWireFrame.draw(renderEncoder) //,
+                                    // dynamicUniformBuffer,
+                                    // uniformBufferOffset)
 
                 renderEncoder.endEncoding()
                 commandBuffer.present(drawable)
@@ -396,31 +397,31 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
         let t0 = Date()
 
-        // ======================================
-        // 1. Rotate the uniforms buffers
+// MOVED to GraphWireFrame
+//        // ======================================
+//        // 1. Rotate the uniforms buffers
+//
+//        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
+//
+//        uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
+//
+//        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
-        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
+        parent.povController.updateModelView(t0)
 
-        uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
+        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, screenScaleFactor, nodeSize, edgeColor)
 
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
-
-        // ======================================
-        // 2. update POV //and widget
-
-        parent.updatePOV()
-        // parent.updateWidget(graphWireFrame)
-
-        // =====================================
-        // 3. Update content of current uniforms buffer
-
-        uniforms[0].projectionMatrix = parent.projectionMatrix
-        uniforms[0].modelViewMatrix = parent.modelViewMatrix
-        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
-        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
-                                             Float(edgeColor.y),
-                                             Float(edgeColor.z),
-                                             Float(edgeColor.w))
+        // MOVED to GraphWireFrame
+//        // =====================================
+//        // 3. Update content of current uniforms buffer
+//
+//        uniforms[0].projectionMatrix = parent.projectionMatrix
+//        uniforms[0].modelViewMatrix = parent.modelViewMatrix
+//        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
+//        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
+//                                             Float(edgeColor.y),
+//                                             Float(edgeColor.z),
+//                                             Float(edgeColor.w))
 
         let dt = Date().timeIntervalSince(t0)
         if (dt > 1/30) {

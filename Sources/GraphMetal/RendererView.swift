@@ -36,7 +36,7 @@ public struct RendererView<S: RenderSource>: UIViewRepresentable
 
     var povController: POVController
 
-    var projectionMatrix: float4x4 {
+var projectionMatrix: float4x4 {
         return povController.projectionMatrix
     }
 

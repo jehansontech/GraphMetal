@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftUI
+// import SwiftUI
 import GenericGraph
 
 public struct GraphChange {

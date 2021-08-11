@@ -15,6 +15,11 @@ import Wacoma
 
 class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
 
+    func draw(_ renderEncoder: MTLRenderCommandEncoder, _ uniformsBuffer: MTLBuffer, _ uniformsBufferOffset: Int) {
+       // NOP
+    }
+
+
     typealias NodeValueType = N
 
     typealias EdgeValueType = E
@@ -45,6 +50,14 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     var edgeIndexCount: Int = 0
 
     var edgeIndexBuffer: MTLBuffer? = nil
+
+    var dynamicUniformBuffer: MTLBuffer!
+
+    var uniformBufferOffset = 0
+
+    var uniformBufferIndex = 0
+
+    var uniforms: UnsafeMutablePointer<Uniforms>!
 
     var _drawCount: Int = 0
 
@@ -79,21 +92,23 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
     func setup(_ view: MTKView) throws {
         debug("GraphWireFrame", "setup. library functions: \(library.functionNames)")
 
-        if (nodePipelineState == nil) {
-            // debug("building node pipeline")
-            self.nodePipelineState = try Self.buildNodePipeline(device, library, view)
-            // debug("done building node pipeline")
+        if dynamicUniformBuffer == nil {
+            try buildUniforms()
         }
-        if (edgePipelineState == nil) {
-            // debug("building edge pipeline")
-            self.edgePipelineState = try Self.buildEdgePipeline(device, library, view)
-            // debug("done building edge pipeline")
+
+        if nodePipelineState == nil {
+            try buildNodePipeline(view)
+        }
+
+        if edgePipelineState == nil {
+            try buildEdgePipeline(view)
         }
     }
 
     func teardown() {
         debug("GraphWireFrame", "teardown")
-        // TODO: maybe nodePipelineState ... if so change its declaration from ! to ?
+        // TODO: maybe dynamicUniformBuffer and uniforms ... if so change declarations from ! to ?
+        // TODO: maybe nodePipelineState ... ditto
         // TODO: maybe edgePipelineState ... ditto
         self.nodePositionBuffer = nil
         self.nodeColorBuffer = nil
@@ -252,9 +267,36 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         }
     }
 
-    func draw(_ renderEncoder: MTLRenderCommandEncoder,
-              _ uniformsBuffer: MTLBuffer,
-              _ uniformsBufferOffset: Int) {
+    // FIXME
+    func preDraw(_ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, _ screenScaleFactor: Double, _ nodeSize: Double, _ edgeColor: SIMD4<Double>) {
+
+        // ======================================
+        // 1. Rotate the uniforms buffers
+
+        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
+
+        uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
+
+        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
+
+        // =====================================
+        // 3. Update content of current uniforms buffer
+
+//        uniforms[0].projectionMatrix = parent.projectionMatrix
+//        uniforms[0].modelViewMatrix = parent.modelViewMatrix
+        uniforms[0].projectionMatrix = projectionMatrix
+        uniforms[0].modelViewMatrix = modelViewMatrix
+        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
+        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
+                                             Float(edgeColor.y),
+                                             Float(edgeColor.z),
+                                             Float(edgeColor.w))
+
+    }
+    
+    func draw(_ renderEncoder: MTLRenderCommandEncoder) { //},
+//              _ uniformsBuffer: MTLBuffer,
+//              _ uniformsBufferOffset: Int) {
 
         _drawCount += 1
         // debug("GraphWireFrame.draw[\(_drawCount)]")
@@ -278,11 +320,17 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
         renderEncoder.pushDebugGroup("Draw Nodes")
         renderEncoder.setRenderPipelineState(nodePipelineState)
-        renderEncoder.setVertexBuffer(uniformsBuffer,
-                                      offset:uniformsBufferOffset,
+//        renderEncoder.setVertexBuffer(uniformsBuffer,
+//                                      offset:uniformsBufferOffset,
+//                                      index: BufferIndex.uniforms.rawValue)
+//        renderEncoder.setFragmentBuffer(uniformsBuffer,
+//                                        offset:uniformsBufferOffset,
+//                                        index: BufferIndex.uniforms.rawValue)
+        renderEncoder.setVertexBuffer(dynamicUniformBuffer,
+                                      offset:uniformBufferOffset,
                                       index: BufferIndex.uniforms.rawValue)
-        renderEncoder.setFragmentBuffer(uniformsBuffer,
-                                        offset:uniformsBufferOffset,
+        renderEncoder.setFragmentBuffer(dynamicUniformBuffer,
+                                        offset:uniformBufferOffset,
                                         index: BufferIndex.uniforms.rawValue)
         renderEncoder.setVertexBuffer(nodePositionBuffer,
                                       offset: 0,
@@ -369,7 +417,19 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         return newNodePositions
     }
 
-    private static func buildNodePipeline(_ device: MTLDevice, _ library: MTLLibrary, _ view: MTKView) throws -> MTLRenderPipelineState {
+    private func buildUniforms() throws {
+        let uniformBufferSize = alignedUniformsSize * maxBuffersInFlight
+        if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
+            self.dynamicUniformBuffer = buffer
+            self.dynamicUniformBuffer.label = "UniformBuffer"
+            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+        }
+        else {
+            throw RendererError.bufferCreationFailed
+        }
+    }
+
+    private func buildNodePipeline(_ view: MTKView) throws {
 
         let vertexFunction = library.makeFunction(name: "node_vertex")
         let fragmentFunction = library.makeFunction(name: "node_fragment")
@@ -404,10 +464,10 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
         pipelineDescriptor.stencilAttachmentPixelFormat = view.depthStencilPixelFormat
 
-        return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        self.nodePipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
 
-    private static func buildEdgePipeline(_ device: MTLDevice, _ library: MTLLibrary, _ view: MTKView) throws -> MTLRenderPipelineState {
+    private func buildEdgePipeline(_ view: MTKView) throws {
 
         let vertexFunction = library.makeFunction(name: "net_vertex")
         let fragmentFunction = library.makeFunction(name: "net_fragment")
@@ -444,7 +504,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
         pipelineDescriptor.stencilAttachmentPixelFormat = view.depthStencilPixelFormat
 
-        return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        edgePipelineState =  try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
 }
 
