@@ -21,7 +21,7 @@ public struct POV: Codable, CustomStringConvertible {
     /// The POV's location in world coordinates.
     public var location: SIMD3<Float>
 
-    /// The point in world coordinates that the POV is focused on
+    /// The point in world coordinates that the POV is looking at
     public var center: SIMD3<Float>
 
     /// Unit vector giving direction the POV is looking

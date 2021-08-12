@@ -82,7 +82,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     init(_ device: MTLDevice, _ screenScaleFactor: Double) throws {
         debug("GraphWireFrame", "init")
-        if let library = Shaders.makeDefaultLibrary(device) {
+        if let library = Shaders.makeLibrary(device) {
             self.library = library
         }
         else {
@@ -365,7 +365,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         renderEncoder.setRenderPipelineState(edgePipelineState)
         renderEncoder.drawIndexedPrimitives(type: .line,
                                             indexCount: edgeIndexCount,
-                                            indexType: RenderingConstants.edgeIndexType,
+                                            indexType: MTLIndexType.uint32,
                                             indexBuffer: edgeIndexBuffer,
                                             indexBufferOffset: 0)
         renderEncoder.popDebugGroup()

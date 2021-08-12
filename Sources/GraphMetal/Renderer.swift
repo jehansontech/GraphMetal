@@ -44,7 +44,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
     public var nodeSizeMaximum: Double = RenderSettings.defaults.nodeSizeMaximum
 
-    public var edgeColor = RenderSettings.defaults.edgeColor
+    public var edgeColorDefault = RenderSettings.defaults.edgeColorDefault
 
     public var nodeColorDefault: SIMD4<Double> {
         get {
@@ -183,7 +183,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
         
         self.nodeSizeMaximum = settings.nodeSizeMaximum
         self.nodeColorDefault = settings.nodeColorDefault
-        self.edgeColor = settings.edgeColor
+        self.edgeColorDefault = settings.edgeColorDefault
     }
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
@@ -411,7 +411,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
         // Update POV based on current time, in case it's moving on its own
         parent.povController.updateModelView(t0)
 
-        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, screenScaleFactor, nodeSize, edgeColor)
+        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, screenScaleFactor, nodeSize, edgeColorDefault)
 
         // MOVED to GraphWireFrame
 //        // =====================================

@@ -14,7 +14,7 @@ final class GraphMetalTests: XCTestCase {
 
     func testLibraryCreation() {
         let device = MTLCreateSystemDefaultDevice()!
-        let library = Shaders.makeDefaultLibrary(device)!
+        let library = Shaders.makeLibrary(device)!
         let funcs = library.functionNames
         XCTAssert(funcs.count > 0)
     }
