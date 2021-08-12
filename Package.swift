@@ -24,9 +24,6 @@ let package = Package(
         .target(
             name: "Shaders",
             dependencies: []),
-        .testTarget(
-            name: "ShadersTests",
-            dependencies: ["Shaders"]),
         .target(
             name: "GraphMetal",
             dependencies: ["Shaders",
