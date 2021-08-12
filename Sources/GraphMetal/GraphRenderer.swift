@@ -31,7 +31,7 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderControls {
+public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderControls {
 
     typealias NodeValueType = S.GraphType.NodeType.ValueType
     typealias EdgeValueType = S.GraphType.EdgeType.ValueType
@@ -58,7 +58,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
     var screenshotRequested: Bool = false
 
-    let parent: RendererView<S>
+    let parent: GraphView<S>
 
     var tapHandler: RendererTapHandler? = nil
 
@@ -97,7 +97,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
     // private var _drawCount: Int = 0
 
-    public init(_ parent: RendererView<S>) throws {
+    public init(_ parent: GraphView<S>) throws {
 
         debug("Renderer", "init")
         
@@ -149,13 +149,15 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
         graphWireFrame = try GraphWireFrame(device, self.screenScaleFactor)
         
         super.init()
+
         self.applySettings(parent.rendererSettings)
-        self.graphHasChanged(GraphChange.ALL)
+        self.graphHasChanged(RenderableGraphChange.ALL)
         NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
     }
 
     deinit {
         debug("Renderer", "deinit")
+        // TODO remove observer at some point -- but doesn't it need to be BEFORE deinitialization?
     }
 
     public func adjustNodeSize(povDistance: Double) {
@@ -187,12 +189,12 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
     }
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
-        if let graphChange = notification.object as? GraphChange {
+        if let graphChange = notification.object as? RenderableGraphChange {
             graphHasChanged(graphChange)
         }
     }
 
-    public func graphHasChanged(_ graphChange: GraphChange) {
+    public func graphHasChanged(_ graphChange: RenderableGraphChange) {
         debug("Renderer", "graphHasChanged")
         graphWireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
     }
@@ -239,7 +241,7 @@ public class Renderer<S: RenderSource>: NSObject, MTKViewDelegate, UIGestureReco
 
                 renderEncoder.setDepthStencilState(depthState)
 
-                graphWireFrame.draw(renderEncoder) //,
+                graphWireFrame.encodeCommands(renderEncoder) //,
                                     // dynamicUniformBuffer,
                                     // uniformBufferOffset)
 

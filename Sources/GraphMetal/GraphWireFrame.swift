@@ -13,16 +13,33 @@ import GenericGraph
 import Shaders
 import Wacoma
 
-class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableGraphWidget {
+//public protocol GraphRenderEncoder {
+//
+//    associatedtype NodeValueType: RenderableNodeValue
+//
+//    associatedtype EdgeValueType: RenderableEdgeValue
+//
+//    // TODO remove throws
+//    func setup(_ view: MTKView) throws
+//
+//    func teardown()
+//
+//    /// Notifies this instance that the graph has changed, so it should needs to update its Metal buffers.
+//    func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
+//        G.NodeType.ValueType == NodeValueType,
+//        G.EdgeType.ValueType == EdgeValueType
+//
+//    func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder)
+//    //,
+//    //      _ uniformsBuffer: MTLBuffer,
+//    //      _ uniformsBufferOffset: Int)
+//}
 
+class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: GraphRenderEncoder {
 
     typealias NodeValueType = N
 
     typealias EdgeValueType = E
-
-    // DOES NOT WORK
-    //    typealias GraphType = Graph where GraphType.NodeType.ValueType == N,  // : RenderableNodeValue,
-    //                                      GraphType.EdgeType.ValueType == E   //: RenderableEdgeValue
 
     // ==============================================================
     // Rendering properties -- Access these only on rendering thread
@@ -61,19 +78,13 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 
     var uniforms: UnsafeMutablePointer<Uniforms>!
 
-    // var _drawCount: Int = 0
-
-
     // ==============================================================
-    // Data properties -- Access these only on graph-update thread
-
-    var lastTopologyUpdate: Int = -1
-
-    var lastPositionsUpdate: Int = -1
-
-    var lastColorsUpdate: Int = -1
+    // Derived graph properties -- Access only on graph-update thread
 
     private var nodeIndices = [NodeID: Int]()
+
+    // ==========================================
+    // Shared properties -- Written on graph-update thread, read on rendering thread
 
     private var bufferUpdate: BufferUpdate? = nil
 
@@ -127,7 +138,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
         self.edgeIndexBuffer = nil
     }
 
-    func graphHasChanged<G: Graph>(_ graph: G, _ change: GraphChange) where
+    func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
         G.NodeType.ValueType == NodeValueType,
         G.EdgeType.ValueType == EdgeValueType {
         if change.nodes {
@@ -309,7 +320,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue>: Renderable
 //    func draw(_ renderEncoder: MTLRenderCommandEncoder, _ uniformsBuffer: MTLBuffer, _ uniformsBufferOffset: Int) {
 //    }
 
-    func draw(_ renderEncoder: MTLRenderCommandEncoder) {
+    func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
 
         // _drawCount += 1
         // debug("GraphWireFrame.draw[\(_drawCount)]")

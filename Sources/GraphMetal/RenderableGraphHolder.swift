@@ -9,13 +9,31 @@ import Foundation
 // import SwiftUI
 import GenericGraph
 
-public struct GraphChange {
+extension Notification.Name {
+    static var graphHasChanged: Notification.Name { return .init("graphHasChanged") }
+}
 
-    public static let ALL = GraphChange(nodes: true,
-                                        nodeColors: true,
-                                        nodePositions: true,
-                                        edges: true,
-                                        edgeColors: true)
+public protocol RenderableGraphHolder: AnyObject {
+    associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
+                                          GraphType.EdgeType.ValueType: RenderableEdgeValue
+
+    var graph: GraphType { get set }
+}
+
+extension RenderableGraphHolder {
+
+    public func fireGraphChange(_ change: RenderableGraphChange) {
+        NotificationCenter.default.post(name: .graphHasChanged, object: change)
+    }
+}
+
+public struct RenderableGraphChange {
+
+    public static let ALL = RenderableGraphChange(nodes: true,
+                                                  nodeColors: true,
+                                                  nodePositions: true,
+                                                  edges: true,
+                                                  edgeColors: true)
 
     /// indicates whether nodes have been added and/or removed
     public var nodes: Bool
@@ -42,24 +60,6 @@ public struct GraphChange {
         self.nodePositions = nodePositions
         self.edges = edges
         self.edgeColors = edgeColors
-    }
-}
-
-extension Notification.Name {
-    static var graphHasChanged: Notification.Name { return .init("graphHasChanged") }
-}
-
-public protocol RenderSource: AnyObject {
-    associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
-                                          GraphType.EdgeType.ValueType: RenderableEdgeValue
-
-    var graph: GraphType { get set }
-}
-
-extension RenderSource {
-
-    public func fireGraphChange(_ change: GraphChange) {
-        NotificationCenter.default.post(name: .graphHasChanged, object: change)
     }
 }
 

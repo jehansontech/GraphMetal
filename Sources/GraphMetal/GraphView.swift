@@ -25,7 +25,7 @@ import GenericGraph
 // and pass it in to this guy's init as a Binding.
 
 
-public struct RendererView<S: RenderSource>: UIViewRepresentable {
+public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
 
@@ -60,9 +60,9 @@ public struct RendererView<S: RenderSource>: UIViewRepresentable {
         self.longPressHandler = longPressHandler
     }
 
-    public func makeCoordinator() -> Renderer<S> {
+    public func makeCoordinator() -> GraphRenderer<S> {
         do {
-            let renderer = try Renderer<S>(self)
+            let renderer = try GraphRenderer<S>(self)
             povController.renderControls = renderer
             return renderer
         }
