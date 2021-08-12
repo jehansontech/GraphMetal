@@ -51,7 +51,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     
     public var modelViewMatrix: float4x4
 
-    weak var renderControls: RenderControls? = nil
+    weak var renderControls: RenderingControls? = nil
 
     private var _motionEnabled: Bool = false
 

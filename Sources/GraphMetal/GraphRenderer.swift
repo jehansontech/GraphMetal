@@ -31,20 +31,20 @@ enum RendererError: Error {
 ///
 ///
 ///
-public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderControls {
+public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderingControls {
 
     typealias NodeValueType = S.GraphType.NodeType.ValueType
     typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
-    public var backgroundColor: SIMD4<Double> = RenderSettings.defaults.backgroundColor
+    public var backgroundColor: SIMD4<Double> = RendererSettings.defaults.backgroundColor
 
-    public var nodeSizeAutomatic: Bool = RenderSettings.defaults.nodeSizeAutomatic
+    public var nodeSizeAutomatic: Bool = RendererSettings.defaults.nodeSizeAutomatic
 
-    public var nodeSize = RenderSettings.defaults.nodeSize
+    public var nodeSize = RendererSettings.defaults.nodeSize
 
-    public var nodeSizeMaximum: Double = RenderSettings.defaults.nodeSizeMaximum
+    public var nodeSizeMaximum: Double = RendererSettings.defaults.nodeSizeMaximum
 
-    public var edgeColorDefault = RenderSettings.defaults.edgeColorDefault
+    public var edgeColorDefault = RendererSettings.defaults.edgeColorDefault
 
     public var nodeColorDefault: SIMD4<Double> {
         get {
@@ -175,7 +175,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
         self.screenshotRequested = true
     }
     
-    func applySettings(_ settings: RenderSettings) {
+    func applySettings(_ settings: RendererSettings) {
         self.backgroundColor = settings.backgroundColor
         self.nodeSizeAutomatic = settings.nodeSizeAutomatic
 

@@ -15,7 +15,7 @@ struct RenderingConstants {
     static let nodeSizeScaleFactor: Double = 800
 }
 
-public protocol RenderProperties {
+public protocol RenderingProperties {
 
     var nodeSize: Double { get set }
 
@@ -32,7 +32,7 @@ public protocol RenderProperties {
     var backgroundColor: SIMD4<Double> { get set }
 }
 
-public protocol RenderControls: RenderProperties, AnyObject {
+public protocol RenderingControls: RenderingProperties, AnyObject {
 
     /// has no effect if nodeSizeAutomatic is false
     func adjustNodeSize(povDistance: Double)
@@ -40,7 +40,7 @@ public protocol RenderControls: RenderProperties, AnyObject {
     func requestScreenshot()
 }
 
-public struct RenderDefaults: RenderProperties {
+public struct RenderingPropertyDefaults: RenderingProperties {
 
     public var nodeSize: Double = 25
 
@@ -55,9 +55,9 @@ public struct RenderDefaults: RenderProperties {
     public var backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
 }
 
-public struct RenderSettings: RenderProperties {
+public struct RendererSettings: RenderingProperties {
 
-    public static let defaults = RenderDefaults()
+    public static let defaults = RenderingPropertyDefaults()
 
     public var nodeSize: Double
 

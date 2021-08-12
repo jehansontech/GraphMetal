@@ -44,7 +44,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
     // ==============================================================
     // Rendering properties -- Access these only on rendering thread
 
-    var nodeColorDefault = RenderSettings.defaults.nodeColorDefault
+    var nodeColorDefault = RendererSettings.defaults.nodeColorDefault
 
     var device: MTLDevice
 

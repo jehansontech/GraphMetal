@@ -29,7 +29,7 @@ public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
 
-    @Binding var rendererSettings: RenderSettings
+    @Binding var rendererSettings: RendererSettings
 
     var graphHolder: S
 
@@ -48,7 +48,7 @@ public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
     let longPressHandler: RendererLongPressHandler?
 
 
-    public init(_ settings: Binding<RenderSettings>,
+    public init(_ settings: Binding<RendererSettings>,
                 _ graphHolder: S,
                 _ povController: POVController,
                 tapHandler: RendererTapHandler? = nil,
