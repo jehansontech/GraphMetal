@@ -6,10 +6,17 @@
 import Foundation
 import GenericGraph
 
+///
+///
+///
 extension Notification.Name {
     static var graphHasChanged: Notification.Name { return .init("graphHasChanged") }
 }
 
+
+///
+///
+///
 public protocol RenderableGraphHolder: AnyObject {
     associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
                                           GraphType.EdgeType.ValueType: RenderableEdgeValue
@@ -17,6 +24,10 @@ public protocol RenderableGraphHolder: AnyObject {
     var graph: GraphType { get set }
 }
 
+
+///
+///
+///
 extension RenderableGraphHolder {
 
     public func fireGraphChange(_ change: RenderableGraphChange) {
@@ -24,6 +35,10 @@ extension RenderableGraphHolder {
     }
 }
 
+
+///
+///
+///
 public struct RenderableGraphChange {
 
     public static let ALL = RenderableGraphChange(nodes: true,
@@ -59,4 +74,3 @@ public struct RenderableGraphChange {
         self.edgeColors = edgeColors
     }
 }
-

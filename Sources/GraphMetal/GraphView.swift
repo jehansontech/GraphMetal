@@ -61,7 +61,7 @@ public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
             let renderer = try GraphRenderer<S>(self)
-            povController.renderControls = renderer
+            povController.rendererControls = renderer
             return renderer
         }
         catch {

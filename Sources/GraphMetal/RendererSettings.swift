@@ -12,15 +12,6 @@ import MetalKit
 ///
 ///
 ///
-struct RendererConstants {
-
-    // EMPIRICAL
-    static let nodeSizeScaleFactor: Double = 800
-}
-
-///
-///
-///
 public protocol RendererProperties {
 
     var nodeSize: Double { get set }
@@ -87,4 +78,3 @@ public struct RendererSettings: RendererProperties {
         self.backgroundColor = Self.defaults.backgroundColor
     }
 }
-

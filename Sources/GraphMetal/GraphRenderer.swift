@@ -27,6 +27,16 @@ enum RendererError: Error {
 ///
 ///
 ///
+struct RendererConstants {
+
+    // EMPIRICAL
+    static let nodeSizeScaleFactor: Double = 800
+}
+
+
+///
+///
+///
 public protocol RendererControls: RendererProperties, AnyObject {
 
     /// has no effect if nodeSizeAutomatic is false
