@@ -1,9 +1,6 @@
 //
-//  Rendering.swift
-//  ArcWorld
-//
-//  Created by James Hanson on 9/12/20.
-//  Copyright © 2020 J.E. Hanson Technologies LLC. All rights reserved.
+//  RendererSettings.swift
+//  GraphMetal
 //
 
 import Foundation
