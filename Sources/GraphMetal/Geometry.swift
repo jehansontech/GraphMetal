@@ -1,8 +1,6 @@
 //
 //  Geometry.swift
-//  ArcWorld
-//
-//  Created by Jim Hanson on 4/6/21.
+//  GraphMetal
 //
 
 import Foundation

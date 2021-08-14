@@ -40,24 +40,29 @@ public protocol RenderingControls: RenderingProperties, AnyObject {
     func requestScreenshot()
 }
 
-public struct RenderingPropertyDefaults: RenderingProperties {
-
-    public var nodeSize: Double = 25
-
-    public var nodeSizeAutomatic: Bool = true
-
-    public var nodeSizeMaximum: Double = 100
-
-    public var nodeColorDefault = SIMD4<Double>(0, 0, 0, 1)
-
-    public var edgeColorDefault = SIMD4<Double>(0.2, 0.2, 0.2, 1)
-
-    public var backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
-}
+//public struct RenderingPropertyDefaults: RenderingProperties {
+//
+//    public var nodeSize: Double = 25
+//
+//    public var nodeSizeAutomatic: Bool = true
+//
+//    public var nodeSizeMaximum: Double = 100
+//
+//    public var nodeColorDefault = SIMD4<Double>(0, 0, 0, 1)
+//
+//    public var edgeColorDefault = SIMD4<Double>(0.2, 0.2, 0.2, 1)
+//
+//    public var backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
+//}
 
 public struct RendererSettings: RenderingProperties {
 
-    public static let defaults = RenderingPropertyDefaults()
+    public static let defaults = RendererSettings(nodeSize: 25,
+                                                   nodeSizeAutomatic: true,
+                                                   nodeSizeMaximum: 100,
+                                                   nodeColorDefault: SIMD4<Double>(0, 0, 0, 1),
+                                                   edgeColorDefault: SIMD4<Double>(0.2, 0.2, 0.2, 1),
+                                                   backgroundColor: SIMD4<Double>(0.02, 0.02, 0.02, 1))
 
     public var nodeSize: Double
 
@@ -75,15 +80,15 @@ public struct RendererSettings: RenderingProperties {
 
     public init(nodeSize: Double = defaults.nodeSize,
                 nodeSizeAutomatic: Bool = defaults.nodeSizeAutomatic,
-                nodeSizeMax: Double = defaults.nodeSizeMaximum,
+                nodeSizeMaximum: Double = defaults.nodeSizeMaximum,
                 nodeColorDefault: SIMD4<Double> = defaults.nodeColorDefault,
-                edgeColor: SIMD4<Double> = defaults.edgeColorDefault,
+                edgeColorDefault: SIMD4<Double> = defaults.edgeColorDefault,
                 backgroundColor: SIMD4<Double> = defaults.backgroundColor) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
-        self.nodeSizeMaximum = nodeSizeMax
+        self.nodeSizeMaximum = nodeSizeMaximum
         self.nodeColorDefault = nodeColorDefault
-        self.edgeColorDefault = edgeColor
+        self.edgeColorDefault = edgeColorDefault
         self.backgroundColor = backgroundColor
     }
 }

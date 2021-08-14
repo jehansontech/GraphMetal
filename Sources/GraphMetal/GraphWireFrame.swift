@@ -1,8 +1,6 @@
 //
 //  GraphWireFrame.swift
-//  ArcWorld
-//
-//  Created by Jim Hanson on 4/8/21.
+//  GraphMetal
 //
 
 
@@ -12,28 +10,6 @@ import MetalKit
 import GenericGraph
 import Shaders
 import Wacoma
-
-//public protocol GraphRenderEncoder {
-//
-//    associatedtype NodeValueType: RenderableNodeValue
-//
-//    associatedtype EdgeValueType: RenderableEdgeValue
-//
-//    // TODO remove throws
-//    func setup(_ view: MTKView) throws
-//
-//    func teardown()
-//
-//    /// Notifies this instance that the graph has changed, so it should needs to update its Metal buffers.
-//    func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
-//        G.NodeType.ValueType == NodeValueType,
-//        G.EdgeType.ValueType == EdgeValueType
-//
-//    func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder)
-//    //,
-//    //      _ uniformsBuffer: MTLBuffer,
-//    //      _ uniformsBufferOffset: Int)
-//}
 
 class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: GraphRenderEncoder {
 
@@ -100,10 +76,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
             throw RendererError.noDefaultLibrary
         }
 
-//        let shaders = Shaders()
-//        self.device = shaders.defaultDevice
-//        self.library = shaders.defaultLibrary
-
         self.device = device
         self.screenScaleFactor = screenScaleFactor
     }
@@ -165,46 +137,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
             }
         }
     }
-
-//    func prepareUpdate<H>(_ graphHolder: H) where
-//        H : RenderableGraphHolder,
-//        E == H.GraphType.EdgeType.ValueType,
-//        N == H.GraphType.NodeType.ValueType {
-//
-//        debug("GraphWireFrame", "prepareUpdate: started")
-//        
-//        if  graphHolder.hasTopologyChanged(since: lastTopologyUpdate) {
-//            debug("GraphWireFrame", "prepareUpdate: topology has changed")
-//            self.lastTopologyUpdate = graphHolder.topologyUpdate
-//            self.lastPositionsUpdate = graphHolder.positionsUpdate
-//            self.lastColorsUpdate = graphHolder.colorsUpdate
-//            self.bufferUpdate = self.prepareTopologyUpdate(graphHolder.graph)
-//        }
-//        else {
-//            var newPositions: [SIMD3<Float>]? = nil
-//            var newColors: [NodeID : SIMD4<Float>]? = nil
-//
-//            if graphHolder.havePositionsChanged(since: lastPositionsUpdate) {
-//                debug("GraphWireFrame", "prepareUpdate: positions have changed")
-//                newPositions = self.makeNodePositions(graphHolder.graph)
-//                self.lastPositionsUpdate = graphHolder.positionsUpdate
-//            }
-//
-//            if graphHolder.haveColorsChanged(since: lastColorsUpdate) {
-//                debug("GraphWireFrame", "prepareUpdate: colors have changed")
-//                newColors = graphHolder.graph.makeNodeColors()
-//                self.lastColorsUpdate = graphHolder.colorsUpdate
-//            }
-//
-//            if (newPositions != nil || newColors != nil) {
-//                self.bufferUpdate = BufferUpdate(nodeCount: self.nodeCount,
-//                                                 nodePositions: newPositions,
-//                                                 nodeColors: newColors,
-//                                                 edgeIndexCount: self.edgeIndexCount,
-//                                                 edgeIndices: nil)
-//            }
-//        }
-//    }
 
     /// Runs on rendering thread
     func applyUpdate() {
@@ -290,11 +222,11 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
         }
     }
 
-    // FIXME
+    // FIXME args are awkward
     func preDraw(_ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, _ screenScaleFactor: Double, _ nodeSize: Double, _ edgeColor: SIMD4<Double>) {
 
         // ======================================
-        // 1. Rotate the uniforms buffers
+        // Rotate the uniforms buffers
 
         uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
 
@@ -303,10 +235,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
         uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
         // =====================================
-        // 3. Update content of current uniforms buffer
+        // Update content of current uniforms buffer
 
-//        uniforms[0].projectionMatrix = parent.projectionMatrix
-//        uniforms[0].modelViewMatrix = parent.modelViewMatrix
         uniforms[0].projectionMatrix = projectionMatrix
         uniforms[0].modelViewMatrix = modelViewMatrix
         uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
@@ -317,9 +247,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
 
     }
     
-//    func draw(_ renderEncoder: MTLRenderCommandEncoder, _ uniformsBuffer: MTLBuffer, _ uniformsBufferOffset: Int) {
-//    }
-
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
 
         // _drawCount += 1
@@ -344,12 +271,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
 
         renderEncoder.pushDebugGroup("Draw Nodes")
         renderEncoder.setRenderPipelineState(nodePipelineState)
-//        renderEncoder.setVertexBuffer(uniformsBuffer,
-//                                      offset:uniformsBufferOffset,
-//                                      index: BufferIndex.uniforms.rawValue)
-//        renderEncoder.setFragmentBuffer(uniformsBuffer,
-//                                        offset:uniformsBufferOffset,
-//                                        index: BufferIndex.uniforms.rawValue)
         renderEncoder.setVertexBuffer(dynamicUniformBuffer,
                                       offset:uniformBufferOffset,
                                       index: BufferIndex.uniforms.rawValue)

@@ -1,8 +1,6 @@
 //
-//  RendererView.swift
-//  ArcWorld
-//
-//  Created by Jim Hanson on 3/17/21.
+//  GraphView.swift
+//  GraphMetal
 //
 
 import SwiftUI
@@ -72,8 +70,8 @@ public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
     }
 
     public func makeUIView(context: Context) -> MTKView {
-        debug("RendererView", "makeUIView")
-        debug("RendererView", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
+        debug("GraphView", "makeUIView")
+        debug("GraphView", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
 
         let mtkView = MTKView()
 
@@ -130,7 +128,7 @@ public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
     }
 
     public func updateUIView(_ mtkView: MTKView, context: Context) {
-        debug("RendererView", "updateUIView")
+        debug("GraphView", "updateUIView")
 
         mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
                                                rendererSettings.backgroundColor.y,
@@ -204,5 +202,3 @@ public protocol RendererRotationHandler {
 
     mutating func rotationEnded()
 }
-
-

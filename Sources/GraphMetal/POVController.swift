@@ -1,9 +1,6 @@
 //
 //  POVController.swift
-//  ArcWorld iOS
-//
-//  Created by James Hanson on 9/26/20.
-//  Copyright © 2020 J.E. Hanson Technologies LLC. All rights reserved.
+//  GraphMetal
 //
 
 import Foundation
@@ -266,7 +263,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 }
 
 // ===========================================================
-// MARK:- Action handlers
+// MARK:- Actions
 // ===========================================================
 
 ///

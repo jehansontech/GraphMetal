@@ -1,12 +1,7 @@
 //
-//  Renderer.swift
-//  ArcWorld
+//  GraphRenderer.swift
+//  GraphMetal
 //
-//  Created by James Hanson on 8/14/20.
-//  Copyright © 2020 J.E. Hanson Technologies LLC. All rights reserved.
-//
-
-// Our platform independent renderer class
 
 import Metal
 import MetalKit
@@ -76,15 +71,6 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
 
     let commandQueue: MTLCommandQueue
 
-// MOVED to GraphWireFrame
-//    var dynamicUniformBuffer: MTLBuffer
-//
-//    var uniformBufferOffset = 0
-//
-//    var uniformBufferIndex = 0
-//
-//    var uniforms: UnsafeMutablePointer<Uniforms>
-    
     var depthState: MTLDepthStencilState
 
     var graphWireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
@@ -122,29 +108,6 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
         else {
             throw RendererError.noDepthStencilState
         }
-
-
-        //        metalKitView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
-        //        metalKitView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-        //
-        //        let viewBounds = SIMD3<Float>(Float(metalKitView.drawableSize.width),
-        //                                      Float(metalKitView.drawableSize.height),
-        //                                      frustumDepth)
-        //        AppModel.instance.povController.updateProjection(viewBounds: viewBounds)
-
-// MOVED TO GraphWireFrame
-//        let uniformBufferSize = alignedUniformsSize * maxBuffersInFlight
-//
-//        if let buffer = self.device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
-//            self.dynamicUniformBuffer = buffer
-//        }
-//        else {
-//            throw RendererError.bufferCreationFailed
-//        }
-//
-//        self.dynamicUniformBuffer.label = "UniformBuffer"
-//
-//        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
 
         graphWireFrame = try GraphWireFrame(device, self.screenScaleFactor)
         
@@ -400,32 +363,11 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
 
         let t0 = Date()
 
-// MOVED to GraphWireFrame
-//        // ======================================
-//        // Rotate the uniforms buffers
-//
-//        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
-//
-//        uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
-//
-//        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
         // Update POV based on current time, in case it's moving on its own
         parent.povController.updateModelView(t0)
 
         graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, screenScaleFactor, nodeSize, edgeColorDefault)
-
-        // MOVED to GraphWireFrame
-//        // =====================================
-//        // Update content of current uniforms buffer
-//
-//        uniforms[0].projectionMatrix = parent.projectionMatrix
-//        uniforms[0].modelViewMatrix = parent.modelViewMatrix
-//        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
-//        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
-//                                             Float(edgeColor.y),
-//                                             Float(edgeColor.z),
-//                                             Float(edgeColor.w))
 
         let dt = Date().timeIntervalSince(t0)
         if (dt > 1/30) {
@@ -544,6 +486,3 @@ fileprivate func describeGR(_ gr: UIGestureRecognizer) -> String {
 
     return "\(grName) \(stateString)"
 }
-
-
-

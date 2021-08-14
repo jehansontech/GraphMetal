@@ -1,8 +1,6 @@
 //
-//  Renderable.swift
-//  ArcWorld
-//
-//  Created by Jim Hanson on 3/17/21.
+//  RenderableGraph.swift
+//  GraphMetal
 //
 
 import GenericGraph

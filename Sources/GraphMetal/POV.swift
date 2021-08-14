@@ -1,9 +1,6 @@
 //
 //  POV.swift
-//  ArcWorld
-//
-//  Created by Jim Hanson on 10/18/20.
-//  Copyright © 2020 J.E. Hanson Technologies LLC. All rights reserved.
+//  GraphMetal
 //
 
 import Foundation

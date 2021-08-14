@@ -1,12 +1,9 @@
 //
-//  RenderableGraphController.swift
-//  
-//
-//  Created by Jim Hanson on 4/26/21.
+//  RenderableGraphHolder.swift
+//  GraphMetal
 //
 
 import Foundation
-// import SwiftUI
 import GenericGraph
 
 extension Notification.Name {
@@ -62,117 +59,4 @@ public struct RenderableGraphChange {
         self.edgeColors = edgeColors
     }
 }
-
-//public protocol RenderableGraphHolder: RenderSource {
-//    
-//    var topologyUpdate: Int { get set }
-//
-//    var positionsUpdate: Int { get set }
-//
-//    var colorsUpdate: Int { get set }
-//}
-//
-//extension RenderableGraphHolder {
-//
-//    public func registerTopologyChange() {
-//        topologyUpdate += 1
-//    }
-//
-//    public func hasTopologyChanged(since update: Int) -> Bool {
-//        return update < topologyUpdate
-//    }
-//
-//    public func registerPositionChange() {
-//        positionsUpdate += 1
-//    }
-//
-//    public func havePositionsChanged(since update: Int) -> Bool {
-//        return update < positionsUpdate
-//    }
-//
-//    public func registerColorChange() {
-//        colorsUpdate += 1
-//    }
-//
-//    public func haveColorsChanged(since update: Int) -> Bool {
-//        return update < colorsUpdate
-//    }
-//}
-//
-//public protocol RenderableGraphController {
-//    associatedtype HolderType: RenderableGraphHolder
-//
-//    var graphHolder: HolderType { get }
-//
-//    var dispatchQueue: DispatchQueue { get }
-//
-//}
-//
-//extension RenderableGraphController {
-//
-//    public func exec(_ task: @escaping (HolderType) -> ()) {
-//        dispatchQueue.async { [self] in
-//            task(graphHolder)
-//        }
-//    }
-//
-//    public func exec<T>(_ task: @escaping (HolderType) -> T, _ callback: @escaping (T) -> ()) {
-//        dispatchQueue.async { [self] in
-//            let result = task(graphHolder)
-//            DispatchQueue.main.sync {
-//                callback(result)
-//            }
-//        }
-//    }
-//
-//    public func schedule(_ task: @escaping (HolderType) -> (), _ delay: Double) {
-//        dispatchQueue.asyncAfter(deadline: .now() + delay) { [self] in
-//            task(graphHolder)
-//        }
-//    }
-//
-//    public func schedule<T>(_ task: @escaping (HolderType) -> T, _ delay: Double, _ callback: @escaping (T) -> ()) {
-//        dispatchQueue.asyncAfter(deadline: .now() + delay) { [self] in
-//            let result = task(graphHolder)
-//            DispatchQueue.main.sync {
-//                callback(result)
-//            }
-//        }
-//    }
-//}
-//
-//public class BasicGraphHolder<G: Graph>: RenderableGraphHolder where
-//    G.NodeType.ValueType: RenderableNodeValue,
-//    G.EdgeType.ValueType: RenderableEdgeValue {
-//
-//    public typealias GraphType = G
-//
-//    public var topologyUpdate: Int = 0
-//
-//    public var positionsUpdate: Int = 0
-//
-//    public var colorsUpdate: Int = 0
-//
-//    public var graph: G
-//
-//    public init(_ graph: G) {
-//        self.graph = graph
-//    }
-//}
-//
-//public struct BasicGraphController<G: Graph>: RenderableGraphController where
-//    G.NodeType.ValueType: RenderableNodeValue,
-//    G.EdgeType.ValueType: RenderableEdgeValue {
-//
-//    public typealias HolderType = BasicGraphHolder<G>
-//
-//    public var graphHolder: BasicGraphHolder<G>
-//
-//    public var dispatchQueue: DispatchQueue
-//
-//    public init(_ graph: G, _ dispatchQueue: DispatchQueue) {
-//        self.graphHolder = BasicGraphHolder(graph)
-//        self.dispatchQueue = dispatchQueue
-//    }
-//}
 
