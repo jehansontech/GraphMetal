@@ -48,7 +48,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     
     public var modelViewMatrix: float4x4
 
-    weak var renderControls: RenderingControls? = nil
+    weak var rendererControls: RendererControls? = nil
 
     private var _motionEnabled: Bool = false
 
@@ -109,8 +109,8 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func requestScreenshot() {
-        if let renderControls = renderControls {
-            renderControls.requestScreenshot()
+        if let rendererControls = rendererControls {
+            rendererControls.requestScreenshot()
         }
     }
     public func markPOV() {
@@ -219,7 +219,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     func updateRenderingParameters() {
         let povDistance = Double(simd_length(self.location - self.center))
         debug("POVController", "new povDistance = \(povDistance)")
-        if let controls = renderControls {
+        if let controls = rendererControls {
             controls.adjustNodeSize(povDistance: povDistance)
         }
     }

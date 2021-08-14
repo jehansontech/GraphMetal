@@ -23,10 +23,23 @@ enum RendererError: Error {
     case bufferCreationFailed
 }
 
+
 ///
 ///
 ///
-public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RenderingControls {
+public protocol RendererControls: RendererProperties, AnyObject {
+
+    /// has no effect if nodeSizeAutomatic is false
+    func adjustNodeSize(povDistance: Double)
+
+    func requestScreenshot()
+}
+
+
+///
+///
+///
+public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RendererControls {
 
     typealias NodeValueType = S.GraphType.NodeType.ValueType
     typealias EdgeValueType = S.GraphType.EdgeType.ValueType
@@ -85,7 +98,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
 
     public init(_ parent: GraphView<S>) throws {
 
-        debug("Renderer", "init")
+        debug("GraphRenderer", "init")
         
         self.parent = parent
 
@@ -125,7 +138,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
 
     public func adjustNodeSize(povDistance: Double) {
         if nodeSizeAutomatic {
-            let newSize = RenderingConstants.nodeSizeScaleFactor / povDistance
+            let newSize = RendererConstants.nodeSizeScaleFactor / povDistance
             self.nodeSize = newSize.clamp(1, nodeSizeMaximum)
             debug("Renderer", "adjustNodeSize: newSize = \(nodeSize)")
         }
