@@ -39,6 +39,8 @@ struct RendererConstants {
 ///
 public protocol RendererControls: RendererProperties, AnyObject {
 
+    var updateInProgress: Bool { get }
+
     /// has no effect if nodeSizeAutomatic is false
     func adjustNodeSize(povDistance: Double)
 
@@ -73,6 +75,14 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
             graphWireFrame.nodeColorDefault = newValue
         }
     }
+
+    public var updateInProgress: Bool {
+        return updateStartedCount > updateCompletedCount
+    }
+
+    var updateStartedCount: Int = 0
+
+    var updateCompletedCount: Int = 0
 
     var screenshotRequested: Bool = false
 
@@ -181,7 +191,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
     }
 
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
-        debug("Renderer", "graphHasChanged")
+        debug("GraphRenderer", "graphHasChanged")
+        self.updateStartedCount += 1
         graphWireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
     }
     
@@ -236,6 +247,12 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
             }
             
             commandBuffer.commit()
+        }
+
+        // FIXME
+        if updateInProgress {
+            debug("GraphRenderer", "draw: finished update")
+            updateCompletedCount += 1
         }
     }
     
