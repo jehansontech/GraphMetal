@@ -113,6 +113,9 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
     func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
         G.NodeType.ValueType == NodeValueType,
         G.EdgeType.ValueType == EdgeValueType {
+
+        debug("GraphWireFrame", "graphHasChanged: started. bufferUpdate=\(bufferUpdate)")
+
         if change.nodes {
             self.bufferUpdate = self.prepareTopologyUpdate(graph)
         }
@@ -135,6 +138,10 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
                                                  edgeIndexCount: self.edgeIndexCount,
                                                  edgeIndices: nil)
             }
+        }
+
+        if self.bufferUpdate != nil {
+            debug("GraphWireFrame", "graphHasChanged: created bufferUpdate")
         }
     }
 
