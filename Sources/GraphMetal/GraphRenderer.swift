@@ -191,9 +191,10 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
     }
 
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
-        debug("GraphRenderer", "graphHasChanged")
+        debug("GraphRenderer", "graphHasChanged: starting")
         self.updateStartedCount += 1
         graphWireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
+        debug("GraphRenderer", "graphHasChanged: done. updateStartedCount=\(updateStartedCount)")
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
@@ -213,6 +214,10 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
 
         // _drawCount += 1
+        // FIXME
+        if updateInProgress {
+            debug("GraphRenderer", "draw: starting. update in progress. updateCompletedCount=\(updateCompletedCount)")
+        }
 
         if screenshotRequested {
             takeScreenshot(view)
@@ -251,8 +256,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
 
         // FIXME
         if updateInProgress {
-            debug("GraphRenderer", "draw: finished update")
             updateCompletedCount += 1
+            debug("GraphRenderer", "draw: done. update completed. updateCompletedCount=\(updateCompletedCount)")
         }
     }
     

@@ -114,7 +114,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
         G.NodeType.ValueType == NodeValueType,
         G.EdgeType.ValueType == EdgeValueType {
 
-        debug("GraphWireFrame", "graphHasChanged: started. bufferUpdate=\(bufferUpdate)")
+        // debug("GraphWireFrame", "graphHasChanged: started. bufferUpdate=\(String(describing: bufferUpdate))")
 
         if change.nodes {
             self.bufferUpdate = self.prepareTopologyUpdate(graph)
@@ -140,9 +140,9 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
             }
         }
 
-        if self.bufferUpdate != nil {
-            debug("GraphWireFrame", "graphHasChanged: created bufferUpdate")
-        }
+//        if self.bufferUpdate != nil {
+//            debug("GraphWireFrame", "graphHasChanged: done. bufferUpdate=\(String(describing: bufferUpdate))")
+//        }
     }
 
     /// Runs on rendering thread
