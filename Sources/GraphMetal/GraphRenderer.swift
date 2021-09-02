@@ -62,6 +62,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
 
     public var nodeSize = RendererSettings.defaults.nodeSize
 
+    public var nodeSizeMinimum: Double = RendererSettings.defaults.nodeSizeMinimum
+
     public var nodeSizeMaximum: Double = RendererSettings.defaults.nodeSizeMaximum
 
     public var edgeColorDefault = RendererSettings.defaults.edgeColorDefault
@@ -159,7 +161,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
     public func adjustNodeSize(povDistance: Double) {
         if nodeSizeAutomatic {
             let newSize = RendererConstants.nodeSizeScaleFactor / povDistance
-            self.nodeSize = newSize.clamp(1, nodeSizeMaximum)
+            self.nodeSize = newSize.clamp(nodeSizeMinimum, nodeSizeMaximum)
             debug("Renderer", "adjustNodeSize: newSize = \(nodeSize)")
         }
         else {

@@ -33,6 +33,7 @@ public struct RendererSettings: RendererProperties {
 
     public static let defaults = RendererSettings(nodeSize: 25,
                                                    nodeSizeAutomatic: true,
+                                                   nodeSizeMinimum: 2,
                                                    nodeSizeMaximum: 100,
                                                    nodeColorDefault: SIMD4<Double>(0, 0, 0, 1),
                                                    edgeColorDefault: SIMD4<Double>(0.2, 0.2, 0.2, 1),
@@ -43,7 +44,10 @@ public struct RendererSettings: RendererProperties {
     /// indicates whether node size should be automatically adjusted when the POV changes
     public var nodeSizeAutomatic: Bool
 
-    /// maximum node size for automatic adjustments
+    /// minimum node size for automatic adjustments. Ignored if nodeSizeAutomatic = false
+    public var nodeSizeMinimum: Double
+
+    /// maximum node size for automatic adjustments. Ignored if nodeSizeAutomatic = false
     public var nodeSizeMaximum: Double
 
     public var nodeColorDefault: SIMD4<Double>
@@ -54,12 +58,14 @@ public struct RendererSettings: RendererProperties {
 
     public init(nodeSize: Double = defaults.nodeSize,
                 nodeSizeAutomatic: Bool = defaults.nodeSizeAutomatic,
+                nodeSizeMinimum: Double = defaults.nodeSizeMinimum,
                 nodeSizeMaximum: Double = defaults.nodeSizeMaximum,
                 nodeColorDefault: SIMD4<Double> = defaults.nodeColorDefault,
                 edgeColorDefault: SIMD4<Double> = defaults.edgeColorDefault,
                 backgroundColor: SIMD4<Double> = defaults.backgroundColor) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
+        self.nodeSizeMinimum = nodeSizeMinimum
         self.nodeSizeMaximum = nodeSizeMaximum
         self.nodeColorDefault = nodeColorDefault
         self.edgeColorDefault = edgeColorDefault
@@ -69,6 +75,7 @@ public struct RendererSettings: RendererProperties {
     mutating public func restoreDefaults() {
         self.nodeSize = Self.defaults.nodeSize
         self.nodeSizeAutomatic = Self.defaults.nodeSizeAutomatic
+        self.nodeSizeMinimum = Self.defaults.nodeSizeMinimum
         self.nodeSizeMaximum = Self.defaults.nodeSizeMaximum
         self.nodeColorDefault = Self.defaults.nodeColorDefault
         self.edgeColorDefault = Self.defaults.edgeColorDefault
