@@ -71,7 +71,8 @@ public struct POV: Codable, CustomStringConvertible {
     func turnToward(center newCenter: SIMD3<Float>) -> POV {
         let oldForward = self.forward
         let newForward = normalize(center - location)
-        let newUp = rotateAlign(newForward, oldForward) * up
+        // let newUp = rotateAlign(newForward, oldForward) * up
+        let newUp = float3x3(rotateFrom: newForward, to: oldForward) * up
         return POV(location: location,
                    center: newCenter,
                    up: newUp)
