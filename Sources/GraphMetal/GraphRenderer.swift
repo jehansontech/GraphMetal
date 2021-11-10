@@ -568,30 +568,29 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 
     @objc func pinch(_ gesture: NSMagnificationGestureRecognizer) {
         print("Renderer(macOS) pinch")
-// TODO
-//        if var pinchHandler = pinchHandler,
-//           let view  = gesture.view,
-//           gesture.numberOfTouches > 1  {
-//
-//            switch gesture.state {
-//            case .possible:
-//                break
-//            case .began:
-//                pinchHandler.pinchBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
-//                                                      gesture.location(ofTouch: 1, in: view),
-//                                                      view.bounds))
-//            case .changed:
-//                pinchHandler.pinchChanged(by: Float(gesture.scale))
-//            case .ended:
-//                pinchHandler.pinchEnded()
-//            case .cancelled:
-//                break
-//            case .failed:
-//                break
-//            @unknown default:
-//                break
-//            }
-//        }
+
+        if var pinchHandler = pinchHandler,
+           let view  = gesture.view  {
+
+            switch gesture.state {
+            case .possible:
+                break
+            case .began:
+                pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view),
+                                                      gesture.location(in: view),
+                                                      view.bounds))
+            case .changed:
+                pinchHandler.pinchChanged(by: Float(gesture.magnification))
+            case .ended:
+                pinchHandler.pinchEnded()
+            case .cancelled:
+                break
+            case .failed:
+                break
+            @unknown default:
+                break
+            }
+        }
     }
 
     @objc func rotate(_ gesture: NSRotationGestureRecognizer) {
@@ -600,25 +599,24 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
         if var rotationHandler = rotationHandler,
            let view  = gesture.view  {
 
-            // TODO
-//            switch gesture.state {
-//            case .possible:
-//                break
-//            case .began:
-//                rotationHandler.rotationBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
-//                                                            gesture.location(ofTouch: 1, in: view),
-//                                                            view.bounds))
-//            case .changed:
-//                rotationHandler.rotationChanged(by: Float(gesture.rotation))
-//            case .ended:
-//                rotationHandler.rotationEnded()
-//            case .cancelled:
-//                break
-//            case .failed:
-//                break
-//            @unknown default:
-//                break
-//            }
+            switch gesture.state {
+            case .possible:
+                break
+            case .began:
+                rotationHandler.rotationBegan(at: clipPoint(gesture.location(in: view),
+                                                            gesture.location(in: view),
+                                                            view.bounds))
+            case .changed:
+                rotationHandler.rotationChanged(by: Float(gesture.rotation))
+            case .ended:
+                rotationHandler.rotationEnded()
+            case .cancelled:
+                break
+            case .failed:
+                break
+            @unknown default:
+                break
+            }
         }
     }
 
