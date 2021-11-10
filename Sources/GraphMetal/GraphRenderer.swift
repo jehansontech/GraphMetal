@@ -487,56 +487,54 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
 public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGestureRecognizerDelegate {
 
     @objc func tap(_ gesture: NSClickGestureRecognizer) {
-        print("GraphRenderer(macOS) tap")
-// TODO
-//        if var tapHandler = self.tapHandler,
-//           let view = gesture.view,
-//           gesture.numberOfTouches > 0 {
-//
-//            switch gesture.state {
-//            case .possible:
-//                break
-//            case .began:
-//                break
-//            case .changed:
-//                break
-//            case .ended:
-//                tapHandler.tap(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
-//            case .cancelled:
-//                break
-//            case .failed:
-//                break
-//            @unknown default:
-//                break
-//            }
-//        }
+        // print("GraphRenderer(macOS) tap")
+
+        if var tapHandler = self.tapHandler,
+           let view = gesture.view {
+
+            switch gesture.state {
+            case .possible:
+                break
+            case .began:
+                break
+            case .changed:
+                break
+            case .ended:
+                tapHandler.tap(at: clipPoint(gesture.location(in: view), view.bounds))
+            case .cancelled:
+                break
+            case .failed:
+                break
+            @unknown default:
+                break
+            }
+        }
     }
 
     @objc func longPress(_ gesture: NSPressGestureRecognizer) {
-        print("GraphRenderer(macOS) longPress")
-// TODO
-//        if var longPressHandler = longPressHandler,
-//           let view = gesture.view,
-//           gesture.numberOfTouches > 0  {
-//
-//            switch gesture.state {
-//            case .possible:
-//                break
-//            case .began:
-//                longPressHandler.longPressBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
-//            case .changed:
-//                longPressHandler.longPressEnded()
-//                break
-//            case .ended:
-//                longPressHandler.longPressEnded()
-//            case .cancelled:
-//                break
-//            case .failed:
-//                break
-//            @unknown default:
-//                break
-//            }
-//        }
+        // print("GraphRenderer(macOS) longPress")
+
+        if var longPressHandler = longPressHandler,
+           let view = gesture.view  {
+
+            switch gesture.state {
+            case .possible:
+                break
+            case .began:
+                longPressHandler.longPressBegan(at: clipPoint(gesture.location(in: view), view.bounds))
+            case .changed:
+                longPressHandler.longPressEnded()
+                break
+            case .ended:
+                longPressHandler.longPressEnded()
+            case .cancelled:
+                break
+            case .failed:
+                break
+            @unknown default:
+                break
+            }
+        }
     }
 
     @objc func pan(_ gesture: NSPanGestureRecognizer) {
