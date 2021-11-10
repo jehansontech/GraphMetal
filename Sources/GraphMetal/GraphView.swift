@@ -22,10 +22,7 @@ import GenericGraph
 // which suggests to me that I can create a @State in view containing this guy
 // and pass it in to this guy's init as a Binding.
 
-
-public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
-
-    public typealias UIViewType = MTKView
+public struct GraphView<S: RenderableGraphHolder> {
 
     @Binding var rendererSettings: RendererSettings
 
@@ -68,6 +65,21 @@ public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
             fatalError("Problem creating renderer: \(error)")
         }
     }
+
+
+    func updateProjection(viewSize: CGSize) {
+        povController.updateProjection(viewSize: viewSize)
+    }
+
+    func updatePOV() {
+        povController.updateModelView(Date())
+    }
+}
+
+#if os(iOS)
+extension GraphView: UIViewRepresentable {
+
+    public typealias UIViewType = MTKView
 
     public func makeUIView(context: Context) -> MTKView {
         debug("GraphView", "makeUIView")
@@ -138,14 +150,12 @@ public struct GraphView<S: RenderableGraphHolder>: UIViewRepresentable {
         context.coordinator.applySettings(rendererSettings)
     }
 
-    func updateProjection(viewSize: CGSize) {
-        povController.updateProjection(viewSize: viewSize)
-    }
-
-    func updatePOV() {
-        povController.updateModelView(Date())
-    }
 }
+#elseif os(macOS)
+extension GraphView: NSViewRepresentable {
+
+}
+#endif
 
 
 
