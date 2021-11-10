@@ -152,9 +152,7 @@ extension GraphView: UIViewRepresentable {
 
 }
 #elseif os(macOS)
-extension GraphView: NSViewRepresentable {
-
-}
+// TODO
 #endif
 
 

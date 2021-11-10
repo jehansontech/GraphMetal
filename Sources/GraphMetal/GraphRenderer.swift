@@ -51,7 +51,7 @@ public protocol RendererControls: RendererProperties, AnyObject {
 ///
 ///
 ///
-public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, UIGestureRecognizerDelegate, RendererControls {
+public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, RendererControls {
 
     typealias NodeValueType = S.GraphType.NodeType.ValueType
     typealias EdgeValueType = S.GraphType.EdgeType.ValueType
@@ -268,6 +268,78 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
     }
     
     
+    private func preDraw(_ view: MTKView) {
+
+        let t0 = Date()
+
+
+        // Update POV based on current time, in case it's moving on its own
+        parent.povController.updateModelView(t0)
+
+        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, screenScaleFactor, nodeSize, edgeColorDefault)
+
+        let dt = Date().timeIntervalSince(t0)
+        if (dt > 1/30) {
+            debug("Renderer", "predraw: elapsed time \(dt)")
+        }
+
+    }
+
+    private func takeScreenshot(_ view: MTKView) {
+
+        // Adapted from
+        // https://stackoverflow.com/questions/33844130/take-a-snapshot-of-current-screen-with-metal-in-swift
+        // [accessed 04/2021]
+
+        guard
+            let texture = view.currentDrawable?.texture
+        else {
+            return
+        }
+
+        let width = texture.width
+        let height   = texture.height
+        let rowBytes = texture.width * 4
+        let p = malloc(width * height * 4)
+        texture.getBytes(p!, bytesPerRow: rowBytes, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
+
+        let pColorSpace = CGColorSpaceCreateDeviceRGB()
+
+        let rawBitmapInfo = CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+        let bitmapInfo:CGBitmapInfo = CGBitmapInfo(rawValue: rawBitmapInfo)
+
+        let selftureSize = texture.width * texture.height * 4
+        let releaseMaskImagePixelData: CGDataProviderReleaseDataCallback = { (info: UnsafeMutableRawPointer?, data: UnsafeRawPointer, size: Int) -> () in
+            return
+        }
+        let provider = CGDataProvider(dataInfo: nil, data: p!, size: selftureSize, releaseData: releaseMaskImagePixelData)
+        let cgImage = CGImage(width: texture.width,
+                              height: texture.height,
+                              bitsPerComponent: 8,
+                              bitsPerPixel: 32,
+                              bytesPerRow: rowBytes,
+                              space: pColorSpace,
+                              bitmapInfo: bitmapInfo,
+                              provider: provider!,
+                              decode: nil,
+                              shouldInterpolate: true,
+                              intent: CGColorRenderingIntent.defaultIntent)
+
+        if let cgImage = cgImage {
+            #if os(iOS)
+            let uiImage = UIImage(cgImage: cgImage)
+            UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
+            #elseif os(macOS)
+            // TODO
+            #endif
+        }
+    }
+
+}
+
+#if os(iOS)
+extension GraphRenderer: UIGestureRecognizerDelegate {
+
     @objc func tap(_ gesture: UITapGestureRecognizer) {
         // print("Renderer.tap")
         if var tapHandler = self.tapHandler,
@@ -410,71 +482,11 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
         return true
     }
 
-    private func preDraw(_ view: MTKView) {
-
-        let t0 = Date()
-
-
-        // Update POV based on current time, in case it's moving on its own
-        parent.povController.updateModelView(t0)
-
-        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, screenScaleFactor, nodeSize, edgeColorDefault)
-
-        let dt = Date().timeIntervalSince(t0)
-        if (dt > 1/30) {
-            debug("Renderer", "predraw: elapsed time \(dt)")
-        }
-
-    }
-
-    private func takeScreenshot(_ view: MTKView) {
-
-        // Adapted from
-        // https://stackoverflow.com/questions/33844130/take-a-snapshot-of-current-screen-with-metal-in-swift
-        // [accessed 04/2021]
-
-        guard
-            let texture = view.currentDrawable?.texture
-        else {
-            return
-        }
-
-        let width = texture.width
-        let height   = texture.height
-        let rowBytes = texture.width * 4
-        let p = malloc(width * height * 4)
-        texture.getBytes(p!, bytesPerRow: rowBytes, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
-
-        let pColorSpace = CGColorSpaceCreateDeviceRGB()
-
-        let rawBitmapInfo = CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
-        let bitmapInfo:CGBitmapInfo = CGBitmapInfo(rawValue: rawBitmapInfo)
-
-        let selftureSize = texture.width * texture.height * 4
-        let releaseMaskImagePixelData: CGDataProviderReleaseDataCallback = { (info: UnsafeMutableRawPointer?, data: UnsafeRawPointer, size: Int) -> () in
-            return
-        }
-        let provider = CGDataProvider(dataInfo: nil, data: p!, size: selftureSize, releaseData: releaseMaskImagePixelData)
-        let cgImage = CGImage(width: texture.width,
-                              height: texture.height,
-                              bitsPerComponent: 8,
-                              bitsPerPixel: 32,
-                              bytesPerRow: rowBytes,
-                              space: pColorSpace,
-                              bitmapInfo: bitmapInfo,
-                              provider: provider!,
-                              decode: nil,
-                              shouldInterpolate: true,
-                              intent: CGColorRenderingIntent.defaultIntent)
-
-        if let cgImage = cgImage {
-            let uiImage = UIImage(cgImage: cgImage)
-            UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
-        }
-    }
 
 }
-
+#elseif os(macOS)
+// TODO
+#endif
 
 fileprivate func clipX(_ viewX: CGFloat, _ viewWidth: CGFloat) -> Float {
     //            let clipX: Float = Float(2 * loc.x / view.bounds.width - 1)
@@ -495,6 +507,7 @@ fileprivate func clipPoint(_ viewPt0: CGPoint, _ viewPt1: CGPoint, _ viewSize: C
                         clipY((viewPt0.y + viewPt1.y)/2, viewSize.height))
 }
 
+#if os(iOS)
 fileprivate func describeGR(_ gr: UIGestureRecognizer) -> String {
 
     let grName: String
@@ -537,3 +550,4 @@ fileprivate func describeGR(_ gr: UIGestureRecognizer) -> String {
 
     return "\(grName) \(stateString)"
 }
+#endif
