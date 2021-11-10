@@ -51,7 +51,7 @@ public protocol RendererControls: RendererProperties, AnyObject {
 ///
 ///
 ///
-public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, RendererControls {
+public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, RendererControls {
 
     typealias NodeValueType = S.GraphType.NodeType.ValueType
     typealias EdgeValueType = S.GraphType.EdgeType.ValueType
@@ -326,19 +326,20 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, MTKViewDelegate,
                               intent: CGColorRenderingIntent.defaultIntent)
 
         if let cgImage = cgImage {
-            #if os(iOS)
+
+#if os(iOS)
             let uiImage = UIImage(cgImage: cgImage)
             UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
-            #elseif os(macOS)
+#elseif os(macOS)
             // TODO
-            #endif
+#endif
         }
     }
 
 }
 
 #if os(iOS)
-extension GraphRenderer: UIGestureRecognizerDelegate {
+public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGestureRecognizerDelegate {
 
     @objc func tap(_ gesture: UITapGestureRecognizer) {
         // print("Renderer.tap")
@@ -481,11 +482,160 @@ extension GraphRenderer: UIGestureRecognizerDelegate {
 
         return true
     }
-
-
 }
 #elseif os(macOS)
-// TODO
+public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGestureRecognizerDelegate {
+
+    // TODO
+//    @objc func tap(_ gesture: NSTapGestureRecognizer) {
+//        // print("Renderer.tap")
+//        if var tapHandler = self.tapHandler,
+//           let view = gesture.view,
+//           gesture.numberOfTouches > 0 {
+//
+//            switch gesture.state {
+//            case .possible:
+//                break
+//            case .began:
+//                break
+//            case .changed:
+//                break
+//            case .ended:
+//                tapHandler.tap(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+//            case .cancelled:
+//                break
+//            case .failed:
+//                break
+//            @unknown default:
+//                break
+//            }
+//        }
+//    }
+
+    // TODO
+//    @objc func longPress(_ gesture: NSLongPressGestureRecognizer) {
+//        // print("Renderer.longPress")
+//        if var longPressHandler = longPressHandler,
+//           let view = gesture.view,
+//           gesture.numberOfTouches > 0  {
+//
+//            switch gesture.state {
+//            case .possible:
+//                break
+//            case .began:
+//                longPressHandler.longPressBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+//            case .changed:
+//                longPressHandler.longPressEnded()
+//                break
+//            case .ended:
+//                longPressHandler.longPressEnded()
+//            case .cancelled:
+//                break
+//            case .failed:
+//                break
+//            @unknown default:
+//                break
+//            }
+//        }
+//    }
+
+    @objc func pan(_ gesture: NSPanGestureRecognizer) {
+        // print("Renderer.pan")
+
+        // TODO
+//        if var dragHandler = self.dragHandler,
+//           let view  = gesture.view,
+//           gesture.numberOfTouches > 0  {
+//
+//            switch gesture.state {
+//            case .possible:
+//                break
+//            case .began:
+//                dragHandler.dragBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+//            case .changed:
+//                let translation = gesture.translation(in: view)
+//                dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
+//                                        scroll: Float(-translation.y / view.bounds.height))
+//            case .ended:
+//                dragHandler.dragEnded()
+//            case .cancelled:
+//                break
+//            case .failed:
+//                break
+//            @unknown default:
+//                break
+//            }
+//        }
+    }
+
+    // TODO
+//    @objc func pinch(_ gesture: NSPinchGestureRecognizer) {
+//        // print("Renderer.pinch")
+//        if var pinchHandler = pinchHandler,
+//           let view  = gesture.view,
+//           gesture.numberOfTouches > 1  {
+//
+//            switch gesture.state {
+//            case .possible:
+//                break
+//            case .began:
+//                pinchHandler.pinchBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
+//                                                      gesture.location(ofTouch: 1, in: view),
+//                                                      view.bounds))
+//            case .changed:
+//                pinchHandler.pinchChanged(by: Float(gesture.scale))
+//            case .ended:
+//                pinchHandler.pinchEnded()
+//            case .cancelled:
+//                break
+//            case .failed:
+//                break
+//            @unknown default:
+//                break
+//            }
+//        }
+//    }
+
+    @objc func rotate(_ gesture: NSRotationGestureRecognizer) {
+        // print("Renderer.rotate")
+
+        // TODO
+//        if var rotationHandler = rotationHandler,
+//           let view  = gesture.view,
+//           gesture.numberOfTouches > 1  {
+//
+//            switch gesture.state {
+//            case .possible:
+//                break
+//            case .began:
+//                rotationHandler.rotationBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
+//                                                            gesture.location(ofTouch: 1, in: view),
+//                                                            view.bounds))
+//            case .changed:
+//                rotationHandler.rotationChanged(by: Float(gesture.rotation))
+//            case .ended:
+//                rotationHandler.rotationEnded()
+//            case .cancelled:
+//                break
+//            case .failed:
+//                break
+//            @unknown default:
+//                break
+//            }
+//        }
+    }
+
+    /// needed in order to do simultaneous gestures
+    public func gestureRecognizer(_ gestureRecognizer: NSGestureRecognizer, shouldRecognizeSimultaneouslyWith: NSGestureRecognizer) -> Bool {
+        // print("simultaneous gestures: \(describeGR(gestureRecognizer)) + \(describeGR(shouldRecognizeSimultaneouslyWith))")
+        if gestureRecognizer is NSPanGestureRecognizer || shouldRecognizeSimultaneouslyWith is NSPanGestureRecognizer {
+            return false
+        }
+
+        return true
+    }
+
+}
 #endif
 
 fileprivate func clipX(_ viewX: CGFloat, _ viewWidth: CGFloat) -> Float {

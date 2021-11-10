@@ -82,8 +82,8 @@ extension GraphView: UIViewRepresentable {
     public typealias UIViewType = MTKView
 
     public func makeUIView(context: Context) -> MTKView {
-        debug("GraphView", "makeUIView")
-        debug("GraphView", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
+        debug("GraphView (iOS)", "makeUIView")
+        debug("GraphView (iOS)", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
 
         let mtkView = MTKView()
 
@@ -140,7 +140,7 @@ extension GraphView: UIViewRepresentable {
     }
 
     public func updateUIView(_ mtkView: MTKView, context: Context) {
-        debug("GraphView", "updateUIView")
+        debug("GraphView (iOS)", "updateUIView")
 
         mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
                                                rendererSettings.backgroundColor.y,
@@ -152,7 +152,81 @@ extension GraphView: UIViewRepresentable {
 
 }
 #elseif os(macOS)
-// TODO
+extension GraphView: NSViewRepresentable {
+    public typealias NSViewType = MTKView
+
+    public func makeNSView(context: Context) -> MTKView {
+        debug("GraphView (macOS)", "makeUIView")
+        debug("GraphView (macOS)", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
+
+        let mtkView = MTKView()
+
+        mtkView.delegate = context.coordinator
+        mtkView.preferredFramesPerSecond = 60
+        mtkView.enableSetNeedsDisplay = true
+        mtkView.device = context.coordinator.device
+        mtkView.framebufferOnly = false
+        mtkView.drawableSize = mtkView.frame.size
+        mtkView.enableSetNeedsDisplay = true
+
+        mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
+        mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
+
+        mtkView.isPaused = false
+
+        if let tapHandler = self.tapHandler {
+            // TODO
+//            context.coordinator.tapHandler = tapHandler
+//            let tapGR = NSTapGestureRecognizer(target: context.coordinator,
+//                                               action: #selector(context.coordinator.tap))
+//            mtkView.addGestureRecognizer(tapGR)
+        }
+
+        if let longPressHandler = self.longPressHandler {
+            // TODO
+//            context.coordinator.longPressHandler = longPressHandler
+//            let longPressGR = NSLongPressGestureRecognizer(target: context.coordinator,
+//                                                           action: #selector(context.coordinator.longPress))
+//            mtkView.addGestureRecognizer(longPressGR)
+        }
+
+        context.coordinator.dragHandler = povController
+        context.coordinator.pinchHandler = povController
+        context.coordinator.rotationHandler = povController
+
+        let panGR = NSPanGestureRecognizer(target: context.coordinator,
+                                           action: #selector(context.coordinator.pan))
+        panGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(panGR)
+
+
+        // TODO
+//        let pinchGR = NSPinchGestureRecognizer(target: context.coordinator,
+//                                               action: #selector(context.coordinator.pinch))
+//        pinchGR.delegate = context.coordinator
+//        mtkView.addGestureRecognizer(pinchGR)
+
+
+        let rotationGR = NSRotationGestureRecognizer(target: context.coordinator,
+                                                     action: #selector(context.coordinator.rotate))
+        rotationGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(rotationGR)
+
+        self.updateNSView(mtkView, context: context)
+        return mtkView
+    }
+
+    public func updateNSView(_ mtkView: MTKView, context: Context) {
+        debug("GraphView (macOS)", "updateUIView")
+
+        mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
+                                               rendererSettings.backgroundColor.y,
+                                               rendererSettings.backgroundColor.z,
+                                               rendererSettings.backgroundColor.w)
+
+        context.coordinator.applySettings(rendererSettings)
+    }
+}
 #endif
 
 
