@@ -487,7 +487,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
 public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGestureRecognizerDelegate {
 
     @objc func tap(_ gesture: NSClickGestureRecognizer) {
-        print("Renderer.tap")
+        print("GraphRenderer(macOS) tap")
 // TODO
 //        if var tapHandler = self.tapHandler,
 //           let view = gesture.view,
@@ -513,7 +513,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
     }
 
     @objc func longPress(_ gesture: NSPressGestureRecognizer) {
-        print("Renderer.longPress")
+        print("GraphRenderer(macOS) longPress")
 // TODO
 //        if var longPressHandler = longPressHandler,
 //           let view = gesture.view,
@@ -540,36 +540,34 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
     }
 
     @objc func pan(_ gesture: NSPanGestureRecognizer) {
-        print("Renderer.pan")
+        print("GraphRenderer(macOS) pan")
 
-        // TODO
-//        if var dragHandler = self.dragHandler,
-//           let view  = gesture.view,
-//           gesture.numberOfTouches > 0  {
-//
-//            switch gesture.state {
-//            case .possible:
-//                break
-//            case .began:
-//                dragHandler.dragBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
-//            case .changed:
-//                let translation = gesture.translation(in: view)
-//                dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
-//                                        scroll: Float(-translation.y / view.bounds.height))
-//            case .ended:
-//                dragHandler.dragEnded()
-//            case .cancelled:
-//                break
-//            case .failed:
-//                break
-//            @unknown default:
-//                break
-//            }
-//        }
+        if var dragHandler = self.dragHandler,
+           let view  = gesture.view  {
+
+            switch gesture.state {
+            case .possible:
+                break
+            case .began:
+                dragHandler.dragBegan(at: clipPoint(gesture.location(in: view), view.bounds))
+            case .changed:
+                let translation = gesture.translation(in: view)
+                dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
+                                        scroll: Float(-translation.y / view.bounds.height))
+            case .ended:
+                dragHandler.dragEnded()
+            case .cancelled:
+                break
+            case .failed:
+                break
+            @unknown default:
+                break
+            }
+        }
     }
 
     @objc func pinch(_ gesture: NSMagnificationGestureRecognizer) {
-        print("Renderer.pinch")
+        print("Renderer(macOS) pinch")
 // TODO
 //        if var pinchHandler = pinchHandler,
 //           let view  = gesture.view,
@@ -597,13 +595,12 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
     }
 
     @objc func rotate(_ gesture: NSRotationGestureRecognizer) {
-        print("Renderer.rotate")
+        print("Renderer(macOS) rotate")
 
-        // TODO
-//        if var rotationHandler = rotationHandler,
-//           let view  = gesture.view,
-//           gesture.numberOfTouches > 1  {
-//
+        if var rotationHandler = rotationHandler,
+           let view  = gesture.view  {
+
+            // TODO
 //            switch gesture.state {
 //            case .possible:
 //                break
@@ -622,7 +619,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 //            @unknown default:
 //                break
 //            }
-//        }
+        }
     }
 
     /// needed in order to do simultaneous gestures
