@@ -175,19 +175,17 @@ extension GraphView: NSViewRepresentable {
         mtkView.isPaused = false
 
         if let tapHandler = self.tapHandler {
-            // TODO
-//            context.coordinator.tapHandler = tapHandler
-//            let tapGR = NSTapGestureRecognizer(target: context.coordinator,
-//                                               action: #selector(context.coordinator.tap))
-//            mtkView.addGestureRecognizer(tapGR)
+            context.coordinator.tapHandler = tapHandler
+            let tapGR = NSClickGestureRecognizer(target: context.coordinator,
+                                               action: #selector(context.coordinator.tap))
+            mtkView.addGestureRecognizer(tapGR)
         }
 
         if let longPressHandler = self.longPressHandler {
-            // TODO
-//            context.coordinator.longPressHandler = longPressHandler
-//            let longPressGR = NSLongPressGestureRecognizer(target: context.coordinator,
-//                                                           action: #selector(context.coordinator.longPress))
-//            mtkView.addGestureRecognizer(longPressGR)
+            context.coordinator.longPressHandler = longPressHandler
+            let longPressGR = NSPressGestureRecognizer(target: context.coordinator,
+                                                           action: #selector(context.coordinator.longPress))
+            mtkView.addGestureRecognizer(longPressGR)
         }
 
         context.coordinator.dragHandler = povController
@@ -200,11 +198,10 @@ extension GraphView: NSViewRepresentable {
         mtkView.addGestureRecognizer(panGR)
 
 
-        // TODO
-//        let pinchGR = NSPinchGestureRecognizer(target: context.coordinator,
-//                                               action: #selector(context.coordinator.pinch))
-//        pinchGR.delegate = context.coordinator
-//        mtkView.addGestureRecognizer(pinchGR)
+        let pinchGR = NSMagnificationGestureRecognizer(target: context.coordinator,
+                                               action: #selector(context.coordinator.pinch))
+        pinchGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(pinchGR)
 
 
         let rotationGR = NSRotationGestureRecognizer(target: context.coordinator,

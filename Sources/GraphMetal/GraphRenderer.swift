@@ -486,9 +486,9 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
 #elseif os(macOS)
 public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGestureRecognizerDelegate {
 
-    // TODO
-//    @objc func tap(_ gesture: NSTapGestureRecognizer) {
-//        // print("Renderer.tap")
+    @objc func tap(_ gesture: NSClickGestureRecognizer) {
+        print("Renderer.tap")
+// TODO
 //        if var tapHandler = self.tapHandler,
 //           let view = gesture.view,
 //           gesture.numberOfTouches > 0 {
@@ -510,11 +510,11 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 //                break
 //            }
 //        }
-//    }
+    }
 
-    // TODO
-//    @objc func longPress(_ gesture: NSLongPressGestureRecognizer) {
-//        // print("Renderer.longPress")
+    @objc func longPress(_ gesture: NSPressGestureRecognizer) {
+        print("Renderer.longPress")
+// TODO
 //        if var longPressHandler = longPressHandler,
 //           let view = gesture.view,
 //           gesture.numberOfTouches > 0  {
@@ -537,10 +537,10 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 //                break
 //            }
 //        }
-//    }
+    }
 
     @objc func pan(_ gesture: NSPanGestureRecognizer) {
-        // print("Renderer.pan")
+        print("Renderer.pan")
 
         // TODO
 //        if var dragHandler = self.dragHandler,
@@ -568,9 +568,9 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 //        }
     }
 
-    // TODO
-//    @objc func pinch(_ gesture: NSPinchGestureRecognizer) {
-//        // print("Renderer.pinch")
+    @objc func pinch(_ gesture: NSMagnificationGestureRecognizer) {
+        print("Renderer.pinch")
+// TODO
 //        if var pinchHandler = pinchHandler,
 //           let view  = gesture.view,
 //           gesture.numberOfTouches > 1  {
@@ -594,10 +594,10 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 //                break
 //            }
 //        }
-//    }
+    }
 
     @objc func rotate(_ gesture: NSRotationGestureRecognizer) {
-        // print("Renderer.rotate")
+        print("Renderer.rotate")
 
         // TODO
 //        if var rotationHandler = rotationHandler,
