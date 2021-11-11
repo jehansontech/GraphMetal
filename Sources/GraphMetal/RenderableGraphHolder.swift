@@ -10,7 +10,7 @@ import GenericGraph
 ///
 ///
 extension Notification.Name {
-    static var graphHasChanged: Notification.Name { return .init("graphHasChanged") }
+    public static var graphHasChanged: Notification.Name { return .init("graphHasChanged") }
 }
 
 
