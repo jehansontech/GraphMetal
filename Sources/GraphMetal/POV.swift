@@ -9,7 +9,7 @@ import simd
 ///
 ///
 ///
-public struct POV: Codable, CustomStringConvertible {
+public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
     
     public static let defaultLocation = SIMD3<Float>(0, 0, 1)
     public static let defaultCenter    = SIMD3<Float>(0, 0, 0)
