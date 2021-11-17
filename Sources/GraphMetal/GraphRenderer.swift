@@ -431,7 +431,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
                                                       gesture.location(ofTouch: 1, in: view),
                                                       view.bounds))
             case .changed:
-                debug("Renderer(ios) pinch change by scale = \(gesture.scale)")
+                debug("Renderer(iOS) pinch changed by scale = \(gesture.scale)")
                 pinchHandler.pinchChanged(by: Float(gesture.scale))
             case .ended:
                 pinchHandler.pinchEnded()
@@ -491,7 +491,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
         if var tapHandler = self.tapHandler,
            let view = gesture.view {
 
-            debug("GraphRenderer(macOS)", "tap at \(gesture.location(in: view)) -> \(clipPoint(gesture.location(in: view), view.bounds))")
+            debug("GraphRenderer(macOS)", "tap at \(gesture.location(in: view)) -> clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
 
             switch gesture.state {
             case .possible:
@@ -578,8 +578,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view),
                                                       view.bounds))
             case .changed:
-                debug("Renderer(macOS) pinch changed to magnification \(gesture.magnification)")
-                pinchHandler.pinchChanged(by: Float(gesture.magnification))
+                debug("Renderer(macOS) pinch changed by magnification = \(gesture.magnification) -> scale = \(1 + gesture.magnification)")
+                pinchHandler.pinchChanged(by: Float(1 + gesture.magnification))
             case .ended:
                 pinchHandler.pinchEnded()
             case .cancelled:
