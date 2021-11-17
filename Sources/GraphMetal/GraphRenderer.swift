@@ -639,13 +639,13 @@ fileprivate func clipX(_ viewX: CGFloat, _ viewWidth: CGFloat) -> Float {
 
 #if os(iOS)
 fileprivate func clipY(_ viewY: CGFloat, _ viewHeight: CGFloat) -> Float {
-    // In iOS view coordinates, max Y is at the TOP of the screen
-    return Float(1 - (2 * viewY) / viewHeight)
+    // In iOS, viewY increases toward the TOP of the screen
+    return Float(1 - 2 * viewY / viewHeight)
 }
 #elseif os(macOS)
 fileprivate func clipY(_ viewY: CGFloat, _ viewHeight: CGFloat) -> Float {
-    // In macOS view coordinates, max Y is at the BOTTOM of the screen
-    return Float(2 * viewY / viewHeight)
+    // In macOS, viewY increaases toward the BOTTOM of the screen
+    return Float(2 * viewY / viewHeight - 1)
 }
 #endif
 
