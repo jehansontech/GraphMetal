@@ -426,10 +426,12 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .possible:
                 break
             case .began:
+                debug("Renderer(iOS) pinch began at clipPoint = \(clipPoint(gesture.location(ofTouch: 0, in: view), gesture.location(ofTouch: 1, in: view), view.bounds))")
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
                                                       gesture.location(ofTouch: 1, in: view),
                                                       view.bounds))
             case .changed:
+                debug("Renderer(ios) pinch change by scale = \(gesture.scale)")
                 pinchHandler.pinchChanged(by: Float(gesture.scale))
             case .ended:
                 pinchHandler.pinchEnded()
@@ -572,7 +574,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
-                debug("Renderer(macOS) pinch began at \(gesture.location(in: view))")
+                debug("Renderer(macOS) pinch began at clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view),
                                                       view.bounds))
             case .changed:
