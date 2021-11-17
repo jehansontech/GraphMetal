@@ -26,12 +26,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     var library: MTLLibrary
 
-//    /// FIXME This is a hardware factor that affects the visibie size of point primitives, independent of the
-//    /// screen bounds.
-//    /// * Retina displays have value 2
-//    /// * Older displays have value 1
-//    var screenScaleFactor: Double = 1
-
     var nodePipelineState: MTLRenderPipelineState!
 
     var nodeCount: Int = 0
@@ -77,7 +71,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
 
         self.device = device
-        // self.screenScaleFactor = screenScaleFactor
     }
 
     deinit {
@@ -234,7 +227,6 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
         let nodeSize = rendererProperties.nodeSize
         let edgeColor = rendererProperties.edgeColorDefault
-    // screenScaleFactor: Double, _ nodeSize: Double, _ edgeColor: SIMD4<Double>) {
 
         // ======================================
         // Rotate the uniforms buffers

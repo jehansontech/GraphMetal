@@ -11,19 +11,19 @@ import MetalKit
 ///
 public protocol RendererProperties {
 
-    var nodeSize: Double { get set }
+    var nodeSize: Double { get }
 
     /// indicates whether node size should be automatically adjusted when the POV changes
-    var nodeSizeAutomatic: Bool { get set }
+    var nodeSizeAutomatic: Bool { get }
 
     /// maximum node size for automatic adjustments
-    var nodeSizeMaximum: Double { get set }
+    var nodeSizeMaximum: Double { get }
 
-    var nodeColorDefault: SIMD4<Double> { get set }
+    var nodeColorDefault: SIMD4<Double> { get }
 
-    var edgeColorDefault: SIMD4<Double> { get set }
+    var edgeColorDefault: SIMD4<Double> { get }
 
-    var backgroundColor: SIMD4<Double> { get set }
+    var backgroundColor: SIMD4<Double> { get }
 }
 
 ///

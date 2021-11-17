@@ -110,12 +110,6 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     var graphWireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
     
-//    /// This is a hardware factor that affects the visibie size of point primitives, independent of the
-//    /// screen bounds.
-//    /// * Retina displays have value 2
-//    /// * Older displays have value 1
-//    var screenScaleFactor: Double = 1
-
     // private var _drawCount: Int = 0
 
     public init(_ parent: GraphView<S>) throws {
@@ -276,7 +270,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         // Update POV based on current time, in case it's moving on its own
         parent.povController.updateModelView(t0)
 
-        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, self as RendererProperties)
+        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, self)
 
         let dt = Date().timeIntervalSince(t0)
         if (dt > 1/30) {
