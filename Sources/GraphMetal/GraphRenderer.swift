@@ -426,12 +426,12 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .possible:
                 break
             case .began:
-                debug("Renderer(iOS) pinch began at clipPoint = \(clipPoint(gesture.location(ofTouch: 0, in: view), gesture.location(ofTouch: 1, in: view), view.bounds))")
+                // debug("Renderer(iOS) pinch began at clipPoint = \(clipPoint(gesture.location(ofTouch: 0, in: view), gesture.location(ofTouch: 1, in: view), view.bounds))")
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
                                                       gesture.location(ofTouch: 1, in: view),
                                                       view.bounds))
             case .changed:
-                debug("Renderer(iOS) pinch changed by scale = \(gesture.scale)")
+                // debug("Renderer(iOS) pinch changed by scale = \(gesture.scale)")
                 pinchHandler.pinchChanged(by: Float(gesture.scale))
             case .ended:
                 pinchHandler.pinchEnded()
@@ -491,7 +491,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
         if var tapHandler = self.tapHandler,
            let view = gesture.view {
 
-            debug("GraphRenderer(macOS)", "tap at \(gesture.location(in: view)) -> clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
+            // debug("GraphRenderer(macOS)", "tap at \(gesture.location(in: view)) -> clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
 
             switch gesture.state {
             case .possible:
@@ -551,8 +551,9 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
                 dragHandler.dragBegan(at: clipPoint(gesture.location(in: view), view.bounds))
             case .changed:
                 let translation = gesture.translation(in: view)
+                // macOS view coords, y axis direction is reverse of iOS
                 dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
-                                        scroll: Float(-translation.y / view.bounds.height))
+                                        scroll: Float(translation.y / view.bounds.height))
             case .ended:
                 dragHandler.dragEnded()
             case .cancelled:
@@ -574,11 +575,11 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
-                debug("Renderer(macOS) pinch began at clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
+                // debug("Renderer(macOS)", "pinch began at clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view),
                                                       view.bounds))
             case .changed:
-                debug("Renderer(macOS) pinch changed by magnification = \(gesture.magnification) -> scale = \(1 + gesture.magnification)")
+                // debug("Renderer(macOS)", "pinch changed by magnification = \(gesture.magnification) -> scale = \(1 + gesture.magnification)")
                 pinchHandler.pinchChanged(by: Float(1 + gesture.magnification))
             case .ended:
                 pinchHandler.pinchEnded()
