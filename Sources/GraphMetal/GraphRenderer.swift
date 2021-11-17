@@ -341,6 +341,9 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
            let view = gesture.view,
            gesture.numberOfTouches > 0 {
 
+            debug("GraphRenderer(iOS)", "tap at \(gesture.location(ofTouch: 0, in: view)) -> \(clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))")
+
+
             switch gesture.state {
             case .possible:
                 break
@@ -486,6 +489,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
         if var tapHandler = self.tapHandler,
            let view = gesture.view {
 
+            debug("GraphRenderer(macOS)", "tap at \(gesture.location(in: view)) -> \(clipPoint(gesture.location(in: view), view.bounds))")
+
             switch gesture.state {
             case .possible:
                 break
@@ -559,7 +564,6 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
     }
 
     @objc func pinch(_ gesture: NSMagnificationGestureRecognizer) {
-        print("Renderer(macOS) pinch")
 
         if var pinchHandler = pinchHandler,
            let view  = gesture.view  {
@@ -568,10 +572,11 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
+                debug("Renderer(macOS) pinch began at \(gesture.location(in: view))")
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view),
-                                                      gesture.location(in: view),
                                                       view.bounds))
             case .changed:
+                debug("Renderer(macOS) pinch changed to magnification \(gesture.magnification)")
                 pinchHandler.pinchChanged(by: Float(gesture.magnification))
             case .ended:
                 pinchHandler.pinchEnded()
@@ -596,7 +601,6 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
                 break
             case .began:
                 rotationHandler.rotationBegan(at: clipPoint(gesture.location(in: view),
-                                                            gesture.location(in: view),
                                                             view.bounds))
             case .changed:
                 rotationHandler.rotationChanged(by: Float(gesture.rotation))
