@@ -11,7 +11,7 @@ import GenericGraph
 import Shaders
 import Wacoma
 
-class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: GraphRenderEncoder {
+class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     typealias NodeValueType = N
 
@@ -26,11 +26,11 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
 
     var library: MTLLibrary
 
-    /// This is a hardware factor that affects the visibie size of point primitives, independent of the
-    /// screen bounds.
-    /// * Retina displays have value 2
-    /// * Older displays have value 1
-    var screenScaleFactor: Double = 1
+//    /// FIXME This is a hardware factor that affects the visibie size of point primitives, independent of the
+//    /// screen bounds.
+//    /// * Retina displays have value 2
+//    /// * Older displays have value 1
+//    var screenScaleFactor: Double = 1
 
     var nodePipelineState: MTLRenderPipelineState!
 
@@ -67,7 +67,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
 
     // ==============================================================
 
-    init(_ device: MTLDevice, _ screenScaleFactor: Double) throws {
+    init(_ device: MTLDevice) throws {
         debug("GraphWireFrame", "init")
         if let library = Shaders.makeLibrary(device) {
             self.library = library
@@ -77,7 +77,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
         }
 
         self.device = device
-        self.screenScaleFactor = screenScaleFactor
+        // self.screenScaleFactor = screenScaleFactor
     }
 
     deinit {
@@ -230,7 +230,11 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
     }
 
     // FIXME args are awkward
-    func preDraw(_ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, _ screenScaleFactor: Double, _ nodeSize: Double, _ edgeColor: SIMD4<Double>) {
+    func preDraw(_ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, _ rendererProperties: RendererProperties) {
+
+        let nodeSize = rendererProperties.nodeSize
+        let edgeColor = rendererProperties.edgeColorDefault
+    // screenScaleFactor: Double, _ nodeSize: Double, _ edgeColor: SIMD4<Double>) {
 
         // ======================================
         // Rotate the uniforms buffers
@@ -246,7 +250,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> { // }: Gra
 
         uniforms[0].projectionMatrix = projectionMatrix
         uniforms[0].modelViewMatrix = modelViewMatrix
-        uniforms[0].pointSize = Float(screenScaleFactor * nodeSize)
+        uniforms[0].pointSize = Float(nodeSize)
         uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
