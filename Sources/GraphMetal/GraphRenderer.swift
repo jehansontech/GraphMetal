@@ -537,7 +537,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
     }
 
     @objc func pan(_ gesture: NSPanGestureRecognizer) {
-        print("GraphRenderer(macOS) pan")
+        // print("GraphRenderer(macOS) pan")
 
         if var dragHandler = self.dragHandler,
            let view  = gesture.view  {
@@ -591,7 +591,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
     }
 
     @objc func rotate(_ gesture: NSRotationGestureRecognizer) {
-        print("Renderer(macOS) rotate")
+        // print("Renderer(macOS) rotate")
 
         if var rotationHandler = rotationHandler,
            let view  = gesture.view  {
@@ -629,15 +629,25 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 }
 #endif
 
+// ======================================================================
+// MARK:- conversion to clip space
+// ======================================================================
+
 fileprivate func clipX(_ viewX: CGFloat, _ viewWidth: CGFloat) -> Float {
-    //            let clipX: Float = Float(2 * loc.x / view.bounds.width - 1)
     return Float(2 * viewX / viewWidth - 1)
 }
 
+#if os(iOS)
 fileprivate func clipY(_ viewY: CGFloat, _ viewHeight: CGFloat) -> Float {
-    //            let clipY: Float = Float(1 - (2 * loc.y) / view.bounds.height)
+    // In iOS view coordinates, max Y is at the TOP of the screen
     return Float(1 - (2 * viewY) / viewHeight)
 }
+#elseif os(macOS)
+fileprivate func clipY(_ viewY: CGFloat, _ viewHeight: CGFloat) -> Float {
+    // In macOS view coordinates, max Y is at the BOTTOM of the screen
+    return Float(2 * viewY / viewHeight)
+}
+#endif
 
 fileprivate func clipPoint(_ viewPt: CGPoint, _ viewSize: CGRect) -> SIMD2<Float> {
     return SIMD2<Float>(clipX(viewPt.x, viewSize.width), clipY(viewPt.y, viewSize.height))
