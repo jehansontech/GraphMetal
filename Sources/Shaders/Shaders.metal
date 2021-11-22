@@ -64,7 +64,7 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
     vertexOut.color = float4(uniforms.edgeColor.x,
                              uniforms.edgeColor.y,
                              uniforms.edgeColor.z,
-                             uniforms.zFadeOffset + uniforms.zFadeFactor * uniforms.edgeColor.w);
+                             (uniforms.zFadeOffset + vertexIn.position.z * uniforms.zFadeFactor) * uniforms.edgeColor.w);
 
     return vertexOut;
 }
@@ -104,7 +104,7 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
     vertexOut.color = float4(vertexIn.color.x,
                              vertexIn.color.y,
                              vertexIn.color.z,
-                             uniforms.zFadeOffset + uniforms.zFadeFactor * vertexIn.color.w);
+                             (uniforms.zFadeOffset + vertexIn.position.z * uniforms.zFadeFactor) * vertexIn.color.w);
     return vertexOut;
 }
 
