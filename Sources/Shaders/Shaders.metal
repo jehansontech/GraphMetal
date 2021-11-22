@@ -60,7 +60,11 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
     NetVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
-    vertexOut.color = uniforms.edgeColor;
+
+    vertexOut.color = float4(uniforms.edgeColor.x,
+                             uniforms.edgeColor.y,
+                             uniforms.edgeColor.z,
+                             uniforms.zFadeOffset + uniforms.zFadeFactor * uniforms.edgeColor.w);
 
     return vertexOut;
 }
@@ -97,12 +101,10 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
     vertexOut.pointSize = uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
 
-    float w = vertexIn.color.w;
     vertexOut.color = float4(vertexIn.color.x,
                              vertexIn.color.y,
                              vertexIn.color.z,
-                             w);
-
+                             uniforms.zFadeOffset + uniforms.zFadeFactor * vertexIn.color.w);
     return vertexOut;
 }
 
