@@ -95,7 +95,12 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.pointSize = uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
-    vertexOut.color = vertexIn.color;
+
+    float w = vertexIn.color.w;
+    vertexOut.color = float4(vertexIn.color.x,
+                             vertexIn.color.y,
+                             vertexIn.color.z,
+                             w);
 
     return vertexOut;
 }
