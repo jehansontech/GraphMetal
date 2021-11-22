@@ -247,8 +247,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
-        uniforms[0].zFadeOffset = 0
-        uniforms[0].zFadeFactor = 1
+        uniforms[0].zFadeOffset = 1
+        uniforms[0].zFadeFactor = 0
     }
     
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
