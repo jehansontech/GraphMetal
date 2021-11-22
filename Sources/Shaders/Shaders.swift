@@ -22,6 +22,7 @@ public struct Uniforms {
     public var pointSize: Float
     public var edgeColor: simd_float4
     public var zFadeFactor: Float
+    public var zFaceOffset: Float
 }
 
 public struct Shaders {

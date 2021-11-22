@@ -37,6 +37,7 @@ typedef struct
     float pointSize;
     simd_float4 edgeColor;
     float zFadeFactor;
+    float zFaceOffset;
 } Uniforms;
 
 
