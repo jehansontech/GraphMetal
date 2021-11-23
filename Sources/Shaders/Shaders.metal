@@ -60,18 +60,23 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
     NetVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
-
-    float w = (uniforms.zFadeOffset + vertexIn.position.z * uniforms.zFadeFactor) * uniforms.edgeColor.w;
-    vertexOut.color = float4(uniforms.edgeColor.x,
-                             uniforms.edgeColor.y,
-                             uniforms.edgeColor.z,
-                             (w < 0) ? 0 : (w > 1 ? 1 : w));
+    vertexOut.color = uniforms.edgeColor
 
     return vertexOut;
 }
 
 fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
                              const device Uniforms&  uniforms [[ buffer(2) ]]) {
+
+
+// dimming
+//    float w = (uniforms.zFadeOffset + vertexOut.interpolated.z * uniforms.zFadeFactor) * uniforms.edgeColor.w;
+//    vertexOut.color = float4(uniforms.edgeColor.x,
+//                             uniforms.edgeColor.y,
+//                             uniforms.edgeColor.z,
+//                             (w < 0) ? 0 : (w > 1 ? 1 : w));
+
+
     return interpolated.color;
 }
 
@@ -101,12 +106,8 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.pointSize = uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = vertexIn.color;
 
-    float w = (uniforms.zFadeOffset + vertexIn.position.z * uniforms.zFadeFactor) * uniforms.edgeColor.w;
-    vertexOut.color = float4(vertexIn.color.x,
-                             vertexIn.color.y,
-                             vertexIn.color.z,
-                             (w < 0) ? 0 : (w > 1 ? 1 : w));
     return vertexOut;
 }
 
@@ -123,6 +124,13 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
     if (length(pointCoord - float2(0.5)) > 0.5) {
         discard_fragment();
     }
+
+    // dimming
+//    float a = (uniforms.zFadeOffset + interpolated.position.z * uniforms.zFadeFactor) * vertexIn.color.a;
+//    vertexOut.color = float4(vertexIn.color.x,
+//                             vertexIn.color.y,
+//                             vertexIn.color.z,
+//                             (w < 0) ? 0 : (w > 1 ? 1 : w));
 
     return interpolated.color;
 }

@@ -247,7 +247,12 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
-        uniforms[0].zFadeOffset = 0
+
+        // TODO use graph's bbox's zMin & zMax to make it so that
+        // zFadeOffset + zFadeFactor * zMin = 1
+        // zFadeOffset + zFadeFactor * zMax = 0
+
+        uniforms[0].zFadeOffset = 1
         uniforms[0].zFadeFactor = 0
     }
     
