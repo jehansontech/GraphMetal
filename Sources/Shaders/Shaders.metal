@@ -60,7 +60,7 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
     NetVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
-    vertexOut.color = uniforms.edgeColor
+    vertexOut.color = uniforms.edgeColor;
 
     return vertexOut;
 }
