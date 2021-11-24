@@ -36,14 +36,14 @@ extension Graph where
         return nodeColors
     }
 
-    public func findNearestNode(_ clipCoordinates: SIMD2<Float>, projectionMatrix: float4x4, modelViewMatrix: float4x4, nearZ: Float) -> (NodeType, SIMD2<Float>)? {
+    public func findNearestNode(_ clipCoordinates: SIMD2<Float>, _ povController: POVController) -> (NodeType, SIMD2<Float>)? {
         let ray0 = SIMD4<Float>(Float(clipCoordinates.x), clipCoordinates.y, 0, 1)
-        var ray1 = projectionMatrix.inverse * ray0
+        var ray1 = povController.projectionMatrix.inverse * ray0
         ray1.z = -1
         ray1.w = 0
 
-        let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
-        let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
+        let rayOrigin = (povController.modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
+        let rayDirection = normalize(povController.modelViewMatrix.inverse * ray1).xyz
 
         var nearestNode: NodeType? = nil
         var nearestD2 = Float.greatestFiniteMagnitude
@@ -57,7 +57,7 @@ extension Graph where
                 /// distance along the ray to the point closest to the node
                 let rayDistance = simd_dot(nodeDisplacement, rayDirection)
 
-                if (rayDistance < nearZ) {
+                if (rayDistance < povController.nearZ) {
                     // Node is not in view
                     continue
                 }
@@ -74,8 +74,9 @@ extension Graph where
             }
         }
         if let nn = nearestNode {
-            // FIXME the 2nd elem is incurrect
-            return (nn, (projectionMatrix * (modelViewMatrix * SIMD4<Float>(nn.value!.location,1))).xy)
+            // FIXME the 2nd elem is incorrect
+            let pt = povController.projectionMatrix * (povController.modelViewMatrix * SIMD4<Float>(nn.value!.location,1))
+            return (nn, pt.xy)
         }
         else {
             return nil
