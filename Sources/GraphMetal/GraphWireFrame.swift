@@ -247,13 +247,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
-
-        // TODO use graph's bbox's zMin & zMax to make it so that
-        // zFadeOffset + zFadeFactor * zMin = 1
-        // zFadeOffset + zFadeFactor * zMax = 0
-
-        uniforms[0].zFadeOffset = 1
-        uniforms[0].zFadeFactor = 0
+        uniforms[0].zNear = rendererProperties.zNear
+        uniforms[0].zFar = rendererProperties.zFar
     }
     
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
@@ -409,8 +404,19 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
-        
-        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
+
+        // This doesn't support dimming
+        // pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
+        //
+        // These are guesses
+        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .destinationAlpha
+        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .max
+        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .one
+        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .one
+
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
         pipelineDescriptor.stencilAttachmentPixelFormat = view.depthStencilPixelFormat
@@ -440,11 +446,12 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
 
+        // This doesn't support dimming
         // pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
-
+        //
         // These are guesses
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .max
+        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
         pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
         pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .destinationAlpha
         pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .max

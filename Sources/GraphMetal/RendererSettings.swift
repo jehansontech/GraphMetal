@@ -24,6 +24,11 @@ public protocol RendererProperties {
     var edgeColorDefault: SIMD4<Double> { get }
 
     var backgroundColor: SIMD4<Double> { get }
+
+    var zNear: Float { get }
+
+    var zFar: Float { get }
+    
 }
 
 ///
@@ -31,14 +36,8 @@ public protocol RendererProperties {
 ///
 public struct RendererSettings: RendererProperties {
 
-    public static let defaults = RendererSettings(nodeSize: 25,
-                                                   nodeSizeAutomatic: true,
-                                                   nodeSizeMinimum: 2,
-                                                   nodeSizeMaximum: 100,
-                                                   nodeColorDefault: SIMD4<Double>(0, 0, 0, 1),
-                                                   edgeColorDefault: SIMD4<Double>(0.2, 0.2, 0.2, 1),
-                                                   backgroundColor: SIMD4<Double>(0.02, 0.02, 0.02, 1))
-
+    public static let defaults = RendererSettings()
+    
     public var nodeSize: Double
 
     /// indicates whether node size should be automatically adjusted when the POV changes
@@ -56,13 +55,33 @@ public struct RendererSettings: RendererProperties {
 
     public var backgroundColor: SIMD4<Double>
 
+    /// distance from the POV's plane to the nearest renderable point (in view coordinates)
+    public var zNear: Float
+
+    /// distance from the POV's plane to the most distant renderable point (in view coordinates)
+    public var zFar: Float
+
+    public init() {
+        self.nodeSize = 25
+        self.nodeSizeAutomatic = true
+        self.nodeSizeMinimum = 2
+        self.nodeSizeMaximum = 100
+        self.nodeColorDefault = SIMD4<Double>(0, 0, 0, 1)
+        self.edgeColorDefault = SIMD4<Double>(0.2, 0.2, 0.2, 1)
+        self.backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
+        self.zNear = 0.001
+        self.zFar = 1000
+    }
+
     public init(nodeSize: Double = defaults.nodeSize,
                 nodeSizeAutomatic: Bool = defaults.nodeSizeAutomatic,
                 nodeSizeMinimum: Double = defaults.nodeSizeMinimum,
                 nodeSizeMaximum: Double = defaults.nodeSizeMaximum,
                 nodeColorDefault: SIMD4<Double> = defaults.nodeColorDefault,
                 edgeColorDefault: SIMD4<Double> = defaults.edgeColorDefault,
-                backgroundColor: SIMD4<Double> = defaults.backgroundColor) {
+                backgroundColor: SIMD4<Double> = defaults.backgroundColor,
+                zNear: Float = defaults.zNear,
+                zFar: Float = defaults.zFar) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
         self.nodeSizeMinimum = nodeSizeMinimum
@@ -70,6 +89,8 @@ public struct RendererSettings: RendererProperties {
         self.nodeColorDefault = nodeColorDefault
         self.edgeColorDefault = edgeColorDefault
         self.backgroundColor = backgroundColor
+        self.zNear = zNear
+        self.zFar = zFar
     }
 
     mutating public func restoreDefaults() {

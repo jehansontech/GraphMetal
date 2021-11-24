@@ -18,10 +18,10 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     public let fovyRadians = Float(65) * .pi / 180
 
     /// EMPIRICAL
-    public let nearZ: Float = 0.001
+    var nearZ: Float = 0.001
 
     /// EMPIRICAL
-    public let farZ: Float = 1000
+    var farZ: Float = 1000
 
     /// macOS and iOS use opposite conventions for scrolling b/c their coordinate systems have
     /// opposite "vertical" orientations. macOS has option to 'flip' the coordinate system so that it
@@ -209,11 +209,17 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.rotatePOV = nil
     }
 
+    func updateProjection(nearZ: Float, farZ: Float) {
+        debug("updateProjection: nearZ=\(nearZ), farZ=\(farZ))")
+        self.nearZ = nearZ
+        self.farZ = farZ
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
+    }
+
     func updateProjection(viewSize: CGSize) {
         self.viewSize = viewSize
         self.projectionMatrix = Self.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
-        self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
-        // _modelViewStale = true
+        // self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
     }
 
     func updateRenderingParameters() {

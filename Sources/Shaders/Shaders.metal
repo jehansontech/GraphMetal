@@ -36,8 +36,8 @@ typedef struct
     simd_float4x4 modelViewMatrix;
     float pointSize;
     simd_float4 edgeColor;
-    float zFadeFactor;
-    float zFadeOffset;
+    float zNear;
+    float zFar;
 } Uniforms;
 
 
@@ -68,14 +68,13 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
 fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
                              const device Uniforms&  uniforms [[ buffer(2) ]]) {
 
+    // dimming
+    interpolated.color.a = 1 - (uniforms.zNear - (1/uniforms.zFar) * interpolated.fragmentPosition.z);
 
-// dimming
-//    float w = (uniforms.zFadeOffset + vertexOut.interpolated.z * uniforms.zFadeFactor) * uniforms.edgeColor.w;
-//    vertexOut.color = float4(uniforms.edgeColor.x,
-//                             uniforms.edgeColor.y,
-//                             uniforms.edgeColor.z,
-//                             (w < 0) ? 0 : (w > 1 ? 1 : w));
-
+    // transparent edges
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
 
     return interpolated.color;
 }
@@ -115,8 +114,11 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
                               float2 pointCoord                    [[point_coord]],
                               const device Uniforms&  uniforms     [[ buffer(2) ]]) {
 
+    // dimming
+    interpolated.color.a = 1 - (uniforms.zNear - (1/uniforms.zFar) * interpolated.fragmentPosition.z);
+
     // transparent nodes
-    if (interpolated.color.a == 0) {
+    if (interpolated.color.a <= 0) {
         discard_fragment();
     }
 
@@ -124,13 +126,6 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
     if (length(pointCoord - float2(0.5)) > 0.5) {
         discard_fragment();
     }
-
-    // dimming
-//    float a = (uniforms.zFadeOffset + interpolated.position.z * uniforms.zFadeFactor) * vertexIn.color.a;
-//    vertexOut.color = float4(vertexIn.color.x,
-//                             vertexIn.color.y,
-//                             vertexIn.color.z,
-//                             (w < 0) ? 0 : (w > 1 ? 1 : w));
 
     return interpolated.color;
 }
