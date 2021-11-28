@@ -93,7 +93,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     private var _povMark: POV? = nil
 
     public var description: String {
-        return "POV: posn=\(stringify(location)) cntr=\(stringify(center)) up=\(stringify(up))"
+        return "POVController POV: posn=\(stringify(location)) cntr=\(stringify(center)) up=\(stringify(up))"
     }
 
     public init() {
@@ -210,7 +210,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     func updateProjection(nearZ: Float, farZ: Float) {
-        debug("updateProjection: nearZ=\(nearZ), farZ=\(farZ))")
+        // debug("POVController", "updateProjection: nearZ=\(nearZ), farZ=\(farZ))")
         self.nearZ = nearZ
         self.farZ = farZ
         self.projectionMatrix = Self.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
