@@ -26,9 +26,7 @@ let package = Package(
             dependencies: []),
         .target(
             name: "GraphMetal",
-            dependencies: ["Shaders",
-                           "GenericGraph",
-                           .product(name: "WacomaUI", package: "Wacoma")]),
+            dependencies: ["GenericGraph", "Shaders", "Wacoma"]),
         .testTarget(
             name: "GraphMetalTests",
             dependencies: ["GraphMetal"])
