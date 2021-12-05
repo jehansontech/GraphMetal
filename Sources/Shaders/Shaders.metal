@@ -70,11 +70,11 @@ fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
 
     // fadeout: alpha decreases linearly with increasing z
     // from 1 at z = fadeoutOnset to 0 at z = visibilityLimit
-    float fade = (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
-    interpolated.color.a = 1 - (fade > 1) ? 1 : ((fade < 0) ? 0 : fade);
+    // float fade = (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
+    // interpolated.color.a = 1 - (fade > 1) ? 1 : ((fade < 0) ? 0 : fade);
 
     // OLD
-    // interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
+    interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
 
     // transparent edges
     if (interpolated.color.a <= 0) {
@@ -121,11 +121,11 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
 
     // fadeout: alpha decreases linearly with increasing z
     // from 1 at z = fadeoutOnset to 0 at z = visibilityLimit
-    float fade = (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
-    interpolated.color.a = 1 - (fade > 1) ? 1 : ((fade < 0) ? 0 : fade);
+    // float fade = (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
+    // interpolated.color.a = 1 - (fade > 1) ? 1 : ((fade < 0) ? 0 : fade);
 
     // OLD
-    // interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
+    interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
