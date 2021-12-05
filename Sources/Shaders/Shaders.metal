@@ -51,6 +51,16 @@ struct NetVertexOut {
     float4 color;
 };
 
+/*
+ returns a value that decreases linearly with increasing distance
+ from the from plane of camera, such that alpha=1 at distance=fadeoutOnset and alpha=0
+ at distance=visibilityLimit. Clamps the return value to [0, 1].
+ */
+float fadeout(float distance, float onset, float limit) {
+    float fade = 1 - (distance - onset) / (limit - onset);
+    return (fade < 0) ? 0 : (fade > 1) ? 1 : fade;
+}
+
 vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
                                const device Uniforms&  uniforms [[ buffer(2) ]]) {
 
@@ -68,13 +78,10 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
 fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
                              const device Uniforms&  uniforms [[ buffer(2) ]]) {
 
-    // fadeout: alpha decreases linearly with increasing z
-    // from 1 at z = fadeoutOnset to 0 at z = visibilityLimit
-    // float fade = (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
-    // interpolated.color.a = 1 - (fade > 1) ? 1 : ((fade < 0) ? 0 : fade);
+    // fadeout
+    // NOTE that distance = -interpolated.fragmentPosition.z
+    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.visibilityLimit);
 
-    // OLD
-    interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
 
     // transparent edges
     if (interpolated.color.a <= 0) {
@@ -119,13 +126,9 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
                               float2 pointCoord                    [[point_coord]],
                               const device Uniforms&  uniforms     [[ buffer(2) ]]) {
 
-    // fadeout: alpha decreases linearly with increasing z
-    // from 1 at z = fadeoutOnset to 0 at z = visibilityLimit
-    // float fade = (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
-    // interpolated.color.a = 1 - (fade > 1) ? 1 : ((fade < 0) ? 0 : fade);
-
-    // OLD
-    interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
+    // fadeout
+    // NOTE that distance = -interpolated.fragmentPosition.z
+    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.visibilityLimit);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
