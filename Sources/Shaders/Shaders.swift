@@ -21,8 +21,8 @@ public struct Uniforms {
     public var modelViewMatrix: simd_float4x4
     public var pointSize: Float
     public var edgeColor: simd_float4
-    public var zNear: Float
-    public var zFar: Float
+    public var fadeOnset: Float
+    public var visbilityLimit: Float
 }
 
 public struct Shaders {

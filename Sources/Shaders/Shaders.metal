@@ -36,8 +36,8 @@ typedef struct
     simd_float4x4 modelViewMatrix;
     float pointSize;
     simd_float4 edgeColor;
-    float zNear;
-    float zFar;
+    float fadeOnset;
+    float visibilityLimit;
 } Uniforms;
 
 
@@ -68,8 +68,9 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
 fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
                              const device Uniforms&  uniforms [[ buffer(2) ]]) {
 
-    // dimming
-    interpolated.color.a = 1 - (uniforms.zNear - (1/uniforms.zFar) * interpolated.fragmentPosition.z);
+    // fadeout: alpha decreases linearly from 1 at z=fadeOnset to 0 at visibilityLimit
+    interpolated.color.a =  1 - (interpolated.fragmentPosition.z - uniforms.fadeOnset) / (uniforms.visibilityLimit - uniforms.fadeOnset);
+    // interpolated.color.a = 1 - (uniforms.fadeOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
 
     // transparent edges
     if (interpolated.color.a <= 0) {
@@ -114,8 +115,9 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
                               float2 pointCoord                    [[point_coord]],
                               const device Uniforms&  uniforms     [[ buffer(2) ]]) {
 
-    // dimming
-    interpolated.color.a = 1 - (uniforms.zNear - (1/uniforms.zFar) * interpolated.fragmentPosition.z);
+    // fadeout: alpha decreases linearly from 1 at z=fadeOnset to 0 at visibilityLimit
+    interpolated.color.a =  1 - (interpolated.fragmentPosition.z - uniforms.fadeOnset) / (uniforms.visibilityLimit - uniforms.fadeOnset);
+    // interpolated.color.a = 1 - (uniforms.fadeOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {

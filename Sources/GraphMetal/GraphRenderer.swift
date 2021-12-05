@@ -56,10 +56,6 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     typealias NodeValueType = S.GraphType.NodeType.ValueType
     typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
-    public var zNear: Float = RendererSettings.defaults.zNear
-
-    public var zFar: Float = RendererSettings.defaults.zFar
-
     public var backgroundColor: SIMD4<Double> = RendererSettings.defaults.backgroundColor
 
     public var nodeSizeAutomatic: Bool = RendererSettings.defaults.nodeSizeAutomatic
@@ -82,9 +78,16 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         }
     }
 
+    public var fadeOnset: Float = RendererSettings.defaults.fadeOnset
+
+    public var visibilityLimit: Float = RendererSettings.defaults.visibilityLimit
+
+    public var nearZ: Float = 0.01
+
     public var updateInProgress: Bool {
         return updateStartedCount > updateCompletedCount
     }
+
 
     var updateStartedCount: Int = 0
 
@@ -182,8 +185,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         self.nodeSizeMaximum = settings.nodeSizeMaximum
         self.nodeColorDefault = settings.nodeColorDefault
         self.edgeColorDefault = settings.edgeColorDefault
-        self.zNear = settings.zNear
-        self.zFar = settings.zFar
+        self.fadeOnset = settings.fadeOnset
+        self.visibilityLimit = settings.visibilityLimit
     }
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
@@ -272,7 +275,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
         let t0 = Date()
 
-        parent.povController.updateProjection(nearZ: self.zNear, farZ: self.zFar)
+        parent.povController.updateProjection(nearZ: self.nearZ, farZ: self.visibilityLimit)
 
         // Update POV based on current time, in case it's moving on its own
         parent.povController.updateModelView(t0)
