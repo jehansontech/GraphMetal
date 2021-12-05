@@ -78,7 +78,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         }
     }
 
-    public var fadeOnset: Float = RendererSettings.defaults.fadeOnset
+    public var fadeoutOnset: Float = RendererSettings.defaults.fadeoutOnset
 
     public var visibilityLimit: Float = RendererSettings.defaults.visibilityLimit
 
@@ -185,7 +185,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         self.nodeSizeMaximum = settings.nodeSizeMaximum
         self.nodeColorDefault = settings.nodeColorDefault
         self.edgeColorDefault = settings.edgeColorDefault
-        self.fadeOnset = settings.fadeOnset
+        self.fadeoutOnset = settings.fadeoutOnset
         self.visibilityLimit = settings.visibilityLimit
     }
 

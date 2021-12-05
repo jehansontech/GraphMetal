@@ -247,7 +247,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
-        uniforms[0].fadeOnset = rendererProperties.fadeOnset
+        uniforms[0].fadeoutOnset = rendererProperties.fadeoutOnset
         uniforms[0].visbilityLimit = rendererProperties.visibilityLimit
     }
     

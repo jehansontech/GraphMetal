@@ -29,7 +29,7 @@ public protocol RendererProperties {
     var backgroundColor: SIMD4<Double> { get }
 
     /// Distance in world coordinates from the POV's plane to the the point where the figure starts fading out
-    var fadeOnset: Float { get }
+    var fadeoutOnset: Float { get }
 
     /// Distance in world coordinates from the POV's plane to the most distant renderable point
     var visibilityLimit: Float { get }
@@ -57,7 +57,7 @@ public struct RendererSettings: RendererProperties {
 
     public var backgroundColor: SIMD4<Double>
 
-    public var fadeOnset: Float
+    public var fadeoutOnset: Float
 
     public var visibilityLimit: Float
 
@@ -69,7 +69,7 @@ public struct RendererSettings: RendererProperties {
         self.nodeColorDefault = SIMD4<Double>(0, 0, 0, 1)
         self.edgeColorDefault = SIMD4<Double>(0.2, 0.2, 0.2, 1)
         self.backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
-        self.fadeOnset = 999
+        self.fadeoutOnset = 999
         self.visibilityLimit = 1000
     }
 
@@ -80,7 +80,7 @@ public struct RendererSettings: RendererProperties {
                 nodeColorDefault: SIMD4<Double> = defaults.nodeColorDefault,
                 edgeColorDefault: SIMD4<Double> = defaults.edgeColorDefault,
                 backgroundColor: SIMD4<Double> = defaults.backgroundColor,
-                fadeOnset: Float = defaults.fadeOnset,
+                fadeoutOnset: Float = defaults.fadeoutOnset,
                 visibilityLimit: Float = defaults.visibilityLimit) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
@@ -89,7 +89,7 @@ public struct RendererSettings: RendererProperties {
         self.nodeColorDefault = nodeColorDefault
         self.edgeColorDefault = edgeColorDefault
         self.backgroundColor = backgroundColor
-        self.fadeOnset = fadeOnset
+        self.fadeoutOnset = fadeoutOnset
         self.visibilityLimit = visibilityLimit
     }
 
@@ -101,7 +101,7 @@ public struct RendererSettings: RendererProperties {
         self.nodeColorDefault = Self.defaults.nodeColorDefault
         self.edgeColorDefault = Self.defaults.edgeColorDefault
         self.backgroundColor = Self.defaults.backgroundColor
-        self.fadeOnset = Self.defaults.fadeOnset
+        self.fadeoutOnset = Self.defaults.fadeoutOnset
         self.visibilityLimit = Self.defaults.visibilityLimit
     }
 }

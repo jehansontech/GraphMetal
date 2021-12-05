@@ -36,7 +36,7 @@ typedef struct
     simd_float4x4 modelViewMatrix;
     float pointSize;
     simd_float4 edgeColor;
-    float fadeOnset;
+    float fadeoutOnset;
     float visibilityLimit;
 } Uniforms;
 
@@ -69,12 +69,12 @@ fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
                              const device Uniforms&  uniforms [[ buffer(2) ]]) {
 
     // fadeout: alpha decreases linearly with increasing z
-    // from 1 at z = fadeOnset to 0 at z = visibilityLimit
-    float alpha =  1 - (interpolated.fragmentPosition.z - uniforms.fadeOnset) / (uniforms.visibilityLimit - uniforms.fadeOnset);
-    interpolated.color.a = (alpha > 1) ? 1 : (alpha < 0) : 0;
+    // from 1 at z = fadeoutOnset to 0 at z = visibilityLimit
+    float alpha =  1 - (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
+    interpolated.color.a = (alpha > 1) ? 1 : ((alpha < 0) ? 0 : alpha);
 
     // OLD
-    // interpolated.color.a = 1 - (uniforms.fadeOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
+    // interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
 
     // transparent edges
     if (interpolated.color.a <= 0) {
@@ -120,12 +120,12 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
                               const device Uniforms&  uniforms     [[ buffer(2) ]]) {
 
     // fadeout: alpha decreases linearly with increasing z
-    // from 1 at z = fadeOnset to 0 at z = visibilityLimit
-    float alpha =  1 - (interpolated.fragmentPosition.z - uniforms.fadeOnset) / (uniforms.visibilityLimit - uniforms.fadeOnset);
-    interpolated.color.a = (alpha > 1) ? 1 : (alpha < 0) : 0;
+    // from 1 at z = fadeoutOnset to 0 at z = visibilityLimit
+    float alpha =  1 - (interpolated.fragmentPosition.z - uniforms.fadeoutOnset) / (uniforms.visibilityLimit - uniforms.fadeoutOnset);
+    interpolated.color.a = (alpha > 1) ? 1 : ((alpha < 0) ? 0 : alpha);
 
     // OLD
-    // interpolated.color.a = 1 - (uniforms.fadeOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
+    // interpolated.color.a = 1 - (uniforms.fadeoutOnset - (1/uniforms.visibilityLimit) * interpolated.fragmentPosition.z);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
