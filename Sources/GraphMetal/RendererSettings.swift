@@ -14,6 +14,9 @@ public protocol PresentationProperties {
     /// Distance in world coordinates from the POV's plane to the most distant renderable point
     var visibilityLimit: Float { get set }
 
+    /// Largest allowed value of visibilityLimit
+    var visibilityMaximum: Float { get set }
+
     /// If true, POV's loation orbits its center around an axis parallel to its up vector
     var orbitEnabled: Bool { get set }
 
@@ -26,22 +29,22 @@ public protocol PresentationProperties {
 ///
 public protocol RendererProperties: PresentationProperties {
 
-    var nodeSize: Double { get }
+    var nodeSize: Double { get set }
 
     /// indicates whether node size should be automatically adjusted when the POV changes
-    var nodeSizeAutomatic: Bool { get }
+    var nodeSizeAutomatic: Bool { get set }
 
     /// Minimum automatic node size. Ignored if nodeSizeAutomatic = false
-    var nodeSizeMinimum: Double { get }
+    var nodeSizeMinimum: Double { get set }
 
     /// Maximum automatic node size. Ignored if nodeSizeAutomatic = false
-    var nodeSizeMaximum: Double { get }
+    var nodeSizeMaximum: Double { get set }
 
-    var nodeColorDefault: SIMD4<Double> { get }
+    var nodeColorDefault: SIMD4<Double> { get set }
 
-    var edgeColorDefault: SIMD4<Double> { get }
+    var edgeColorDefault: SIMD4<Double> { get set }
 
-    var backgroundColor: SIMD4<Double> { get }
+    var backgroundColor: SIMD4<Double> { get set }
 }
 
 ///
@@ -69,6 +72,8 @@ public struct RendererSettings: RendererProperties {
 
     public var visibilityLimit: Float
 
+    public var visibilityMaximum: Float
+
     public var orbitEnabled: Bool
 
     public var orbitSpeed: Float
@@ -81,8 +86,9 @@ public struct RendererSettings: RendererProperties {
         self.nodeColorDefault = SIMD4<Double>(0, 0, 0, 1)
         self.edgeColorDefault = SIMD4<Double>(0.2, 0.2, 0.2, 1)
         self.backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
-        self.fadeoutOnset = 999
+        self.fadeoutOnset = 500
         self.visibilityLimit = 1000
+        self.visibilityMaximum = 1000
         self.orbitEnabled = false
         self.orbitSpeed = .twoPi / 60 // 1 revolution per minute
     }
@@ -96,6 +102,7 @@ public struct RendererSettings: RendererProperties {
                 backgroundColor: SIMD4<Double> = defaults.backgroundColor,
                 fadeoutOnset: Float = defaults.fadeoutOnset,
                 visibilityLimit: Float = defaults.visibilityLimit,
+                visibilityLimitMax: Float = defaults.visibilityMaximum,
                 orbitEnabled: Bool = defaults.orbitEnabled,
                 orbitSpeed: Float = defaults.orbitSpeed) {
         self.nodeSize = nodeSize
@@ -107,6 +114,7 @@ public struct RendererSettings: RendererProperties {
         self.backgroundColor = backgroundColor
         self.fadeoutOnset = fadeoutOnset
         self.visibilityLimit = visibilityLimit
+        self.visibilityMaximum = visibilityLimitMax
         self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
     }
@@ -121,6 +129,7 @@ public struct RendererSettings: RendererProperties {
         self.backgroundColor = Self.defaults.backgroundColor
         self.fadeoutOnset = Self.defaults.fadeoutOnset
         self.visibilityLimit = Self.defaults.visibilityLimit
+        self.visibilityMaximum = Self.defaults.visibilityMaximum
         self.orbitEnabled = Self.defaults.orbitEnabled
         self.orbitSpeed = Self.defaults.orbitSpeed
     }

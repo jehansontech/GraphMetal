@@ -82,6 +82,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public var visibilityLimit: Float = RendererSettings.defaults.visibilityLimit
 
+    public var visibilityMaximum: Float = RendererSettings.defaults.visibilityMaximum
+
     public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
 
     public var orbitSpeed: Float = RendererSettings.defaults.orbitSpeed
@@ -179,20 +181,25 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     }
     
     func applySettings(_ settings: RendererSettings) {
-        self.backgroundColor = settings.backgroundColor
-        self.nodeSizeAutomatic = settings.nodeSizeAutomatic
 
-        if !nodeSizeAutomatic {
-            self.nodeSize = settings.nodeSize
-        }
-        
+        // FIXME: this is proof of bad design
+
+        self.fadeoutOnset = settings.fadeoutOnset
+        self.visibilityLimit = settings.visibilityLimit
+        self.visibilityMaximum = settings.visibilityMaximum
+        self.orbitEnabled = settings.orbitEnabled
+        self.orbitSpeed = settings.orbitSpeed
+        self.nodeSizeAutomatic = settings.nodeSizeAutomatic
+        self.nodeSizeMinimum = settings.nodeSizeMinimum
         self.nodeSizeMaximum = settings.nodeSizeMaximum
         self.nodeColorDefault = settings.nodeColorDefault
         self.edgeColorDefault = settings.edgeColorDefault
-        self.orbitEnabled = settings.orbitEnabled
-        self.orbitSpeed = settings.orbitSpeed
-        self.fadeoutOnset = settings.fadeoutOnset
-        self.visibilityLimit = settings.visibilityLimit
+        self.backgroundColor = settings.backgroundColor
+
+        // special case
+        if !nodeSizeAutomatic {
+            self.nodeSize = settings.nodeSize
+        }
     }
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
