@@ -6,10 +6,25 @@
 import Foundation
 import MetalKit
 
+public protocol PresentationProperties {
+
+    /// Distance in world coordinates from the POV's plane to the the point where the figure starts fading out
+    var fadeoutOnset: Float { get set }
+
+    /// Distance in world coordinates from the POV's plane to the most distant renderable point
+    var visibilityLimit: Float { get set }
+
+    /// If true, POV's loation orbits its center around an axis parallel to its up vector
+    var orbitEnabled: Bool { get set }
+
+    /// In radians per second
+    var orbitSpeed: Float { get set }
+}
+
 ///
 ///
 ///
-public protocol RendererProperties {
+public protocol RendererProperties: PresentationProperties {
 
     var nodeSize: Double { get }
 
@@ -27,13 +42,6 @@ public protocol RendererProperties {
     var edgeColorDefault: SIMD4<Double> { get }
 
     var backgroundColor: SIMD4<Double> { get }
-
-    /// Distance in world coordinates from the POV's plane to the the point where the figure starts fading out
-    var fadeoutOnset: Float { get }
-
-    /// Distance in world coordinates from the POV's plane to the most distant renderable point
-    var visibilityLimit: Float { get }
-    
 }
 
 ///
@@ -61,6 +69,10 @@ public struct RendererSettings: RendererProperties {
 
     public var visibilityLimit: Float
 
+    public var orbitEnabled: Bool
+
+    public var orbitSpeed: Float
+
     public init() {
         self.nodeSize = 25
         self.nodeSizeAutomatic = true
@@ -71,6 +83,8 @@ public struct RendererSettings: RendererProperties {
         self.backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
         self.fadeoutOnset = 999
         self.visibilityLimit = 1000
+        self.orbitEnabled = false
+        self.orbitSpeed = .twoPi / 60 // 1 revolution per minute
     }
 
     public init(nodeSize: Double = defaults.nodeSize,
@@ -81,7 +95,9 @@ public struct RendererSettings: RendererProperties {
                 edgeColorDefault: SIMD4<Double> = defaults.edgeColorDefault,
                 backgroundColor: SIMD4<Double> = defaults.backgroundColor,
                 fadeoutOnset: Float = defaults.fadeoutOnset,
-                visibilityLimit: Float = defaults.visibilityLimit) {
+                visibilityLimit: Float = defaults.visibilityLimit,
+                orbitEnabled: Bool = defaults.orbitEnabled,
+                orbitSpeed: Float = defaults.orbitSpeed) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
         self.nodeSizeMinimum = nodeSizeMinimum
@@ -91,6 +107,8 @@ public struct RendererSettings: RendererProperties {
         self.backgroundColor = backgroundColor
         self.fadeoutOnset = fadeoutOnset
         self.visibilityLimit = visibilityLimit
+        self.orbitEnabled = orbitEnabled
+        self.orbitSpeed = orbitSpeed
     }
 
     mutating public func restoreDefaults() {
@@ -103,5 +121,7 @@ public struct RendererSettings: RendererProperties {
         self.backgroundColor = Self.defaults.backgroundColor
         self.fadeoutOnset = Self.defaults.fadeoutOnset
         self.visibilityLimit = Self.defaults.visibilityLimit
+        self.orbitEnabled = Self.defaults.orbitEnabled
+        self.orbitSpeed = Self.defaults.orbitSpeed
     }
 }

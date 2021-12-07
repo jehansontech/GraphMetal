@@ -82,6 +82,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public var visibilityLimit: Float = RendererSettings.defaults.visibilityLimit
 
+    public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
+
+    public var orbitSpeed: Float = RendererSettings.defaults.orbitSpeed
+    
     public var nearZ: Float = 0.01
 
     public var updateInProgress: Bool {
@@ -185,6 +189,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         self.nodeSizeMaximum = settings.nodeSizeMaximum
         self.nodeColorDefault = settings.nodeColorDefault
         self.edgeColorDefault = settings.edgeColorDefault
+        self.orbitEnabled = settings.orbitEnabled
+        self.orbitSpeed = settings.orbitSpeed
         self.fadeoutOnset = settings.fadeoutOnset
         self.visibilityLimit = settings.visibilityLimit
     }

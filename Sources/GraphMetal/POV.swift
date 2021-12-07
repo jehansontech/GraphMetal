@@ -18,10 +18,10 @@ public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
     /// The POV's location in world coordinates.
     public var location: SIMD3<Float>
 
-    /// The point in world coordinates that the POV is looking at
+    /// The point in world coordinates that the POV is looking at.
     public var center: SIMD3<Float>
 
-    /// Unit vector giving direction the POV is looking
+    /// Unit vector giving the direction the POV is looking, i.e., normalized displacement vector (center - location)
     public var forward: SIMD3<Float> {
         return normalize(center - location)
     }
@@ -30,7 +30,7 @@ public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
     public var up: SIMD3<Float>
 
     public var description: String {
-        return "loc=\(location) cntr=\(center) fwd=\(forward) up=\(up)"
+        return "location: \(location.prettyString) center: \(center.prettyString) up: \(up.prettyString)"
     }
     
     public init(location: SIMD3<Float> = POV.defaultLocation,

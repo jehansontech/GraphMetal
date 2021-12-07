@@ -17,11 +17,11 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     /// EMPIRICAL
     public let fovyRadians = Float(65) * .pi / 180
 
-    /// EMPIRICAL
-    var nearZ: Float = 0.001
+    /// used only as default
+    var nearZ: Float = 0.01
 
-    /// EMPIRICAL
-    var farZ: Float = 1000
+    /// used only as default
+    var farZ: Float  = RendererSettings.defaults.visibilityLimit
 
     /// macOS and iOS use opposite conventions for scrolling b/c their coordinate systems have
     /// opposite "vertical" orientations. macOS has option to 'flip' the coordinate system so that it
@@ -49,10 +49,6 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     public var modelViewMatrix: float4x4
 
     weak var rendererControls: RendererControls? = nil
-
-    private var _motionEnabled: Bool = false
-
-    private var _velocityRTP: SIMD3<Float> = .zero
 
     private var _lastUpdateTimestamp: Date? = nil
 
@@ -240,19 +236,13 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         else {
             self.flyPOV = nil
 
-            // FIXME Doesn't work...
-            //            if (_motionEnabled && self._velocityRTP != Geometry.zero) {
-            //                if let t0 = _lastUpdateTimestamp {
-            //                    let dt = timestamp.timeIntervalSince(t0)
-            //
-            //                    // FIXME this is wrong
-            //                    let locationRTP = Geometry.cartesianToSpherical(xyz: self.location)
-            //                    let newLocationRTP = locationRTP + Float(dt) * _velocityRTP
-            //                    self.location = Geometry.sphericalToCartesian(rtp: newLocationRTP)
-            //
-            //                    self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
-            //                }
-            //            }
+            if let t0 = _lastUpdateTimestamp,
+               let controls = rendererControls,
+               controls.orbitEnabled {
+                let dPhi = controls.orbitSpeed * Float(timestamp.timeIntervalSince(t0))
+                self.location = (float4x4(rotationAround: up, by: dPhi) * SIMD4<Float>(location, 1)).xyz
+                self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
+            }
         }
         _lastUpdateTimestamp = timestamp
     }
@@ -306,13 +296,10 @@ struct DragPOV {
         let perpAxis = normalize(simd_cross(initialPOV.forward, initialPOV.up))
 
         let newLocation = (
-            float4x4(translationBy: initialPOV.center)
-                * float4x4(rotationAround: initialPOV.up, by: -pan * panSensitivity)
-                * float4x4(rotationAround: perpAxis, by: scroll * scrollSensitivity)
-                * float4x4(translationBy: -initialPOV.center)
-                * SIMD4<Float>(initialPOV.location, 1)
+            float4x4(rotationAround: initialPOV.up, by: -pan * panSensitivity)
+            * float4x4(rotationAround: perpAxis, by: scroll * scrollSensitivity)
+            * SIMD4<Float>(initialPOV.location, 1)
         ).xyz
-
 
         let newUp = (
             float4x4(rotationAround: perpAxis, by: scroll * scrollSensitivity)
