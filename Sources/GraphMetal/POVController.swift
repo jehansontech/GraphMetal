@@ -93,7 +93,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     private var _povMark: POV? = nil
 
     public var description: String {
-        return "POVController POV: posn=\(stringify(location)) cntr=\(stringify(center)) up=\(stringify(up))"
+        return "POVController POV: posn=\(location.prettyString) cntr=\(center.prettyString) up=\(up.prettyString)"
     }
 
     public init() {
