@@ -130,7 +130,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         }
     }
 
-    public func turnToward(_ newCenter: SIMD3<Float>) {
+    public func centerOn(_ newCenter: SIMD3<Float>) {
         flyTo(POV(location: pov.location,
                   center: newCenter,
                   up: pov.up))
