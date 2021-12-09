@@ -7,7 +7,7 @@ import GenericGraph
 import simd
 
 
-public protocol RenderableNodeValue: EmbeddableNodeValue {
+public protocol RenderableNodeValue: EmbeddedNodeValue {
 
     /// if true, the node will not be rendered
     var hidden: Bool { get }
