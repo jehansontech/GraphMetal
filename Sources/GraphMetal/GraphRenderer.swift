@@ -81,9 +81,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public var fadeoutOnset: Float = RendererSettings.defaults.fadeoutOnset
 
-    public var visibilityLimit: Float = RendererSettings.defaults.visibilityLimit
-
-    public var visibilityMaximum: Float = RendererSettings.defaults.visibilityMaximum
+    public var fadeoutDistance: Float = RendererSettings.defaults.fadeoutDistance
 
     public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
 
@@ -194,8 +192,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         self.zNear = settings.zNear
         self.zFar = settings.zFar
         self.fadeoutOnset = settings.fadeoutOnset
-        self.visibilityLimit = settings.visibilityLimit
-        self.visibilityMaximum = settings.visibilityMaximum
+        self.fadeoutDistance = settings.fadeoutDistance
         self.orbitEnabled = settings.orbitEnabled
         self.orbitSpeed = settings.orbitSpeed
         self.nodeSizeAutomatic = settings.nodeSizeAutomatic
@@ -307,7 +304,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
                                nodeSize: self.nodeSize,
                                edgeColor: self.edgeColor,
                                fadeoutOnset: self.fadeoutOnset,
-                               visibilityLimit: self.visibilityLimit)
+                               fadeoutDistance: self.fadeoutDistance)
         // graphWireFrame.preDraw(parent.povController, self)
 
         let dt = Date().timeIntervalSince(t0)

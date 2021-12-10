@@ -37,7 +37,7 @@ typedef struct
     float pointSize;
     simd_float4 edgeColor;
     float fadeoutOnset;
-    float visibilityLimit;
+    float fadeoutDistance;
 } Uniforms;
 
 
@@ -52,12 +52,13 @@ struct NetVertexOut {
 };
 
 /*
- returns a value that decreases linearly with increasing distance
- from the from plane of camera, such that alpha=1 at distance=fadeoutOnset and alpha=0
- at distance=visibilityLimit. Clamps the return value to [0, 1].
+ Returns a value that decreases linearly with increasing distance z from the
+ plane of POV, such that alpha=1 at z=onset and alpha=0 at z=onset + distance.
+ Expects z >= 0.
+ Clamps the return value to [0, 1].
  */
-float fadeout(float distance, float onset, float limit) {
-    float fade = 1 - (distance - onset) / (limit - onset);
+float fadeout(float z, float onset, float distance) {
+    float fade = 1 - (z - onset) / distance;
     return (fade < 0) ? 0 : (fade > 1) ? 1 : fade;
 }
 
@@ -79,8 +80,8 @@ fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
                              const device Uniforms&  uniforms [[ buffer(2) ]]) {
 
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.visibilityLimit);
+    // Note that distance is -z
+    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
 
 
     // transparent edges
@@ -128,7 +129,7 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.visibilityLimit);
+    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {

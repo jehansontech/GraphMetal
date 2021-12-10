@@ -227,7 +227,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
                  nodeSize: CGFloat,
                  edgeColor: SIMD4<Double>,
                  fadeoutOnset: Float,
-                 visibilityLimit: Float) {
+                 fadeoutDistance: Float) {
 
         // ======================================
         // Rotate the uniforms buffers
@@ -249,9 +249,15 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
         uniforms[0].fadeoutOnset = fadeoutOnset
-        uniforms[0].visbilityLimit = visibilityLimit
+        uniforms[0].fadeoutDistance = fadeoutDistance
     }
 
+
+//    func adjustedNodeSize(_ pov: POV) -> CGFloat {
+//        if (self.settings.nodeSizeAutomatic) {
+//
+//        }
+//    }
 
 //    // FIXME: args are awkward
 //    func preDraw(_ povController: POVController, _ properties: RendererProperties) {
@@ -279,7 +285,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 //                                             Float(edgeColor.z),
 //                                             Float(edgeColor.w))
 //        uniforms[0].fadeoutOnset = properties.fadeoutOnset
-//        uniforms[0].visbilityLimit = properties.visibilityLimit
+//        uniforms[0].visbilityLimit = properties.fadeoutDistance
 //    }
     
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {

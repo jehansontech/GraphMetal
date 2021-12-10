@@ -37,9 +37,7 @@ public struct RendererSettings: RendererProperties {
 
     public var fadeoutOnset: Float
 
-    public var visibilityLimit: Float
-
-    public var visibilityMaximum: Float
+    public var fadeoutDistance: Float
 
     public var orbitEnabled: Bool
 
@@ -56,9 +54,8 @@ public struct RendererSettings: RendererProperties {
         self.yFOV = .piOverTwo
         self.zNear = 0.01
         self.zFar = 1000
-        self.fadeoutOnset = 500
-        self.visibilityLimit = 1000
-        self.visibilityMaximum = 1000
+        self.fadeoutOnset = 0
+        self.fadeoutDistance = 1000
         self.orbitEnabled = false
         self.orbitSpeed = .pi / 30
     }
@@ -74,8 +71,7 @@ public struct RendererSettings: RendererProperties {
                 zNear: Float = defaults.zNear,
                 zFar: Float = defaults.zFar,
                 fadeoutOnset: Float = defaults.fadeoutOnset,
-                visibilityLimit: Float = defaults.visibilityLimit,
-                visibilityLimitMax: Float = defaults.visibilityMaximum,
+                fadeoutDistance: Float = defaults.fadeoutDistance,
                 orbitEnabled: Bool = defaults.orbitEnabled,
                 orbitSpeed: Float = defaults.orbitSpeed) {
         self.nodeSize = nodeSize
@@ -89,8 +85,7 @@ public struct RendererSettings: RendererProperties {
         self.zNear = zNear
         self.zFar = zFar
         self.fadeoutOnset = fadeoutOnset
-        self.visibilityLimit = visibilityLimit
-        self.visibilityMaximum = visibilityLimitMax
+        self.fadeoutDistance = fadeoutDistance
         self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
     }

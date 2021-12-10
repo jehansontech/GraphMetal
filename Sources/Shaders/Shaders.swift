@@ -22,7 +22,7 @@ public struct Uniforms {
     public var pointSize: Float
     public var edgeColor: simd_float4
     public var fadeoutOnset: Float
-    public var visbilityLimit: Float
+    public var fadeoutDistance: Float
 }
 
 public struct Shaders {
