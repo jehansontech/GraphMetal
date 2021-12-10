@@ -426,9 +426,11 @@ class FlyPOV {
         case arrived
     }
 
-    let initialPOV: POV
+    // Needed for multi-step flying, NOT USED yet.
+    let povSequence: [POV]
 
-    let finalPOV: POV
+    // Needed for multi-step flying, NOT USED yet.
+    let totalDistance: Float
 
     let coastingThreshold: Double
 
@@ -440,48 +442,50 @@ class FlyPOV {
 
     var lastUpdateTime: Date = .distantPast
 
-    var stepIndex: Int = 0
-
     var normalizedSpeed: Double = 0
 
-    var fractionalDistance: Double = 0
+    var currentStepIndex: Int = 0
+
+    /// fraction of the distance in the current step has been covered
+    var currentStepFractionalDistance: Double = 0
 
     var phase: Phase = .new
 
     init(_ pov: POV, _ destination: POV, _ constants: POVControllerConstants) {
-        self.initialPOV = pov
-        self.finalPOV = destination
+        let povSequence = [pov, destination]
+        self.povSequence = povSequence
+        self.totalDistance = Self.calculateTotalDistance([pov, destination])
         self.coastingThreshold = constants.flyCoastingThreshold
         self.normalizedAcceleration = constants.flyNormalizedAcceleration
         self.minSpeed = constants.flyMinSpeed
         self.maxSpeed = constants.flyMaxSpeed
     }
 
-//    static func calculateTotalDistance(_ povSequence: [POV]) -> Float {
-//        var distance: Float = 0
-//        for i in 1..<povSequence.count {
-//            distance += simd_distance(povSequence[i-1].location, povSequence[i].location)
-//        }
-//        return distance
-//    }
+    static func calculateTotalDistance(_ povSequence: [POV]) -> Float {
+        var distance: Float = 0
+        for i in 1..<povSequence.count {
+            distance += simd_distance(povSequence[i-1].location, povSequence[i].location)
+        }
+        return distance
+    }
 
     /// returns nil when finished
     func update(_ timestamp: Date) -> POV? {
 
         // It's essential that the first time this func is called,
         // phase = .new
-        // fractionalDistance = 0
+        // currentStepFractionalDistance = 0
 
         let dt = timestamp.timeIntervalSince(lastUpdateTime)
         lastUpdateTime = timestamp
 
-        fractionalDistance += normalizedSpeed * dt
+        currentStepFractionalDistance += normalizedSpeed * dt
 
         switch phase {
         case .new:
             phase = .accelerating
         case .accelerating:
-            if fractionalDistance >= coastingThreshold {
+            if currentStepFractionalDistance >= coastingThreshold {
                 phase = .coasting
             }
             else {
@@ -492,11 +496,12 @@ class FlyPOV {
                 }
             }
         case .coasting:
-            if fractionalDistance >= (1 - coastingThreshold) {
+            if currentStepFractionalDistance >= (1 - coastingThreshold) {
                 phase = .decelerating
             }
         case .decelerating:
-            if fractionalDistance >= 1  {
+            if currentStepFractionalDistance >= 1  {
+                currentStepFractionalDistance = 1
                 phase = .arrived
             }
             else {
@@ -509,9 +514,11 @@ class FlyPOV {
             return nil
         }
 
-        let newLocation = Float(fractionalDistance) * (finalPOV.location - initialPOV.location) + initialPOV.location
-        let newCenter   = Float(fractionalDistance) * (finalPOV.center - initialPOV.center) + initialPOV.center
-        let newUp       = Float(fractionalDistance) * (finalPOV.up - initialPOV.up) + initialPOV.up
+        let initialPOV = povSequence[currentStepIndex]
+        let finalPOV = povSequence[currentStepIndex+1]
+        let newLocation = Float(currentStepFractionalDistance) * (finalPOV.location - initialPOV.location) + initialPOV.location
+        let newCenter   = Float(currentStepFractionalDistance) * (finalPOV.center - initialPOV.center) + initialPOV.center
+        let newUp       = Float(currentStepFractionalDistance) * (finalPOV.up - initialPOV.up) + initialPOV.up
         return POV(location: newLocation,
                    center: newCenter,
                    up: newUp)
