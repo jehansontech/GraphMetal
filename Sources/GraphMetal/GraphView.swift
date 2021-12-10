@@ -74,6 +74,29 @@ public struct GraphView<S: RenderableGraphHolder> {
     func updatePOV() {
         povController.updateModelView(Date())
     }
+
+    internal func makeMTKView() -> MTKView {
+        let mtkView = MTKView()
+
+        // Q: WHY DO THIS?
+        // A: copied from sample code w/o understanding
+        // --> let's see what happens without it
+        // mtkView.enableSetNeedsDisplay = true
+        // --> SEEMS FINE
+
+        // Q: WHY DO THIS?
+        // A: copied from sample code w/o understanding
+        // --> let's see what happens without it
+        // mtkView.framebufferOnly = false
+        // --> SEEMS FINE
+
+        mtkView.preferredFramesPerSecond = 60
+        mtkView.drawableSize = mtkView.frame.size
+        mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
+        mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
+
+        return mtkView
+    }
 }
 
 #if os(iOS)
@@ -83,22 +106,10 @@ extension GraphView: UIViewRepresentable {
 
     public func makeUIView(context: Context) -> MTKView {
         debug("GraphView (iOS)", "makeUIView")
-        debug("GraphView (iOS)", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
 
-        let mtkView = MTKView()
-
+        let mtkView = makeMTKView()
         mtkView.delegate = context.coordinator
-        mtkView.preferredFramesPerSecond = 60
-        mtkView.enableSetNeedsDisplay = true
         mtkView.device = context.coordinator.device
-        mtkView.framebufferOnly = false
-        mtkView.drawableSize = mtkView.frame.size
-        mtkView.enableSetNeedsDisplay = true
-
-        mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
-        mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-
-        mtkView.isPaused = false
 
         if let tapHandler = self.tapHandler {
             context.coordinator.tapHandler = tapHandler
@@ -156,23 +167,11 @@ extension GraphView: NSViewRepresentable {
     public typealias NSViewType = MTKView
 
     public func makeNSView(context: Context) -> MTKView {
-        debug("GraphView (macOS)", "makeUIView")
-        debug("GraphView (macOS)", "rendererSettings.backgroundColor = \(rendererSettings.backgroundColor)")
+        debug("GraphView (macOS)", "makeNSView")
 
-        let mtkView = MTKView()
-
+        let mtkView = makeMTKView()
         mtkView.delegate = context.coordinator
-        mtkView.preferredFramesPerSecond = 60
-        mtkView.enableSetNeedsDisplay = true
         mtkView.device = context.coordinator.device
-        mtkView.framebufferOnly = false
-        mtkView.drawableSize = mtkView.frame.size
-        mtkView.enableSetNeedsDisplay = true
-
-        mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
-        mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-
-        mtkView.isPaused = false
 
         if let tapHandler = self.tapHandler {
             context.coordinator.tapHandler = tapHandler
@@ -214,7 +213,7 @@ extension GraphView: NSViewRepresentable {
     }
 
     public func updateNSView(_ mtkView: MTKView, context: Context) {
-        debug("GraphView (macOS)", "updateUIView")
+        debug("GraphView (macOS)", "updateNSView")
 
         mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
                                                rendererSettings.backgroundColor.y,

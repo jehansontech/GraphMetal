@@ -223,7 +223,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
     }
 
     // FIXME: args are awkward
-    func preDraw(_ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, _ properties: RendererProperties) {
+    func preDraw(_ povController: POVController, _ properties: RendererProperties) {
 
         let nodeSize = properties.nodeSize
         let edgeColor = properties.edgeColor
@@ -240,8 +240,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         // =====================================
         // Update content of current uniforms buffer
 
-        uniforms[0].projectionMatrix = projectionMatrix
-        uniforms[0].modelViewMatrix = modelViewMatrix
+        uniforms[0].projectionMatrix = povController.projectionMatrix
+        uniforms[0].modelViewMatrix = povController.modelViewMatrix
         uniforms[0].pointSize = Float(nodeSize)
         uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
                                              Float(edgeColor.y),

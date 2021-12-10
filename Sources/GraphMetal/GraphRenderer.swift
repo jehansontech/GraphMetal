@@ -302,7 +302,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         // Update POV based on current time, in case it's moving on its own
         parent.povController.updateModelView(t0)
 
-        graphWireFrame.preDraw(parent.povController.projectionMatrix, parent.povController.modelViewMatrix, self)
+        graphWireFrame.preDraw(parent.povController, self)
 
         let dt = Date().timeIntervalSince(t0)
         if (dt > 1/30) {
