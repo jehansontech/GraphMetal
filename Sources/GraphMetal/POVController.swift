@@ -9,29 +9,62 @@ import SwiftUI
 import simd
 import Wacoma
 
+public struct POVControllerConstants {
+
+    let scrollSensitivity: Float
+
+    let panSensitivity: Float
+
+    let magnificationSensitivity: Float
+
+    let rotationSensitivity: Float
+
+    let flyCoastingThreshold: Double
+
+    let flyNormalizedAcceleration: Double
+
+    let flyMinSpeed: Double
+
+    let flyMaxSpeed: Double
+
+#if os(iOS)
+    init() {
+        self.scrollSensitivity = 1.5 * .piOverTwo
+        self.panSensitivity = 1.5 * .pi
+        self.magnificationSensitivity = 2
+        self.rotationSensitivity = 1.25
+        self.flyCoastingThreshold = 0.33
+        self.flyNormalizedAcceleration = 6
+        self.flyMinSpeed  = 0.01
+        self.flyMaxSpeed = 10
+    }
+#elseif os(macOS)
+    init() {
+        self.scrollSensitivity = 1.5 * .piOverTwo
+        self.panSensitivity = 1.5 * .pi
+        self.magnificationSensitivity = 2
+        self.rotationSensitivity = 1.25
+        self.flyCoastingThreshold = 0.33
+        self.flyNormalizedAcceleration = 6
+        self.flyMinSpeed  = 0.01
+        self.flyMaxSpeed = 10
+    }
+#endif
+
+}
+
 ///
 ///
 ///
 public class POVController: ObservableObject, CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
 
-    /// EMPIRICAL
-    public let fovyRadians = Float(65) * .pi / 180
+    var constants = POVControllerConstants()
 
-    /// used only as default
-    var nearZ: Float = 0.01
+    var yFOV: Float
 
-    /// used only as default
-    var farZ: Float  = RendererSettings.defaults.visibilityLimit
+    var zNear: Float
 
-    /// macOS and iOS use opposite conventions for scrolling b/c their coordinate systems have
-    /// opposite "vertical" orientations. macOS has option to 'flip' the coordinate system so that it
-    /// matches that of iOS.
-    /// * scrollReversed = false is appropriate for iOS and macOS flipped views.
-    /// * scrollReversed = true is appropriate macOS unflipped vlews
-    var scrollReversed = false
-    
-    /// Determined by hardware
-    var scrollFlipFactor: Float = 1
+    var zFar: Float
 
     // for POV
     var location: SIMD3<Float>
@@ -95,13 +128,16 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     public init() {
         debug("POVController", "init")
 
-        // Dummy values
+        // Dummy values, replaced during rendering lopop
+        self.yFOV = RendererSettings.defaults.yFOV
+        self.zNear = RendererSettings.defaults.zNear
+        self.zFar = RendererSettings.defaults.zFar
         self.location = POV.defaultLocation
         self.center = POV.defaultCenter
         self.up = POV.defaultUp
         self.viewSize = CGSize(width: 100, height: 100)
         self.modelViewMatrix = POVController.makeModelViewMatrix(location: location, center: center, up: up)
-        self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
+        self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
     }
 
     public func requestScreenshot() {
@@ -138,14 +174,14 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     public func flyTo(_ destination: POV) {
         if !flying {
-            self.flyPOV = FlyPOV(self.pov, destination)
+            self.flyPOV = FlyPOV(self.pov, destination, constants)
         }
     }
 
     public func dragBegan(at location: SIMD2<Float>) {
         // print("POVController.dragBegan")
         if !flying {
-            self.dragPOV = DragPOV(self.pov, location)
+            self.dragPOV = DragPOV(self.pov, location, constants)
         }
     }
 
@@ -166,7 +202,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     public func pinchBegan(at center: SIMD2<Float>) {
         // print("POVController.pinchBegan")
         if !flying {
-            self.pinchPOV = PinchPOV(self.pov, center)
+            self.pinchPOV = PinchPOV(self.pov, center, constants)
         }
     }
 
@@ -187,7 +223,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     public func rotationBegan(at location: SIMD2<Float>) {
         // print("POVController.rotationBegan")
         if !flying {
-            rotatePOV = RotatePOV(self.pov, location)
+            rotatePOV = RotatePOV(self.pov, location, constants)
         }
     }
     
@@ -201,21 +237,19 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func rotationEnded() {
-        // print("POVController.rotationEnded")
         self.rotatePOV = nil
     }
 
-    func updateProjection(nearZ: Float, farZ: Float) {
-        // debug("POVController", "updateProjection: nearZ=\(nearZ), farZ=\(farZ))")
-        self.nearZ = nearZ
-        self.farZ = farZ
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
+    func updateProjection(yFOV: Float, zNear: Float, zFar: Float) {
+        self.zNear = zNear
+        self.zFar = zFar
+        self.yFOV = yFOV
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
     }
 
     func updateProjection(viewSize: CGSize) {
         self.viewSize = viewSize
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, fovyRadians, nearZ, farZ)
-        // self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
     }
 
     func updateRenderingParameters() {
@@ -228,22 +262,23 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     func updateModelView(_ timestamp: Date) {
 
-        // if we're flying, ignore pov.velocity
-
         if let newPOV = flyPOV?.update(timestamp) {
             self.pov = newPOV
         }
         else {
             self.flyPOV = nil
-
-            if let t0 = _lastUpdateTimestamp,
-               let controls = rendererControls,
-               controls.orbitEnabled {
-                let dPhi = controls.orbitSpeed * Float(timestamp.timeIntervalSince(t0))
-                self.location = (float4x4(rotationAround: up, by: dPhi) * SIMD4<Float>(location, 1)).xyz
-                self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
-            }
         }
+
+        // orbital motion -- even if we're flying
+        if let t0 = _lastUpdateTimestamp,
+           let controls = rendererControls,
+           controls.orbitEnabled {
+            // STET: multiply by -1 so that positive speed looks like earth's direction of rotation
+            let dPhi = -1 * controls.orbitSpeed * Float(timestamp.timeIntervalSince(t0))
+            self.location = (float4x4(rotationAround: up, by: dPhi) * SIMD4<Float>(location, 1)).xyz
+            self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
+        }
+
         _lastUpdateTimestamp = timestamp
     }
 
@@ -267,17 +302,19 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 ///
 struct DragPOV {
 
-    let scrollSensitivity: Float = 1.5 * .piOverTwo
-
-    let panSensitivity: Float = 1.5 * .pi
-
     let initialPOV: POV
 
     let touchLocation: SIMD2<Float>
 
-    init(_ pov: POV, _ touchLocation: SIMD2<Float>) {
+    let scrollSensitivity: Float
+
+    let panSensitivity: Float
+
+    init(_ pov: POV, _ touchLocation: SIMD2<Float>, _ constants: POVControllerConstants) {
         self.initialPOV = pov
         self.touchLocation = touchLocation
+        self.scrollSensitivity = constants.scrollSensitivity
+        self.panSensitivity = constants.panSensitivity
     }
 
     mutating func dragChanged(_ pov: POV, pan: Float, scroll: Float) -> POV? {
@@ -320,15 +357,16 @@ struct DragPOV {
 ///
 struct PinchPOV {
 
-    var magnificationSensitivity: Float = 2
-
     let initialPOV: POV
 
     let touchLocation: SIMD2<Float>
 
-    init(_ pov: POV, _ touchLocation: SIMD2<Float>) {
+    let magnificationSensitivity: Float
+
+    init(_ pov: POV, _ touchLocation: SIMD2<Float>, _ constants: POVControllerConstants) {
         self.initialPOV = pov
         self.touchLocation = touchLocation
+        self.magnificationSensitivity = constants.magnificationSensitivity
     }
 
     mutating func magnificationChanged(_ pov: POV, scale: Float) -> POV? {
@@ -350,15 +388,16 @@ struct PinchPOV {
 ///
 struct RotatePOV {
 
-    var rotationSensitivity: Float = 1.5
-
     let initialPOV: POV
 
     let touchLocation: SIMD2<Float>
 
-    init(_ pov: POV, _ touchLocation: SIMD2<Float>) {
+    let rotationSensitivity: Float
+
+    init(_ pov: POV, _ touchLocation: SIMD2<Float>, _ constants: POVControllerConstants) {
         self.initialPOV = pov
         self.touchLocation = touchLocation
+        self.rotationSensitivity = constants.rotationSensitivity
     }
 
     mutating func rotationChanged(_ pov: POV, radians: Float) -> POV? {
@@ -387,23 +426,21 @@ class FlyPOV {
         case arrived
     }
 
-    /// EMPIRICAL
-    let coastingThreshold: Double = 0.33
-
-    /// EMPIRICAL
-    let normalizedAcceleration: Double = 8
-
-    /// EMPIRICAL: not reached
-    let minSpeed: Double = 0.01
-
-    /// EMPIRICAL: not reached
-    let maxSpeed: Double = 10
-
     let initialPOV: POV
 
     let finalPOV: POV
 
+    let coastingThreshold: Double
+
+    let normalizedAcceleration: Double
+
+    let minSpeed: Double
+
+    let maxSpeed: Double
+
     var lastUpdateTime: Date = .distantPast
+
+    var stepIndex: Int = 0
 
     var normalizedSpeed: Double = 0
 
@@ -411,17 +448,29 @@ class FlyPOV {
 
     var phase: Phase = .new
 
-    init(_ pov: POV, _ destination: POV) {
+    init(_ pov: POV, _ destination: POV, _ constants: POVControllerConstants) {
         self.initialPOV = pov
         self.finalPOV = destination
+        self.coastingThreshold = constants.flyCoastingThreshold
+        self.normalizedAcceleration = constants.flyNormalizedAcceleration
+        self.minSpeed = constants.flyMinSpeed
+        self.maxSpeed = constants.flyMaxSpeed
     }
+
+//    static func calculateTotalDistance(_ povSequence: [POV]) -> Float {
+//        var distance: Float = 0
+//        for i in 1..<povSequence.count {
+//            distance += simd_distance(povSequence[i-1].location, povSequence[i].location)
+//        }
+//        return distance
+//    }
 
     /// returns nil when finished
     func update(_ timestamp: Date) -> POV? {
 
         // It's essential that the first time this func is called,
         // phase = .new
-        // normalizedSpeed = 0
+        // fractionalDistance = 0
 
         let dt = timestamp.timeIntervalSince(lastUpdateTime)
         lastUpdateTime = timestamp
@@ -448,7 +497,6 @@ class FlyPOV {
             }
         case .decelerating:
             if fractionalDistance >= 1  {
-                fractionalDistance = 1
                 phase = .arrived
             }
             else {

@@ -277,6 +277,7 @@ public protocol RendererRotationHandler {
     /// center is midpoint between two fingers
     mutating func rotationBegan(at center: SIMD2<Float>)
 
+    /// increases as the fingers rotate counterclockwise
     mutating func rotationChanged(by radians: Float)
 
     mutating func rotationEnded()

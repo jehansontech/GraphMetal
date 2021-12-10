@@ -31,6 +31,7 @@ struct RendererConstants {
 
     // EMPIRICAL
     static let nodeSizeScaleFactor: Double = 800
+
 }
 
 
@@ -66,7 +67,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public var nodeSizeMaximum: Double = RendererSettings.defaults.nodeSizeMaximum
 
-    public var edgeColorDefault = RendererSettings.defaults.edgeColorDefault
+    public var edgeColor = RendererSettings.defaults.edgeColor
 
     public var nodeColorDefault: SIMD4<Double> {
         get {
@@ -87,8 +88,12 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
 
     public var orbitSpeed: Float = RendererSettings.defaults.orbitSpeed
-    
-    public var nearZ: Float = 0.01
+
+    public var yFOV: Float = RendererSettings.defaults.yFOV
+
+    public var zNear: Float = RendererSettings.defaults.zNear
+
+    public var zFar: Float = RendererSettings.defaults.zFar
 
     public var updateInProgress: Bool {
         return updateStartedCount > updateCompletedCount
@@ -181,9 +186,13 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     }
     
     func applySettings(_ settings: RendererSettings) {
+        debug("Renderer", "applySettings")
 
         // FIXME: this is proof of bad design
 
+        self.yFOV = settings.yFOV
+        self.zNear = settings.zNear
+        self.zFar = settings.zFar
         self.fadeoutOnset = settings.fadeoutOnset
         self.visibilityLimit = settings.visibilityLimit
         self.visibilityMaximum = settings.visibilityMaximum
@@ -193,7 +202,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         self.nodeSizeMinimum = settings.nodeSizeMinimum
         self.nodeSizeMaximum = settings.nodeSizeMaximum
         self.nodeColorDefault = settings.nodeColorDefault
-        self.edgeColorDefault = settings.edgeColorDefault
+        self.edgeColor = settings.edgeColor
         self.backgroundColor = settings.backgroundColor
 
         // special case
@@ -288,7 +297,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
         let t0 = Date()
 
-        parent.povController.updateProjection(nearZ: self.nearZ, farZ: self.visibilityLimit)
+        parent.povController.updateProjection(yFOV: self.yFOV, zNear: self.zNear, zFar: self.zFar)
 
         // Update POV based on current time, in case it's moving on its own
         parent.povController.updateModelView(t0)
@@ -425,6 +434,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
                 dragHandler.dragBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
             case .changed:
                 let translation = gesture.translation(in: view)
+                // STET: scroll is multiplied by -1
                 dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
                                         scroll: Float(-translation.y / view.bounds.height))
             case .ended:
@@ -449,12 +459,10 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .possible:
                 break
             case .began:
-                // debug("Renderer(iOS) pinch began at clipPoint = \(clipPoint(gesture.location(ofTouch: 0, in: view), gesture.location(ofTouch: 1, in: view), view.bounds))")
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
                                                       gesture.location(ofTouch: 1, in: view),
                                                       view.bounds))
             case .changed:
-                // debug("Renderer(iOS) pinch changed by scale = \(gesture.scale)")
                 pinchHandler.pinchChanged(by: Float(gesture.scale))
             case .ended:
                 pinchHandler.pinchEnded()
@@ -513,9 +521,6 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
 
         if var tapHandler = self.tapHandler,
            let view = gesture.view {
-
-            // debug("GraphRenderer(macOS)", "tap at \(gesture.location(in: view)) -> clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
-
             switch gesture.state {
             case .possible:
                 break
@@ -574,7 +579,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
                 dragHandler.dragBegan(at: clipPoint(gesture.location(in: view), view.bounds))
             case .changed:
                 let translation = gesture.translation(in: view)
-                // macOS view coords, y axis direction is reverse of iOS
+                // macOS uses upside-down clip coords, so the scroll value is the opposite of that on iOS
                 dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
                                         scroll: Float(translation.y / view.bounds.height))
             case .ended:
@@ -598,11 +603,10 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
-                // debug("Renderer(macOS)", "pinch began at clipPoint = \(clipPoint(gesture.location(in: view), view.bounds))")
                 pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view),
                                                       view.bounds))
             case .changed:
-                // debug("Renderer(macOS)", "pinch changed by magnification = \(gesture.magnification) -> scale = \(1 + gesture.magnification)")
+                // macOS gesture's magnification=0 corresponds to iOS gesture's scale=1
                 pinchHandler.pinchChanged(by: Float(1 + gesture.magnification))
             case .ended:
                 pinchHandler.pinchEnded()
@@ -629,7 +633,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
                 rotationHandler.rotationBegan(at: clipPoint(gesture.location(in: view),
                                                             view.bounds))
             case .changed:
-                rotationHandler.rotationChanged(by: Float(gesture.rotation))
+                // multiply by -1 because macOS gestures use upside-down clip space
+                rotationHandler.rotationChanged(by: Float(-gesture.rotation))
             case .ended:
                 rotationHandler.rotationEnded()
             case .cancelled:

@@ -222,11 +222,11 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
     }
 
-    // FIXME args are awkward
-    func preDraw(_ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, _ rendererProperties: RendererProperties) {
+    // FIXME: args are awkward
+    func preDraw(_ projectionMatrix: float4x4, _ modelViewMatrix: float4x4, _ properties: RendererProperties) {
 
-        let nodeSize = rendererProperties.nodeSize
-        let edgeColor = rendererProperties.edgeColorDefault
+        let nodeSize = properties.nodeSize
+        let edgeColor = properties.edgeColor
 
         // ======================================
         // Rotate the uniforms buffers
@@ -247,8 +247,8 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
-        uniforms[0].fadeoutOnset = rendererProperties.fadeoutOnset
-        uniforms[0].visbilityLimit = rendererProperties.visibilityLimit
+        uniforms[0].fadeoutOnset = properties.fadeoutOnset
+        uniforms[0].visbilityLimit = properties.visibilityLimit
     }
     
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {

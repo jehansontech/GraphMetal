@@ -57,7 +57,7 @@ extension Graph where
                 /// distance along the ray to the point closest to the node
                 let rayDistance = simd_dot(nodeDisplacement, rayDirection)
 
-                if (rayDistance < povController.nearZ) {
+                if (rayDistance < povController.zNear) {
                     // Node is not in view
                     continue
                 }
