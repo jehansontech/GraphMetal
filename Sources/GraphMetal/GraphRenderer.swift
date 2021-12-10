@@ -228,7 +228,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         debug("Renderer", "mtkView size=\(size)")
-        parent.updateProjection(viewSize: size)
+        _ = parent.povController.updateProjection(viewSize: size)
 
         do {
             try graphWireFrame.setup(view)
@@ -297,12 +297,18 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
         let t0 = Date()
 
-        parent.povController.updateProjection(yFOV: self.yFOV, zNear: self.zNear, zFar: self.zFar)
+        let projectionMatrix = parent.povController.updateProjection(yFOV: self.yFOV, zNear: self.zNear, zFar: self.zFar)
 
         // Update POV based on current time, in case it's moving on its own
-        parent.povController.updateModelView(t0)
+        let modelViewMatrix = parent.povController.updateModelView(t0)
 
-        graphWireFrame.preDraw(parent.povController, self)
+        graphWireFrame.preDraw(projectionMatrix: projectionMatrix,
+                               modelViewMatrix: modelViewMatrix,
+                               nodeSize: self.nodeSize,
+                               edgeColor: self.edgeColor,
+                               fadeoutOnset: self.fadeoutOnset,
+                               visibilityLimit: self.visibilityLimit)
+        // graphWireFrame.preDraw(parent.povController, self)
 
         let dt = Date().timeIntervalSince(t0)
         if (dt > 1/30) {

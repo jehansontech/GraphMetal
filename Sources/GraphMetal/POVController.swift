@@ -60,11 +60,11 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     var constants = POVControllerConstants()
 
-    var yFOV: Float
+    public var yFOV: Float
 
-    var zNear: Float
+    public var zNear: Float
 
-    var zFar: Float
+    public var zFar: Float
 
     // for POV
     var location: SIMD3<Float>
@@ -240,18 +240,6 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.rotatePOV = nil
     }
 
-    func updateProjection(yFOV: Float, zNear: Float, zFar: Float) {
-        self.zNear = zNear
-        self.zFar = zFar
-        self.yFOV = yFOV
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
-    }
-
-    func updateProjection(viewSize: CGSize) {
-        self.viewSize = viewSize
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
-    }
-
     func updateRenderingParameters() {
         let povDistance = Double(simd_length(self.location - self.center))
         debug("POVController", "new povDistance = \(povDistance)")
@@ -260,26 +248,47 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         }
     }
 
-    func updateModelView(_ timestamp: Date) {
+    func updateProjection(yFOV: Float, zNear: Float, zFar: Float) -> float4x4 {
+        self.zNear = zNear
+        self.zFar = zFar
+        self.yFOV = yFOV
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
+        return self.projectionMatrix
+    }
 
+    func updateProjection(viewSize: CGSize) -> float4x4 {
+        self.viewSize = viewSize
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
+        return self.projectionMatrix
+    }
+
+    func updateModelView(_ timestamp: Date) -> float4x4 {
+
+        var updatePOV: POV
         if let newPOV = flyPOV?.update(timestamp) {
-            self.pov = newPOV
+            updatePOV = newPOV
         }
         else {
             self.flyPOV = nil
+            updatePOV = self.pov
         }
 
-        // orbital motion -- even if we're flying
+        // =======================================
+        // Q: orbital motion even if we're flying or handling a gesture?
+        // A: Sure, what could go wrong?
+        // =======================================
+
         if let t0 = _lastUpdateTimestamp,
            let controls = rendererControls,
            controls.orbitEnabled {
             // STET: multiply by -1 so that positive speed looks like earth's direction of rotation
             let dPhi = -1 * controls.orbitSpeed * Float(timestamp.timeIntervalSince(t0))
-            self.location = (float4x4(rotationAround: up, by: dPhi) * SIMD4<Float>(location, 1)).xyz
-            self.modelViewMatrix = Self.makeModelViewMatrix(location: location, center: center, up: up)
+            updatePOV.location = (float4x4(rotationAround: up, by: dPhi) * SIMD4<Float>(location, 1)).xyz
         }
-
         _lastUpdateTimestamp = timestamp
+
+        self.pov = updatePOV // automatically update the modelViewMatrix
+        return modelViewMatrix
     }
 
     static func makeModelViewMatrix(location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) -> float4x4 {

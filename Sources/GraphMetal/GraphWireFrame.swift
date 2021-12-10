@@ -222,11 +222,12 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
     }
 
-    // FIXME: args are awkward
-    func preDraw(_ povController: POVController, _ properties: RendererProperties) {
-
-        let nodeSize = properties.nodeSize
-        let edgeColor = properties.edgeColor
+    func preDraw(projectionMatrix: float4x4,
+                 modelViewMatrix: float4x4,
+                 nodeSize: CGFloat,
+                 edgeColor: SIMD4<Double>,
+                 fadeoutOnset: Float,
+                 visibilityLimit: Float) {
 
         // ======================================
         // Rotate the uniforms buffers
@@ -240,16 +241,46 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         // =====================================
         // Update content of current uniforms buffer
 
-        uniforms[0].projectionMatrix = povController.projectionMatrix
-        uniforms[0].modelViewMatrix = povController.modelViewMatrix
+        uniforms[0].projectionMatrix = projectionMatrix
+        uniforms[0].modelViewMatrix = modelViewMatrix
         uniforms[0].pointSize = Float(nodeSize)
         uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
                                              Float(edgeColor.y),
                                              Float(edgeColor.z),
                                              Float(edgeColor.w))
-        uniforms[0].fadeoutOnset = properties.fadeoutOnset
-        uniforms[0].visbilityLimit = properties.visibilityLimit
+        uniforms[0].fadeoutOnset = fadeoutOnset
+        uniforms[0].visbilityLimit = visibilityLimit
     }
+
+
+//    // FIXME: args are awkward
+//    func preDraw(_ povController: POVController, _ properties: RendererProperties) {
+//
+//        let nodeSize = properties.nodeSize
+//        let edgeColor = properties.edgeColor
+//
+//        // ======================================
+//        // Rotate the uniforms buffers
+//
+//        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
+//
+//        uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
+//
+//        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
+//
+//        // =====================================
+//        // Update content of current uniforms buffer
+//
+//        uniforms[0].projectionMatrix = povController.projectionMatrix
+//        uniforms[0].modelViewMatrix = povController.modelViewMatrix
+//        uniforms[0].pointSize = Float(nodeSize)
+//        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
+//                                             Float(edgeColor.y),
+//                                             Float(edgeColor.z),
+//                                             Float(edgeColor.w))
+//        uniforms[0].fadeoutOnset = properties.fadeoutOnset
+//        uniforms[0].visbilityLimit = properties.visibilityLimit
+//    }
     
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
 
