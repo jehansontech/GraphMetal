@@ -8,27 +8,13 @@ import MetalKit
 import Wacoma
 import GenericGraph
 
-// https://stackoverflow.com/questions/65461516/how-do-i-trigger-updateuiview-of-a-uiviewrepresentable#:~:text=1%20Answer&text=You%20need%20to%20create%20UIKit,should%20update%20your%20UIKit%20view.
-// sez
-// @Binding var backgroundColor in my UIViewRepresentable
-//
-// https://github.com/nalexn/ViewInspector/issues/6
-// sez
-// "For UIViewRepresentable, you have to wrap that into a standalone native SwiftUI view,
-// using a @State to pass to the actual test view's @Binding. And it should have a closure
-// that receive Self and send it outside. Because the structure is copied or you'll lost
-// the @State status."
-//
-// which suggests to me that I can create a @State in view containing this guy
-// and pass it in to this guy's init as a Binding.
-
 public struct GraphView<S: RenderableGraphHolder> {
 
     @Binding var rendererSettings: RendererSettings
 
     var graphHolder: S
 
-    var povController: POVController
+    weak var povController: POVController!
 
     //    // NOT USED
     //    var projectionMatrix: float4x4 {
@@ -44,10 +30,12 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     let longPressHandler: RendererLongPressHandler?
 
+    weak var wireframeSettings: GraphWireFrameSettings?
 
     public init(_ settings: Binding<RendererSettings>,
                 _ graphHolder: S,
                 _ povController: POVController,
+                wireframeSettings: GraphWireFrameSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
         self._rendererSettings = settings
@@ -55,11 +43,13 @@ public struct GraphView<S: RenderableGraphHolder> {
         self.povController = povController
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
+
+        self.wireframeSettings = wireframeSettings
     }
 
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
-            let renderer = try GraphRenderer<S>(self)
+            let renderer = try GraphRenderer<S>(self, wireframeSettings)
             povController.rendererControls = renderer
             return renderer
         }

@@ -11,7 +11,84 @@ import GenericGraph
 import Shaders
 import Wacoma
 
-class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
+// ======================================
+// This protocol is TEMPORARY:
+// Delete when refactoring is done
+// ======================================
+public protocol GraphWireFrameProperties {
+
+    /// Width in pixels of the node's dot
+    var nodeSize: Double { get set }
+
+    /// indicates whether node size should be automatically adjusted when the POV changes
+    var nodeSizeAutomatic: Bool { get set }
+
+    /// Minimum automatic node size. Ignored if nodeSizeAutomatic is false
+    var nodeSizeMinimum: Double { get set }
+
+    /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
+    var nodeSizeMaximum: Double { get set }
+
+    var nodeColorDefault: SIMD4<Double> { get set }
+
+    var edgeColor: SIMD4<Double> { get set }
+}
+
+public class GraphWireFrameSettings: ObservableObject, GraphWireFrameProperties {
+
+    /// EMPIRICAL
+    static let nodeSizeScaleFactor: Double = 800
+
+    public static let defaults = GraphWireFrameSettings()
+
+    @Published public var nodeSize: Double
+
+    @Published public var nodeSizeAutomatic: Bool
+
+    @Published public var nodeSizeMinimum: Double
+
+    @Published public var nodeSizeMaximum: Double
+
+    @Published public var nodeColorDefault: SIMD4<Double>
+
+    @Published public var edgeColor: SIMD4<Double>
+
+    public init(nodeSize: Double = 25,
+                nodeSizeAutomatic: Bool = true,
+                nodeSizeMinimum: Double = 2,
+                nodeSizeMaximum: Double = 100,
+                nodeColorDefault: SIMD4<Double> = SIMD4<Double>(0, 0, 0, 1),
+                edgeColor: SIMD4<Double> = SIMD4<Double>(0.2, 0.2, 0.2, 1)) {
+        self.nodeSize = nodeSize
+        self.nodeSizeAutomatic = nodeSizeAutomatic
+        self.nodeSizeMinimum = nodeSizeMinimum
+        self.nodeSizeMaximum = nodeSizeMaximum
+        self.nodeColorDefault = nodeColorDefault
+        self.edgeColor = edgeColor
+    }
+
+//    func copyFrom(_ settings: GraphWireFrameProperties) {
+//        self.nodeSize = settings.nodeSize
+//        self.nodeSizeAutomatic = settings.nodeSizeAutomatic
+//        self.nodeSizeMinimum = settings.nodeSizeMinimum
+//        self.nodeSizeMaximum = settings.nodeSizeMaximum
+//        self.nodeColorDefault = settings.nodeColorDefault
+//        self.edgeColor = settings.edgeColor
+//    }
+    
+    func adjustedNodeSize(_ pov: POV) -> Double {
+        if nodeSizeAutomatic {
+            let newSize = Self.nodeSizeScaleFactor / Double(pov.radius)
+            return newSize.clamp(nodeSizeMinimum, nodeSizeMaximum)
+        }
+        else {
+            return nodeSize
+        }
+    }
+}
+
+
+public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     typealias NodeValueType = N
 
@@ -20,7 +97,9 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
     // ==============================================================
     // Rendering properties -- Access these only on rendering thread
 
-    var nodeColorDefault = RendererSettings.defaults.nodeColorDefault
+    public var settings: GraphWireFrameSettings
+
+    // var nodeColorDefault = RendererSettings.defaults.nodeColorDefault
 
     var device: MTLDevice
 
@@ -61,7 +140,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     // ==============================================================
 
-    init(_ device: MTLDevice) throws {
+    init(_ device: MTLDevice, _ settings: GraphWireFrameSettings? = nil) throws {
         debug("GraphWireFrame", "init")
         if let library = Shaders.makeLibrary(device) {
             self.library = library
@@ -71,6 +150,13 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
 
         self.device = device
+
+        if let settings = settings {
+            self.settings = settings
+        }
+        else {
+            self.settings = GraphWireFrameSettings()
+        }
     }
 
     deinit {
@@ -182,10 +268,10 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
         else if let newNodeColors = update.nodeColors {
 
-            let defaultColor = SIMD4<Float>(Float(self.nodeColorDefault.x),
-                                  Float(self.nodeColorDefault.y),
-                                  Float(self.nodeColorDefault.z),
-                                  Float(self.nodeColorDefault.w))
+            let defaultColor = SIMD4<Float>(Float(settings.nodeColorDefault.x),
+                                  Float(settings.nodeColorDefault.y),
+                                  Float(settings.nodeColorDefault.z),
+                                  Float(settings.nodeColorDefault.w))
             var colorsArray = [SIMD4<Float>](repeating: defaultColor, count: nodeCount)
             for (nodeID, color) in newNodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
@@ -224,8 +310,7 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     func preDraw(projectionMatrix: float4x4,
                  modelViewMatrix: float4x4,
-                 nodeSize: CGFloat,
-                 edgeColor: SIMD4<Double>,
+                 pov: POV,
                  fadeoutOnset: Float,
                  fadeoutDistance: Float) {
 
@@ -243,21 +328,14 @@ class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
         uniforms[0].projectionMatrix = projectionMatrix
         uniforms[0].modelViewMatrix = modelViewMatrix
-        uniforms[0].pointSize = Float(nodeSize)
-        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
-                                             Float(edgeColor.y),
-                                             Float(edgeColor.z),
-                                             Float(edgeColor.w))
+        uniforms[0].pointSize = Float(settings.adjustedNodeSize(pov))
+        uniforms[0].edgeColor = SIMD4<Float>(Float(settings.edgeColor.x),
+                                             Float(settings.edgeColor.y),
+                                             Float(settings.edgeColor.z),
+                                             Float(settings.edgeColor.w))
         uniforms[0].fadeoutOnset = fadeoutOnset
         uniforms[0].fadeoutDistance = fadeoutDistance
     }
-
-
-//    func adjustedNodeSize(_ pov: POV) -> CGFloat {
-//        if (self.settings.nodeSizeAutomatic) {
-//
-//        }
-//    }
 
 //    // FIXME: args are awkward
 //    func preDraw(_ povController: POVController, _ properties: RendererProperties) {

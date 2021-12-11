@@ -12,7 +12,7 @@ import simd
 public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
     
     public static let defaultLocation = SIMD3<Float>(0, 0, 1)
-    public static let defaultCenter    = SIMD3<Float>(0, 0, 0)
+    public static let defaultCenter   = SIMD3<Float>(0, 0, 0)
     public static let defaultUp       = SIMD3<Float>(0, 1, 0)
 
     /// The POV's location in world coordinates.
@@ -21,13 +21,18 @@ public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
     /// The point in world coordinates that the POV is looking at.
     public var center: SIMD3<Float>
 
-    /// Unit vector giving the direction the POV is looking, i.e., normalized displacement vector (center - location)
+    /// Unit vector giving the POV's orientation: i.e., the direction of "up".
+    public var up: SIMD3<Float>
+
+    /// Unit vector giving the direction the POV is looking
     public var forward: SIMD3<Float> {
         return normalize(center - location)
     }
 
-    /// Unit vector giving the POV's orientation: i.e., the direction of "up".
-    public var up: SIMD3<Float>
+    /// Distance between location and center
+    public var radius: Float {
+        simd_distance(location, center)
+    }
 
     public var description: String {
         return "location: \(location.prettyString) center: \(center.prettyString) up: \(up.prettyString)"

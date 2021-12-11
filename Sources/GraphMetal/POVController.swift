@@ -9,7 +9,7 @@ import SwiftUI
 import simd
 import Wacoma
 
-public struct POVControllerConstants {
+struct POVControllerConstants {
 
     let scrollSensitivity: Float
 
@@ -53,6 +53,28 @@ public struct POVControllerConstants {
 
 }
 
+//public class POVControllerSettings: ObservableObject, POVControllerProperties {
+//
+//    @Published public var pov: POV
+//
+//    @Published public var orbitEnabled: Bool
+//
+//    @Published public var orbitSpeed: Float
+//
+//    func copyFrom(_ settings: POVControllerProperties) {
+//        self.orbitEnabled = settings.orbitEnabled
+//        self.orbitSpeed = settings.orbitSpeed
+//    }
+//
+//    public init(pov: POV = POV(),
+//                orbitEnabled: Bool = false,
+//                orbitSpeed: Float = .pi/30) {
+//        self.pov = pov
+//        self.orbitEnabled = orbitEnabled
+//        self.orbitSpeed = orbitSpeed
+//    }
+//}
+
 ///
 ///
 ///
@@ -60,20 +82,33 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     var constants = POVControllerConstants()
 
+    // var settings: POVControllerSettings
+
+    @Published public var pov: POV {
+        didSet {
+            self.modelViewMatrix = Self.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
+        }
+    }
+
+    @Published public var orbitEnabled: Bool
+
+    @Published public var orbitSpeed: Float
+
+
+//    // for POV
+//    var location: SIMD3<Float>
+//
+//    // for POV
+//    var center: SIMD3<Float>
+//
+//    // for POV
+//    var up: SIMD3<Float>
+
     public var yFOV: Float
 
     public var zNear: Float
 
     public var zFar: Float
-
-    // for POV
-    var location: SIMD3<Float>
-
-    // for POV
-    var center: SIMD3<Float>
-
-    // for POV
-    var up: SIMD3<Float>
 
     var viewSize: CGSize
 
@@ -97,21 +132,23 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         return (flyPOV != nil)
     }
 
-    public var pov: POV {
-        get {
-            return POV(location: self.location,
-                       center: self.center,
-                       up: self.up)
-        }
-        set {
-            debug("NEW POV: \(newValue)")
-            self.location = newValue.location
-            self.center = newValue.center
-            self.up = normalize(newValue.up)
-            self.modelViewMatrix = Self.makeModelViewMatrix(location: self.location, center: self.center, up: self.up)
-            updateRenderingParameters()
-        }
-    }
+//    public var pov: POV {
+//        get {
+//            return settings.pov
+//            return POV(location: self.location,
+//                       center: self.center,
+//                       up: self.up)
+//        }
+//        set {
+//            debug("NEW POV: \(newValue)")
+//            settings.pov = newValue
+//            self.location = newValue.location
+//            self.center = newValue.center
+//            self.up = normalize(newValue.up)
+//            self.modelViewMatrix = Self.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
+//            // updateRenderingParameters()
+//        }
+//    }
 
     public var povDefault: POV? = nil
 
@@ -122,22 +159,38 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     private var _povMark: POV? = nil
 
     public var description: String {
-        return "POVController POV: posn=\(location.prettyString) cntr=\(center.prettyString) up=\(up.prettyString)"
+        return "POVController POV: posn=\(pov.location.prettyString) cntr=\(pov.center.prettyString) up=\(pov.up.prettyString)"
     }
 
-    public init() {
-        debug("POVController", "init")
+    public init(pov: POV = POV(),
+                orbitEnabled: Bool = false,
+                orbitSpeed: Float = .pi/30) {
+        self.pov = pov
+        self.orbitEnabled = orbitEnabled
+        self.orbitSpeed = orbitSpeed
 
-        // Dummy values, replaced during rendering lopop
+        //        let pov: POV
+        //        if let settings = settings {
+        //            self.settings = settings
+        //            pov = settings.pov
+        //        }
+        //        else {
+        //            let settings = POVControllerSettings()
+        //            self.settings = settings
+        //            pov = settings.pov
+        //        }
+
+        //        self.location = POV.defaultLocation
+        //        self.center = POV.defaultCenter
+        //        self.up = POV.defaultUp
+
         self.yFOV = RendererSettings.defaults.yFOV
         self.zNear = RendererSettings.defaults.zNear
         self.zFar = RendererSettings.defaults.zFar
-        self.location = POV.defaultLocation
-        self.center = POV.defaultCenter
-        self.up = POV.defaultUp
         self.viewSize = CGSize(width: 100, height: 100)
-        self.modelViewMatrix = POVController.makeModelViewMatrix(location: location, center: center, up: up)
+        self.modelViewMatrix = POVController.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
         self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
+
     }
 
     public func requestScreenshot() {
@@ -240,13 +293,14 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.rotatePOV = nil
     }
 
-    func updateRenderingParameters() {
-        let povDistance = Double(simd_length(self.location - self.center))
-        debug("POVController", "new povDistance = \(povDistance)")
-        if let controls = rendererControls {
-            controls.adjustNodeSize(povDistance: povDistance)
-        }
-    }
+    // NOT USED
+    //    func updateRenderingParameters() {
+    //        let povDistance = Double(simd_length(self.location - self.center))
+    //        debug("POVController", "new povDistance = \(povDistance)")
+    //        if let controls = rendererControls {
+    //            controls.adjustNodeSize(povDistance: povDistance)
+    //        }
+    //    }
 
     func updateProjection(yFOV: Float, zNear: Float, zFar: Float) -> float4x4 {
         self.zNear = zNear
@@ -279,15 +333,15 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         // =======================================
 
         if let t0 = _lastUpdateTimestamp,
-           let controls = rendererControls,
-           controls.orbitEnabled {
+           orbitEnabled {
             // STET: multiply by -1 so that positive speed looks like earth's direction of rotation
-            let dPhi = -1 * controls.orbitSpeed * Float(timestamp.timeIntervalSince(t0))
-            updatePOV.location = (float4x4(rotationAround: up, by: dPhi) * SIMD4<Float>(location, 1)).xyz
+            let dPhi = -1 * orbitSpeed * Float(timestamp.timeIntervalSince(t0))
+            updatePOV.location = (float4x4(rotationAround: pov.up, by: dPhi) * SIMD4<Float>(pov.location, 1)).xyz
         }
         _lastUpdateTimestamp = timestamp
 
-        self.pov = updatePOV // automatically update the modelViewMatrix
+        self.pov = updatePOV // this will automatically update the modelViewMatrix
+
         return modelViewMatrix
     }
 
@@ -333,7 +387,7 @@ struct DragPOV {
         // center point
         //
         // SCROLL is a rotation of the location and up vectors.
-        // --location rotates about an axis that is perpendicular to both 
+        // --location rotates about an axis that is perpendicular to both
         //   forward and up axes and that passes through the center point
         // --up vector rotates about the same axis
         //
@@ -349,7 +403,7 @@ struct DragPOV {
 
         let newUp = (
             float4x4(rotationAround: perpAxis, by: scroll * scrollSensitivity)
-                * SIMD4<Float>(initialPOV.up, 1)
+            * SIMD4<Float>(initialPOV.up, 1)
         ).xyz
 
 

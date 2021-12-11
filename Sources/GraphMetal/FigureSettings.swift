@@ -5,10 +5,13 @@
 //  Created by Jim Hanson on 12/10/21.
 //
 
-struct FigureSettings {
+import SwiftUI
 
-}
 
+// =======================================================
+// This protocol is TEMPORARY
+// TODO: Delete when RendererSettings refactor is complete
+// =======================================================
 public protocol POVControllerProperties {
 
     /// If true, POV's loation orbits its center point around an axis parallel to its up vector
@@ -16,25 +19,6 @@ public protocol POVControllerProperties {
 
     /// In radians per second
     var orbitSpeed: Float { get set }
-}
-
-public protocol GraphWireFrameProperties {
-
-    /// Width in pixels of the node's dot
-    var nodeSize: Double { get set }
-
-    /// indicates whether node size should be automatically adjusted when the POV changes
-    var nodeSizeAutomatic: Bool { get set }
-
-    /// Minimum automatic node size. Ignored if nodeSizeAutomatic is false
-    var nodeSizeMinimum: Double { get set }
-
-    /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
-    var nodeSizeMaximum: Double { get set }
-
-    var nodeColorDefault: SIMD4<Double> { get set }
-
-    var edgeColor: SIMD4<Double> { get set }
 }
 
 public protocol GraphRendererProperties {
@@ -59,3 +43,19 @@ public protocol GraphRendererProperties {
     var backgroundColor: SIMD4<Double> { get set }
 }
 
+public struct GraphRendererSettings: GraphRendererProperties {
+
+    public var yFOV: Float
+
+    public var zNear: Float
+
+    public var zFar: Float
+
+    public var fadeoutOnset: Float
+
+    public var fadeoutDistance: Float
+
+    public var backgroundColor: SIMD4<Double>
+
+
+}

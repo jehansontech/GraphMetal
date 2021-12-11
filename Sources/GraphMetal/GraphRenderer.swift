@@ -27,23 +27,9 @@ enum RendererError: Error {
 ///
 ///
 ///
-struct RendererConstants {
-
-    // EMPIRICAL
-    static let nodeSizeScaleFactor: Double = 800
-
-}
-
-
-///
-///
-///
-public protocol RendererControls: RendererProperties, AnyObject {
+public protocol RendererControls: AnyObject { //, POVControllerProperties  {
 
     var updateInProgress: Bool { get }
-
-    /// has no effect if nodeSizeAutomatic is false
-    func adjustNodeSize(povDistance: Double)
 
     func requestScreenshot()
 }
@@ -54,38 +40,15 @@ public protocol RendererControls: RendererProperties, AnyObject {
 ///
 public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, RendererControls {
 
-    typealias NodeValueType = S.GraphType.NodeType.ValueType
-    typealias EdgeValueType = S.GraphType.EdgeType.ValueType
+    public typealias NodeValueType = S.GraphType.NodeType.ValueType
+
+    public typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
     public var backgroundColor: SIMD4<Double> = RendererSettings.defaults.backgroundColor
-
-    public var nodeSizeAutomatic: Bool = RendererSettings.defaults.nodeSizeAutomatic
-
-    public var nodeSize = RendererSettings.defaults.nodeSize
-
-    public var nodeSizeMinimum: Double = RendererSettings.defaults.nodeSizeMinimum
-
-    public var nodeSizeMaximum: Double = RendererSettings.defaults.nodeSizeMaximum
-
-    public var edgeColor = RendererSettings.defaults.edgeColor
-
-    public var nodeColorDefault: SIMD4<Double> {
-        get {
-            return graphWireFrame.nodeColorDefault
-        }
-
-        set(newValue) {
-            graphWireFrame.nodeColorDefault = newValue
-        }
-    }
 
     public var fadeoutOnset: Float = RendererSettings.defaults.fadeoutOnset
 
     public var fadeoutDistance: Float = RendererSettings.defaults.fadeoutDistance
-
-    public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
-
-    public var orbitSpeed: Float = RendererSettings.defaults.orbitSpeed
 
     public var yFOV: Float = RendererSettings.defaults.yFOV
 
@@ -96,6 +59,9 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     public var updateInProgress: Bool {
         return updateStartedCount > updateCompletedCount
     }
+
+//    public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
+//    public var orbitSpeed: Float = RendererSettings.defaults.orbitSpeed
 
 
     var updateStartedCount: Int = 0
@@ -124,11 +90,12 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     var depthState: MTLDepthStencilState
 
-    var graphWireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
+    public var wireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
     
     // private var _drawCount: Int = 0
 
-    public init(_ parent: GraphView<S>) throws {
+    public init(_ parent: GraphView<S>,
+                _ wireframeSettings: GraphWireFrameSettings?) throws {
 
         debug("GraphRenderer", "init")
         
@@ -154,7 +121,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
             throw RendererError.noDepthStencilState
         }
 
-        graphWireFrame = try GraphWireFrame(device)
+        wireFrame = try GraphWireFrame(device, wireframeSettings)
         
         super.init()
 
@@ -168,17 +135,6 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         // TODO remove observer at some point -- but doesn't it need to be BEFORE deinitialization?
     }
 
-    public func adjustNodeSize(povDistance: Double) {
-        if nodeSizeAutomatic {
-            let newSize = RendererConstants.nodeSizeScaleFactor / povDistance
-            self.nodeSize = newSize.clamp(nodeSizeMinimum, nodeSizeMaximum)
-            debug("Renderer", "adjustNodeSize: newSize = \(nodeSize)")
-        }
-        else {
-            debug("Renderer", "adjustNodeSize: doing nothing because nodeSizeAutomatic = \(nodeSizeAutomatic)")
-        }
-    }
-    
     public func requestScreenshot() {
         self.screenshotRequested = true
     }
@@ -186,26 +142,18 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     func applySettings(_ settings: RendererSettings) {
         debug("Renderer", "applySettings")
 
-        // FIXME: this is proof of bad design
+        // FIXME: this method's existence is proof of bad design
 
+        // self.orbitEnabled = settings.orbitEnabled
+        // self.orbitSpeed = settings.orbitSpeed
+        // parent.povController.settings.copyFrom(settings)
+        
         self.yFOV = settings.yFOV
         self.zNear = settings.zNear
         self.zFar = settings.zFar
         self.fadeoutOnset = settings.fadeoutOnset
         self.fadeoutDistance = settings.fadeoutDistance
-        self.orbitEnabled = settings.orbitEnabled
-        self.orbitSpeed = settings.orbitSpeed
-        self.nodeSizeAutomatic = settings.nodeSizeAutomatic
-        self.nodeSizeMinimum = settings.nodeSizeMinimum
-        self.nodeSizeMaximum = settings.nodeSizeMaximum
-        self.nodeColorDefault = settings.nodeColorDefault
-        self.edgeColor = settings.edgeColor
         self.backgroundColor = settings.backgroundColor
-
-        // special case
-        if !nodeSizeAutomatic {
-            self.nodeSize = settings.nodeSize
-        }
     }
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
@@ -218,7 +166,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         let t0 = Date()
         debug("GraphRenderer", "graphHasChanged: starting. updateStartedCount=\(updateStartedCount) updateCompletedCount=\(updateCompletedCount)")
         self.updateStartedCount += 1
-        graphWireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
+        wireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
         let dt = Date().timeIntervalSince(t0)
         debug("GraphRenderer", "graphHasChanged: done. dt=\(dt) updateStartedCount=\(updateStartedCount) updateCompletedCount=\(updateCompletedCount)")
     }
@@ -228,7 +176,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         _ = parent.povController.updateProjection(viewSize: size)
 
         do {
-            try graphWireFrame.setup(view)
+            try wireFrame.setup(view)
         }
         catch {
             // TODO log it
@@ -270,7 +218,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
                 renderEncoder.setDepthStencilState(depthState)
 
-                graphWireFrame.encodeCommands(renderEncoder) //,
+                wireFrame.encodeCommands(renderEncoder) //,
                                     // dynamicUniformBuffer,
                                     // uniformBufferOffset)
 
@@ -299,10 +247,9 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         // Update POV based on current time, in case it's moving on its own
         let modelViewMatrix = parent.povController.updateModelView(t0)
 
-        graphWireFrame.preDraw(projectionMatrix: projectionMatrix,
+        wireFrame.preDraw(projectionMatrix: projectionMatrix,
                                modelViewMatrix: modelViewMatrix,
-                               nodeSize: self.nodeSize,
-                               edgeColor: self.edgeColor,
+                               pov: parent.povController.pov,
                                fadeoutOnset: self.fadeoutOnset,
                                fadeoutDistance: self.fadeoutDistance)
         // graphWireFrame.preDraw(parent.povController, self)
