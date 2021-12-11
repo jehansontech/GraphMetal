@@ -84,11 +84,12 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     // var settings: POVControllerSettings
 
-    @Published public var pov: POV {
-        didSet {
-            self.modelViewMatrix = Self.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
-        }
-    }
+    @Published public var pov: POV
+// {
+//        didSet {
+//            self.modelViewMatrix = Self.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
+//        }
+//    }
 
     @Published public var orbitEnabled: Bool
 
@@ -104,17 +105,17 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 //    // for POV
 //    var up: SIMD3<Float>
 
-    public var yFOV: Float
-
-    public var zNear: Float
-
-    public var zFar: Float
-
-    var viewSize: CGSize
-
-    public var projectionMatrix: float4x4
-    
-    public var modelViewMatrix: float4x4
+//    public var yFOV: Float
+//
+//    public var zNear: Float
+//
+//    public var zFar: Float
+//
+//    var viewSize: CGSize
+//
+    // public var projectionMatrix: float4x4
+    //
+    // public var modelViewMatrix: float4x4
 
     weak var rendererControls: RendererControls? = nil
 
@@ -184,12 +185,12 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         //        self.center = POV.defaultCenter
         //        self.up = POV.defaultUp
 
-        self.yFOV = RendererSettings.defaults.yFOV
-        self.zNear = RendererSettings.defaults.zNear
-        self.zFar = RendererSettings.defaults.zFar
-        self.viewSize = CGSize(width: 100, height: 100)
-        self.modelViewMatrix = POVController.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
-        self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
+//        self.yFOV = RendererSettings.defaults.yFOV
+//        self.zNear = RendererSettings.defaults.zNear
+//        self.zFar = RendererSettings.defaults.zFar
+//        self.viewSize = CGSize(width: 100, height: 100)
+//        self.modelViewMatrix = POVController.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
+        // self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
 
     }
 
@@ -302,29 +303,28 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     //        }
     //    }
 
-    func updateProjection(yFOV: Float, zNear: Float, zFar: Float) -> float4x4 {
-        self.zNear = zNear
-        self.zFar = zFar
-        self.yFOV = yFOV
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
-        return self.projectionMatrix
-    }
+//    func updateProjection(yFOV: Float, zNear: Float, zFar: Float) -> float4x4 {
+//        self.zNear = zNear
+//        self.zFar = zFar
+//        self.yFOV = yFOV
+//        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
+//        return self.projectionMatrix
+//    }
+//
+//    func updateProjection(viewSize: CGSize) -> float4x4 {
+//        self.viewSize = viewSize
+//        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
+//        return self.projectionMatrix
+//    }
 
-    func updateProjection(viewSize: CGSize) -> float4x4 {
-        self.viewSize = viewSize
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
-        return self.projectionMatrix
-    }
-
-    func updateModelView(_ timestamp: Date) -> float4x4 {
-
-        var updatePOV: POV
+    func updatePOV(_ timestamp: Date) -> POV {
+        var updatedPOV: POV
         if let newPOV = flyPOV?.update(timestamp) {
-            updatePOV = newPOV
+            updatedPOV = newPOV
         }
         else {
             self.flyPOV = nil
-            updatePOV = self.pov
+            updatedPOV = self.pov
         }
 
         // =======================================
@@ -336,24 +336,23 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
            orbitEnabled {
             // STET: multiply by -1 so that positive speed looks like earth's direction of rotation
             let dPhi = -1 * orbitSpeed * Float(timestamp.timeIntervalSince(t0))
-            updatePOV.location = (float4x4(rotationAround: pov.up, by: dPhi) * SIMD4<Float>(pov.location, 1)).xyz
+            updatedPOV.location = (float4x4(rotationAround: pov.up, by: dPhi) * SIMD4<Float>(pov.location, 1)).xyz
         }
         _lastUpdateTimestamp = timestamp
 
-        self.pov = updatePOV // this will automatically update the modelViewMatrix
-
-        return modelViewMatrix
+        self.pov = updatedPOV // this will automatically update the modelViewMatrix
+        return updatedPOV
     }
 
-    static func makeModelViewMatrix(location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) -> float4x4 {
-        return float4x4(lookAt: center, eye: location, up: up)
-    }
-
-    /// viewBounds are (width, height, depth). All three must be > 0
-    static func makeProjectionMatrix(_ viewSize: CGSize, _ fovyRadians: Float, _ nearZ: Float, _ farZ: Float) -> float4x4 {
-        let aspectRatio = (viewSize.height > 0) ? Float(viewSize.width) / Float(viewSize.height) : 1
-        return float4x4(perspectiveProjectionRHFovY: fovyRadians, aspectRatio: aspectRatio, nearZ: nearZ, farZ: farZ)
-    }
+//    static func makeModelViewMatrix(location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) -> float4x4 {
+//        return float4x4(lookAt: center, eye: location, up: up)
+//    }
+//
+//    /// viewBounds are (width, height, depth). All three must be > 0
+//    static func makeProjectionMatrix(_ viewSize: CGSize, _ fovyRadians: Float, _ nearZ: Float, _ farZ: Float) -> float4x4 {
+//        let aspectRatio = (viewSize.height > 0) ? Float(viewSize.width) / Float(viewSize.height) : 1
+//        return float4x4(perspectiveProjectionRHFovY: fovyRadians, aspectRatio: aspectRatio, nearZ: nearZ, farZ: farZ)
+//    }
 }
 
 // ===========================================================

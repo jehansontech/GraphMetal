@@ -245,6 +245,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
                         farZ: settings.zFar)
     }
 
+    static func makeModelViewMatrix(_ pov: POV) -> float4x4 {
+        return float4x4(lookAt: pov.center, eye: pov.location, up: pov.up)
+    }
+
     public func requestScreenshot() {
         self.screenshotRequested = true
     }
@@ -282,7 +286,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        debug("Renderer", "mtkView size=\(size)")
+        debug("GraphRenderer.mtkView(size)", "started. size=\(size)")
 
         self.viewSize = size
         // let projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
@@ -358,12 +362,11 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
                                                settings.backgroundColor.z,
                                                settings.backgroundColor.w)
 
-        let t0 = Date()
 
         let projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
 
-        // Update POV based on current time, in case it's moving on its own
-        let modelViewMatrix = parent.povController.updateModelView(t0)
+        // Update POV, in case it's moving on its own
+        let modelViewMatrix = Self.makeModelViewMatrix(parent.povController.updatePOV(Date()))
 
         wireFrame.preDraw(projectionMatrix: projectionMatrix,
                                modelViewMatrix: modelViewMatrix,
