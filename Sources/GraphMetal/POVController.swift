@@ -116,21 +116,21 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     // public var projectionMatrix: float4x4
     //
     // public var modelViewMatrix: float4x4
-
-    weak var rendererControls: RendererControls? = nil
+//
+//    weak var rendererControls: RendererControls? = nil
 
     private var _lastUpdateTimestamp: Date? = nil
 
-    var dragPOV: DragPOV? = nil
+    private var dragInProgress: POVDragAction? = nil
 
-    var pinchPOV: PinchPOV? = nil
+    private var pinchInProgress: POVPinchAction? = nil
 
-    var rotatePOV: RotatePOV? = nil
+    private var rotationInProgress: POVRotationAction? = nil
 
-    var flyPOV: FlyPOV? = nil
+    private var flightInProgress: POVFlightAction? = nil
 
-    var flying: Bool {
-        return (flyPOV != nil)
+    public var flying: Bool {
+        return (flightInProgress != nil)
     }
 
 //    public var pov: POV {
@@ -194,11 +194,12 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     }
 
-    public func requestScreenshot() {
-        if let rendererControls = rendererControls {
-            rendererControls.requestScreenshot()
-        }
-    }
+//    public func requestScreenshot() {
+//        if let rendererControls = rendererControls {
+//            rendererControls.requestScreenshot()
+//        }
+//    }
+
     public func markPOV() {
         self._povMark = pov
         // print("POV mark: \(pov)")
@@ -228,20 +229,20 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     public func flyTo(_ destination: POV) {
         if !flying {
-            self.flyPOV = FlyPOV(self.pov, destination, constants)
+            self.flightInProgress = POVFlightAction(self.pov, destination, constants)
         }
     }
 
     public func dragBegan(at location: SIMD2<Float>) {
         // print("POVController.dragBegan")
         if !flying {
-            self.dragPOV = DragPOV(self.pov, location, constants)
+            self.dragInProgress = POVDragAction(self.pov, location, constants)
         }
     }
 
     public func dragChanged(pan: Float, scroll: Float) {
         // print("POVController.dragChanged")
-        if var povDragHandler = self.dragPOV {
+        if var povDragHandler = self.dragInProgress {
             if let newPOV = povDragHandler.dragChanged(self.pov, pan: pan, scroll: scroll) {
                 self.pov = newPOV
             }
@@ -250,19 +251,19 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     public func dragEnded() {
         // print("POVController.dragEnded")
-        self.dragPOV = nil
+        self.dragInProgress = nil
     }
 
     public func pinchBegan(at center: SIMD2<Float>) {
         // print("POVController.pinchBegan")
         if !flying {
-            self.pinchPOV = PinchPOV(self.pov, center, constants)
+            self.pinchInProgress = POVPinchAction(self.pov, center, constants)
         }
     }
 
     public func pinchChanged(by scale: Float) {
         // print("POVController.pinchChanged")
-        if var povPinchHandler = self.pinchPOV {
+        if var povPinchHandler = self.pinchInProgress {
             if let newPOV = povPinchHandler.magnificationChanged(self.pov, scale: scale) {
                 self.pov = newPOV
             }
@@ -271,19 +272,19 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     public func pinchEnded() {
         // print("POVController.pinchEnded")
-        pinchPOV = nil
+        pinchInProgress = nil
     }
 
     public func rotationBegan(at location: SIMD2<Float>) {
         // print("POVController.rotationBegan")
         if !flying {
-            rotatePOV = RotatePOV(self.pov, location, constants)
+            rotationInProgress = POVRotationAction(self.pov, location, constants)
         }
     }
     
     public func rotationChanged(by radians: Float) {
         // print("POVController.rotationChanged")
-        if var povRotationHandler = self.rotatePOV {
+        if var povRotationHandler = self.rotationInProgress {
             if let newPOV = povRotationHandler.rotationChanged(self.pov, radians: radians) {
                 self.pov = newPOV
             }
@@ -291,7 +292,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func rotationEnded() {
-        self.rotatePOV = nil
+        self.rotationInProgress = nil
     }
 
     // NOT USED
@@ -319,11 +320,11 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     func updatePOV(_ timestamp: Date) -> POV {
         var updatedPOV: POV
-        if let newPOV = flyPOV?.update(timestamp) {
+        if let newPOV = flightInProgress?.update(timestamp) {
             updatedPOV = newPOV
         }
         else {
-            self.flyPOV = nil
+            self.flightInProgress = nil
             updatedPOV = self.pov
         }
 
@@ -362,7 +363,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 ///
 ///
 ///
-struct DragPOV {
+struct POVDragAction {
 
     let initialPOV: POV
 
@@ -417,7 +418,7 @@ struct DragPOV {
 ///
 ///
 ///
-struct PinchPOV {
+struct POVPinchAction {
 
     let initialPOV: POV
 
@@ -448,7 +449,7 @@ struct PinchPOV {
 ///
 ///
 ///
-struct RotatePOV {
+struct POVRotationAction {
 
     let initialPOV: POV
 
@@ -478,7 +479,7 @@ struct RotatePOV {
 //
 //
 //
-class FlyPOV {
+class POVFlightAction {
 
     enum Phase: Double {
         case new

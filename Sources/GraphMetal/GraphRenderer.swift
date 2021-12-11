@@ -98,29 +98,26 @@ public class GraphRendererSettings: ObservableObject { // }, GraphRendererProper
     }
 }
 
-///
-///
-///
-public protocol RendererControls: AnyObject { //, POVControllerProperties  {
-
-    // var updateInProgress: Bool { get }
-
-    func requestScreenshot()
-}
+//public protocol RendererControls: AnyObject { //, POVControllerProperties  {
+//
+//    // var updateInProgress: Bool { get }
+//
+//    func requestScreenshot()
+//}
 
 
 ///
 ///
 ///
-public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, RendererControls {
+public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDelegate { //, RendererControls {
 
     public typealias NodeValueType = S.GraphType.NodeType.ValueType
 
     public typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
     // NOT USED
-    public var updateInProgress: Bool = false
-
+    // public var updateInProgress: Bool = false
+//
 //    public var backgroundColor: SIMD4<Double> = RendererSettings.defaults.backgroundColor
 //
 //    public var fadeoutOnset: Float = RendererSettings.defaults.fadeoutOnset
@@ -161,6 +158,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     private var screenshotRequested: Bool = false
 
     let parent: GraphView<S>
+
+    var projectionMatrix: float4x4
+
+    var modelViewMatrix: float4x4
 
     var tapHandler: RendererTapHandler? = nil
 
@@ -209,6 +210,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         else {
             throw RendererError.noDevice
         }
+
+        // Dummy values
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
+        self.modelViewMatrix = Self.makeModelViewMatrix(POV())
 
         self.commandQueue = device.makeCommandQueue()!
         
@@ -357,16 +362,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     
     private func preDraw(_ view: MTKView) {
 
-        view.clearColor = MTLClearColorMake(settings.backgroundColor.x,
-                                               settings.backgroundColor.y,
-                                               settings.backgroundColor.z,
-                                               settings.backgroundColor.w)
-
-
-        let projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
 
         // Update POV, in case it's moving on its own
-        let modelViewMatrix = Self.makeModelViewMatrix(parent.povController.updatePOV(Date()))
+        self.modelViewMatrix = Self.makeModelViewMatrix(parent.povController.updatePOV(Date()))
 
         wireFrame.preDraw(projectionMatrix: projectionMatrix,
                                modelViewMatrix: modelViewMatrix,
