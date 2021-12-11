@@ -106,8 +106,6 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
     // needed to keep settings from being discarded when it's not passed in from outside.
     private var _fallbackSettings: GraphWireFrameSettings? = nil
 
-    // var nodeColorDefault = RendererSettings.defaults.nodeColorDefault
-
     var device: MTLDevice
 
     var library: MTLLibrary

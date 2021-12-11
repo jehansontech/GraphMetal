@@ -32,53 +32,19 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
-    // NOT USED
-    // public var updateInProgress: Bool = false
-//
-//    public var backgroundColor: SIMD4<Double> = RendererSettings.defaults.backgroundColor
-//
-//    public var fadeoutOnset: Float = RendererSettings.defaults.fadeoutOnset
-//
-//    public var fadeoutDistance: Float = RendererSettings.defaults.fadeoutDistance
-//
-//    public var yFOV: Float = RendererSettings.defaults.yFOV
-//
-//    public var zNear: Float = RendererSettings.defaults.zNear
-//
-//    public var zFar: Float = RendererSettings.defaults.zFar
-
     var viewSize: CGSize
 
-    weak var settings: RenderController!
+    weak var renderController: RenderController!
 
-    private var _fallbackSettings: RenderController? = nil
+    private var _fallbackRenderController: RenderController? = nil
 
     weak var povController: POVController!
 
     private var _fallbackPOVController: POVController? = nil
 
-//    public var updateInProgress: Bool {
-//        return updateStartedCount > updateCompletedCount
-//    }
-//
-//    public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
-//    public var orbitSpeed: Float = RendererSettings.defaults.orbitSpeed
-//
-//    private var updateStartedCount: Int = 0 {
-//        didSet {
-//            settings.updateInProgress = (updateStartedCount > updateCompletedCount)
-//        }
-//    }
-//
-//    private var updateCompletedCount: Int = 0 {
-//        didSet {
-//            settings.updateInProgress = (updateStartedCount > updateCompletedCount)
-//        }
-//    }
-
     private var screenshotRequested: Bool = false
 
-    let parent: GraphView<S>
+    let graphHolder: S
 
     var projectionMatrix: float4x4
 
@@ -106,25 +72,25 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     
     // private var _drawCount: Int = 0
 
-    public init(_ parent: GraphView<S>,
-                _ rendererSettings: RenderController? = nil,
-                _ povController: POVController? = nil,
-                _ wireframeSettings: GraphWireFrameSettings? = nil) throws {
+    public init(_ graphHolder: S,
+                renderController: RenderController? = nil,
+                povController: POVController? = nil,
+                wireframeSettings: GraphWireFrameSettings? = nil) throws {
 
         debug("GraphRenderer", "init")
         
-        self.parent = parent
+        self.graphHolder = graphHolder
 
         self.viewSize = CGSize(width: 100, height: 100) // dummy nonzero values
 
-        if let settings = rendererSettings {
-            self.settings = settings
+        if let renderController = renderController {
+            self.renderController = renderController
         }
         else {
-            let settings = RenderController()
-            self._fallbackSettings = settings
-            self.settings = settings
+            self._fallbackRenderController = RenderController()
+            self.renderController = self._fallbackRenderController
         }
+
 
         if let povController = povController {
             self.povController = povController
@@ -142,8 +108,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
             throw RendererError.noDevice
         }
 
-        // Dummy values
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
+        // Dummy values for the matrices
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, renderController)
         self.modelViewMatrix = Self.makeModelViewMatrix(POV())
 
         self.commandQueue = device.makeCommandQueue()!
@@ -163,7 +129,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         
         super.init()
 
-        rendererSettings?.delegate = self
+        renderController.delegate = self
 
         self.graphHasChanged(RenderableGraphChange.ALL)
         NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
@@ -192,11 +158,11 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     
     public func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID? {
 
-        if let (nn, _) = parent.graphHolder.graph.findNearestNode(clipLocation,
+        if let (nn, _) = graphHolder.graph.findNearestNode(clipLocation,
                                                  projectionMatrix: self.projectionMatrix,
                                                  modelViewMatrix: self.modelViewMatrix,
-                                                 zNear: self.settings.zNear,
-                                                 zFar: self.settings.zFar) {
+                                                 zNear: self.renderController.zNear,
+                                                 zFar: self.renderController.zFar) {
             return nn.id
         }
         else {
@@ -215,8 +181,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
         let t0 = Date()
         debug("GraphRenderer.graphHasChanged", "starting.")
-        settings.updateStarted()
-        wireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
+        renderController.updateStarted()
+        wireFrame.graphHasChanged(graphHolder.graph, graphChange)
         let dt = Date().timeIntervalSince(t0)
         debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
     }
@@ -243,7 +209,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         let t0 = Date()
 
         // FIXME: what's this doing here?
-        if settings.updateInProgress {
+        if renderController.updateInProgress {
             debug("GraphRenderer.draw", "starting. update is currently in progress.")
         }
 
@@ -282,8 +248,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         }
 
         // FIXME: why the if statement?
-        if settings.updateInProgress {
-            settings.updateCompleted()
+        if renderController.updateInProgress {
+            renderController.updateCompleted()
         }
 
         let dt = Date().timeIntervalSince(t0)
@@ -296,14 +262,14 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         // Update POV here in case it's moving.
         let pov = povController.updatePOV(Date())
 
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, renderController)
         self.modelViewMatrix = Self.makeModelViewMatrix(pov)
 
         wireFrame.preDraw(projectionMatrix: projectionMatrix,
                                modelViewMatrix: modelViewMatrix,
                                pov: pov,
-                               fadeoutOnset: settings.fadeoutOnset,
-                               fadeoutDistance: settings.fadeoutDistance)
+                               fadeoutOnset: renderController.fadeoutOnset,
+                               fadeoutDistance: renderController.fadeoutDistance)
 
 
 //        let dt = Date().timeIntervalSince(t0)

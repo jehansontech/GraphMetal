@@ -169,36 +169,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.pov = pov
         self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
-
-        //        let pov: POV
-        //        if let settings = settings {
-        //            self.settings = settings
-        //            pov = settings.pov
-        //        }
-        //        else {
-        //            let settings = POVControllerSettings()
-        //            self.settings = settings
-        //            pov = settings.pov
-        //        }
-
-        //        self.location = POV.defaultLocation
-        //        self.center = POV.defaultCenter
-        //        self.up = POV.defaultUp
-
-//        self.yFOV = RendererSettings.defaults.yFOV
-//        self.zNear = RendererSettings.defaults.zNear
-//        self.zFar = RendererSettings.defaults.zFar
-//        self.viewSize = CGSize(width: 100, height: 100)
-//        self.modelViewMatrix = POVController.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
-        // self.projectionMatrix = POVController.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
-
     }
-
-//    public func requestScreenshot() {
-//        if let rendererControls = rendererControls {
-//            rendererControls.requestScreenshot()
-//        }
-//    }
 
     public func markPOV() {
         self._povMark = pov

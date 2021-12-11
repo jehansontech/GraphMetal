@@ -10,44 +10,28 @@ import GenericGraph
 
 public struct GraphView<S: RenderableGraphHolder> {
 
-//     @Binding var rendererSettings: RendererSettings
-
     var graphHolder: S
-
-    //    // NOT USED
-    //    var projectionMatrix: float4x4 {
-    //        return povController.projectionMatrix
-    //    }
-    //
-    //    // NOT USED
-    //    var modelViewMatrix: float4x4 {
-    //        return povController.modelViewMatrix
-    //    }
 
     let tapHandler: RendererTapHandler?
 
     let longPressHandler: RendererLongPressHandler?
 
-    // weak?
-    private var graphRendererSettings: RenderController?
+    private weak var renderController: RenderController?
 
-    // weak?
-    private var wireframeSettings: GraphWireFrameSettings?
+    private weak var povController: POVController?
 
-    // weak?
-    private var povController: POVController?
+    private weak var wireframeSettings: GraphWireFrameSettings?
 
     public init(_ graphHolder: S,
+                renderController: RenderController? = nil,
                 povController: POVController? = nil,
-                rendererSettings: RenderController? = nil,
                 wireframeSettings: GraphWireFrameSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
-        // self._rendererSettings = oldStyleSettings
 
         self.graphHolder = graphHolder
+        self.renderController = renderController
         self.povController = povController
-        self.graphRendererSettings = rendererSettings
         self.wireframeSettings = wireframeSettings
 
         self.tapHandler = tapHandler
@@ -56,9 +40,10 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
-            let renderer = try GraphRenderer<S>(self, graphRendererSettings, povController, wireframeSettings)
-            // povController.rendererControls = renderer
-            return renderer
+            return try GraphRenderer<S>(self.graphHolder,
+                                                renderController: renderController,
+                                                povController: povController,
+                                                wireframeSettings: wireframeSettings)
         }
         catch {
             fatalError("Problem creating renderer: \(error)")
@@ -97,10 +82,10 @@ extension GraphView: UIViewRepresentable {
         mtkView.drawableSize = mtkView.frame.size
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-        mtkView.clearColor = MTLClearColorMake(context.coordinator.settings.backgroundColor.x,
-                                               context.coordinator.settings.backgroundColor.y,
-                                               context.coordinator.settings.backgroundColor.z,
-                                               context.coordinator.settings.backgroundColor.w)
+        mtkView.clearColor = MTLClearColorMake(context.coordinator.renderController.backgroundColor.x,
+                                               context.coordinator.renderController.backgroundColor.y,
+                                               context.coordinator.renderController.backgroundColor.z,
+                                               context.coordinator.renderController.backgroundColor.w)
 
         // Gestures
 
@@ -172,10 +157,10 @@ extension GraphView: NSViewRepresentable {
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
 
-        mtkView.clearColor = MTLClearColorMake(context.coordinator.settings.backgroundColor.x,
-                                               context.coordinator.settings.backgroundColor.y,
-                                               context.coordinator.settings.backgroundColor.z,
-                                               context.coordinator.settings.backgroundColor.w)
+        mtkView.clearColor = MTLClearColorMake(context.coordinator.renderController.backgroundColor.x,
+                                               context.coordinator.renderController.backgroundColor.y,
+                                               context.coordinator.renderController.backgroundColor.z,
+                                               context.coordinator.renderController.backgroundColor.w)
         // Gestures
 
         context.coordinator.dragHandler = povController

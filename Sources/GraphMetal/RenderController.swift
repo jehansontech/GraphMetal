@@ -63,13 +63,15 @@ public class RenderController: ObservableObject, RenderControllerDelegate {
 
     func updateStarted() {
         updateStartedCount += 1
-        debug("GraphRendererSettings", "updateStated. new updateStartedCount=\(updateStartedCount), updateCompletedCount=\(updateCompletedCount)")
+        debug("RenderController", "updateStated. new updateStartedCount=\(updateStartedCount), updateCompletedCount=\(updateCompletedCount)")
+
+        // FIXME: this needs to be executed on main thread!
         self.updateInProgress = (updateStartedCount > updateCompletedCount)
     }
 
     func updateCompleted() {
         updateCompletedCount += 1
-        debug("GraphRendererSettings", "updateCompleted. updateStartedCount=\(updateStartedCount), new updateCompletedCount=\(updateCompletedCount)")
+        debug("RenderController", "updateCompleted. updateStartedCount=\(updateStartedCount), new updateCompletedCount=\(updateCompletedCount)")
         self.updateInProgress = (updateStartedCount > updateCompletedCount)
     }
 }
