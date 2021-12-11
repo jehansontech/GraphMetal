@@ -16,6 +16,8 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     weak var povController: POVController!
 
+    private var _fallbackPOVController: POVController? = nil
+
     //    // NOT USED
     //    var projectionMatrix: float4x4 {
     //        return povController.projectionMatrix
@@ -36,21 +38,22 @@ public struct GraphView<S: RenderableGraphHolder> {
     // weak?
     var wireframeSettings: GraphWireFrameSettings?
 
-    public init(_ settings: Binding<RendererSettings>,
+    public init(_ oldStyleSettings: Binding<RendererSettings>,
                 _ graphHolder: S,
                 _ povController: POVController,
                 rendererSettings: GraphRendererSettings? = nil,
                 wireframeSettings: GraphWireFrameSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
-        self._rendererSettings = settings
+        self._rendererSettings = oldStyleSettings
+
         self.graphHolder = graphHolder
         self.povController = povController
-        self.tapHandler = tapHandler
-        self.longPressHandler = longPressHandler
-
         self.graphRendererSettings = rendererSettings
         self.wireframeSettings = wireframeSettings
+
+        self.tapHandler = tapHandler
+        self.longPressHandler = longPressHandler
     }
 
     public func makeCoordinator() -> GraphRenderer<S> {
@@ -82,7 +85,7 @@ extension GraphView: UIViewRepresentable {
     public typealias UIViewType = MTKView
 
     public func makeUIView(context: Context) -> MTKView {
-        debug("GraphView (iOS)", "makeUIView")
+        debug("GraphView (iOS) makeUIView", "started")
 
         let mtkView = MTKView()
 
@@ -96,6 +99,10 @@ extension GraphView: UIViewRepresentable {
         mtkView.drawableSize = mtkView.frame.size
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
+        mtkView.clearColor = MTLClearColorMake(context.coordinator.settings.backgroundColor.x,
+                                               context.coordinator.settings.backgroundColor.y,
+                                               context.coordinator.settings.backgroundColor.z,
+                                               context.coordinator.settings.backgroundColor.w)
 
         // Gestures
 
@@ -143,14 +150,7 @@ extension GraphView: UIViewRepresentable {
     }
 
     public func updateUIView(_ mtkView: MTKView, context: Context) {
-        debug("GraphView (iOS)", "updateUIView")
-
-        mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
-                                               rendererSettings.backgroundColor.y,
-                                               rendererSettings.backgroundColor.z,
-                                               rendererSettings.backgroundColor.w)
-
-        context.coordinator.applySettings(rendererSettings)
+        debug("GraphView (iOS) updateUIView", "NOP")
     }
 
 }
@@ -159,7 +159,7 @@ extension GraphView: NSViewRepresentable {
     public typealias NSViewType = MTKView
 
     public func makeNSView(context: Context) -> MTKView {
-        debug("GraphView (macOS)", "makeNSView")
+        debug("GraphView (macOS) makeNSView", "started")
 
         let mtkView = MTKView()
 
@@ -174,6 +174,10 @@ extension GraphView: NSViewRepresentable {
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
 
+        mtkView.clearColor = MTLClearColorMake(context.coordinator.settings.backgroundColor.x,
+                                               context.coordinator.settings.backgroundColor.y,
+                                               context.coordinator.settings.backgroundColor.z,
+                                               context.coordinator.settings.backgroundColor.w)
         // Gestures
 
         context.coordinator.dragHandler = povController
@@ -220,14 +224,7 @@ extension GraphView: NSViewRepresentable {
     }
 
     public func updateNSView(_ mtkView: MTKView, context: Context) {
-        debug("GraphView (macOS)", "updateNSView")
-
-        mtkView.clearColor = MTLClearColorMake(rendererSettings.backgroundColor.x,
-                                               rendererSettings.backgroundColor.y,
-                                               rendererSettings.backgroundColor.z,
-                                               rendererSettings.backgroundColor.w)
-
-        context.coordinator.applySettings(rendererSettings)
+        debug("GraphView (macOS) updateNSView", "NOP")
     }
 }
 #endif

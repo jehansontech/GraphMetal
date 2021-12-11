@@ -13,7 +13,7 @@ public protocol RendererProperties: GraphRendererProperties  {
 
 }
 
-public struct RendererSettings: GraphRendererProperties {
+public struct RendererSettings { // : GraphRendererProperties {
 
     public static let defaults = RendererSettings()
     
@@ -29,7 +29,7 @@ public struct RendererSettings: GraphRendererProperties {
 //
 //    public var edgeColor: SIMD4<Double>
 
-    public var backgroundColor: SIMD4<Double>
+//    public var backgroundColor: SIMD4<Double>
 
     public var yFOV: Float
 
@@ -52,7 +52,7 @@ public struct RendererSettings: GraphRendererProperties {
 //        self.nodeSizeMaximum = 100
 //        self.nodeColorDefault = SIMD4<Double>(0, 0, 0, 1)
 //        self.edgeColor = SIMD4<Double>(0.2, 0.2, 0.2, 1)
-        self.backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
+ //       self.backgroundColor = SIMD4<Double>(0.02, 0.02, 0.02, 1)
         self.yFOV = .piOverTwo
         self.zNear = 0.01
         self.zFar = 1000
@@ -92,13 +92,11 @@ public struct RendererSettings: GraphRendererProperties {
 //        self.orbitSpeed = orbitSpeed
 //    }
 
-    public init(backgroundColor: SIMD4<Double> = defaults.backgroundColor,
-                fovyRadians: Float = defaults.yFOV,
+    public init(fovyRadians: Float = defaults.yFOV,
                 zNear: Float = defaults.zNear,
                 zFar: Float = defaults.zFar,
                 fadeoutOnset: Float = defaults.fadeoutOnset,
                 fadeoutDistance: Float = defaults.fadeoutDistance) {
-        self.backgroundColor = backgroundColor
         self.yFOV = fovyRadians
         self.zNear = zNear
         self.zFar = zFar

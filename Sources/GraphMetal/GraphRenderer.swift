@@ -23,8 +23,36 @@ enum RendererError: Error {
     case bufferCreationFailed
 }
 
+// =======================================================
+// This protocol is TEMPORARY
+// TODO: Delete when RendererSettings refactor is complete
+// =======================================================
+public protocol GraphRendererProperties {
 
-public class GraphRendererSettings: ObservableObject, GraphRendererProperties {
+    /// Angular width, in radians, of the POV's field of view
+    var yFOV: Float { get set }
+
+    /// Distance in world coordinates from the plane of the POV to the nearest renderable point
+    var zNear: Float { get set }
+
+    /// Distance in world coordinates from the plane of the POV to the farthest renderable point
+    var zFar: Float { get set }
+
+    /// Distance in world coordinates from from the plane of the POV  to the the point where the figure starts fading out.
+    /// Nodes at distances less than `fadeoutOnset` are opaque.
+    var fadeoutOnset: Float { get set }
+
+    /// Distance in world coordinates over which the figure fades out.
+    /// Nodes at distances greater than`fadeoutOnset + fadeoutDistance` are transparent.
+    var fadeoutDistance: Float { get set }
+
+    var backgroundColor: SIMD4<Double> { get set }
+}
+
+
+public class GraphRendererSettings: ObservableObject { // }, GraphRendererProperties {
+
+    @Published public private(set) var updateInProgress: Bool
 
     @Published public var yFOV: Float
 
@@ -36,7 +64,11 @@ public class GraphRendererSettings: ObservableObject, GraphRendererProperties {
 
     @Published public var fadeoutDistance: Float
 
-    @Published public var backgroundColor: SIMD4<Double>
+    @Published public private(set) var backgroundColor: SIMD4<Double>
+
+    private var updateStartedCount: Int = 0
+
+    private var updateCompletedCount: Int = 0
 
     public init(yFOV: Float = .piOverFour,
                 zNear: Float = 0.01,
@@ -44,12 +76,25 @@ public class GraphRendererSettings: ObservableObject, GraphRendererProperties {
                 fadeoutOnset: Float = 0,
                 fadeoutDistance: Float = 1000,
                 backgroundColor: SIMD4<Double> = SIMD4<Double>(0.02, 0.02, 0.02, 1)) {
+        self.updateInProgress = false
         self.yFOV = yFOV
         self.zNear = zNear
         self.zFar = zFar
         self.fadeoutOnset = fadeoutOnset
         self.fadeoutDistance = fadeoutDistance
         self.backgroundColor = backgroundColor
+    }
+
+    func updateStarted() {
+        updateStartedCount += 1
+        debug("GraphRendererSettings", "updateStated. new updateStartedCount=\(updateStartedCount), updateCompletedCount=\(updateCompletedCount)")
+        self.updateInProgress = (updateStartedCount > updateCompletedCount)
+    }
+
+    func updateCompleted() {
+        updateCompletedCount += 1
+        debug("GraphRendererSettings", "updateCompleted. updateStartedCount=\(updateStartedCount), new updateCompletedCount=\(updateCompletedCount)")
+        self.updateInProgress = (updateStartedCount > updateCompletedCount)
     }
 }
 
@@ -58,7 +103,7 @@ public class GraphRendererSettings: ObservableObject, GraphRendererProperties {
 ///
 public protocol RendererControls: AnyObject { //, POVControllerProperties  {
 
-    var updateInProgress: Bool { get }
+    // var updateInProgress: Bool { get }
 
     func requestScreenshot()
 }
@@ -73,35 +118,47 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
-    public var backgroundColor: SIMD4<Double> = RendererSettings.defaults.backgroundColor
+    // NOT USED
+    public var updateInProgress: Bool = false
 
-    public var fadeoutOnset: Float = RendererSettings.defaults.fadeoutOnset
+//    public var backgroundColor: SIMD4<Double> = RendererSettings.defaults.backgroundColor
+//
+//    public var fadeoutOnset: Float = RendererSettings.defaults.fadeoutOnset
+//
+//    public var fadeoutDistance: Float = RendererSettings.defaults.fadeoutDistance
+//
+//    public var yFOV: Float = RendererSettings.defaults.yFOV
+//
+//    public var zNear: Float = RendererSettings.defaults.zNear
+//
+//    public var zFar: Float = RendererSettings.defaults.zFar
 
-    public var fadeoutDistance: Float = RendererSettings.defaults.fadeoutDistance
-
-    public var yFOV: Float = RendererSettings.defaults.yFOV
-
-    public var zNear: Float = RendererSettings.defaults.zNear
-
-    public var zFar: Float = RendererSettings.defaults.zFar
+    var viewSize: CGSize
 
     weak var settings: GraphRendererSettings!
 
     private var _fallbackSettings: GraphRendererSettings? = nil
 
-    public var updateInProgress: Bool {
-        return updateStartedCount > updateCompletedCount
-    }
-
+//    public var updateInProgress: Bool {
+//        return updateStartedCount > updateCompletedCount
+//    }
+//
 //    public var orbitEnabled: Bool = RendererSettings.defaults.orbitEnabled
 //    public var orbitSpeed: Float = RendererSettings.defaults.orbitSpeed
+//
+//    private var updateStartedCount: Int = 0 {
+//        didSet {
+//            settings.updateInProgress = (updateStartedCount > updateCompletedCount)
+//        }
+//    }
+//
+//    private var updateCompletedCount: Int = 0 {
+//        didSet {
+//            settings.updateInProgress = (updateStartedCount > updateCompletedCount)
+//        }
+//    }
 
-
-    var updateStartedCount: Int = 0
-
-    var updateCompletedCount: Int = 0
-
-    var screenshotRequested: Bool = false
+    private var screenshotRequested: Bool = false
 
     let parent: GraphView<S>
 
@@ -135,13 +192,15 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         
         self.parent = parent
 
+        self.viewSize = CGSize(width: 100, height: 100) // dummy nonzero values
+
         if let settings = rendererSettings {
             self.settings = settings
         }
         else {
             let settings = GraphRendererSettings()
-            self.settings = settings
             self._fallbackSettings = settings
+            self.settings = settings
         }
 
         if let device = MTLCreateSystemDefaultDevice() {
@@ -168,36 +227,44 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         
         super.init()
 
-        self.applySettings(parent.rendererSettings)
+        // self.applySettings(parent.rendererSettings)
         self.graphHasChanged(RenderableGraphChange.ALL)
         NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
     }
 
     deinit {
-        debug("Renderer", "deinit")
+        debug("GraphRenderer", "deinit")
         // TODO remove observer at some point -- but doesn't it need to be BEFORE deinitialization?
+    }
+
+    static func makeProjectionMatrix(_ viewSize: CGSize, _ settings: GraphRendererSettings) -> float4x4 {
+        let aspectRatio = (viewSize.height > 0) ? Float(viewSize.width) / Float(viewSize.height) : 1
+        return float4x4(perspectiveProjectionRHFovY: settings.yFOV,
+                        aspectRatio: aspectRatio,
+                        nearZ: settings.zNear,
+                        farZ: settings.zFar)
     }
 
     public func requestScreenshot() {
         self.screenshotRequested = true
     }
     
-    func applySettings(_ settings: RendererSettings) {
-        debug("Renderer", "applySettings")
-
-        // FIXME: this method's existence is proof of bad design
-
-        // self.orbitEnabled = settings.orbitEnabled
-        // self.orbitSpeed = settings.orbitSpeed
-        // parent.povController.settings.copyFrom(settings)
-        
-        self.yFOV = settings.yFOV
-        self.zNear = settings.zNear
-        self.zFar = settings.zFar
-        self.fadeoutOnset = settings.fadeoutOnset
-        self.fadeoutDistance = settings.fadeoutDistance
-        self.backgroundColor = settings.backgroundColor
-    }
+//    func applySettings(_ settings: RendererSettings) {
+//        debug("Renderer", "applySettings")
+//
+//        // FIXME: this method's existence is proof of bad design
+//
+//        // self.orbitEnabled = settings.orbitEnabled
+//        // self.orbitSpeed = settings.orbitSpeed
+//        // parent.povController.settings.copyFrom(settings)
+//
+//        self.yFOV = settings.yFOV
+//        self.zNear = settings.zNear
+//        self.zFar = settings.zFar
+//        self.fadeoutOnset = settings.fadeoutOnset
+//        self.fadeoutDistance = settings.fadeoutDistance
+//        self.backgroundColor = settings.backgroundColor
+//    }
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
         if let graphChange = notification.object as? RenderableGraphChange {
@@ -207,16 +274,18 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
         let t0 = Date()
-        debug("GraphRenderer", "graphHasChanged: starting. updateStartedCount=\(updateStartedCount) updateCompletedCount=\(updateCompletedCount)")
-        self.updateStartedCount += 1
+        debug("GraphRenderer.graphHasChanged", "starting.")
+        settings.updateStarted()
         wireFrame.graphHasChanged(parent.graphHolder.graph, graphChange)
         let dt = Date().timeIntervalSince(t0)
-        debug("GraphRenderer", "graphHasChanged: done. dt=\(dt) updateStartedCount=\(updateStartedCount) updateCompletedCount=\(updateCompletedCount)")
+        debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         debug("Renderer", "mtkView size=\(size)")
-        _ = parent.povController.updateProjection(viewSize: size)
+
+        self.viewSize = size
+        // let projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
 
         do {
             try wireFrame.setup(view)
@@ -231,17 +300,17 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
 
         // _drawCount += 1
-        // FIXME
         let t0 = Date()
-        if updateInProgress {
-            debug("GraphRenderer", "draw: starting. update in progress. updateStartedCount=\(updateStartedCount) updateCompletedCount=\(updateCompletedCount)")
+
+        // FIXME: what's this doing here?
+        if settings.updateInProgress {
+            debug("GraphRenderer.draw", "starting. update is currently in progress.")
         }
 
         if screenshotRequested {
             takeScreenshot(view)
             screenshotRequested = false
         }
-
 
         self.preDraw(view)
 
@@ -272,20 +341,26 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
             commandBuffer.commit()
         }
 
-        // FIXME
-        let dt = Date().timeIntervalSince(t0)
-        if updateInProgress {
-            updateCompletedCount += 1
-            debug("GraphRenderer", "draw: done. update completed. dt=\(dt) updateStartedCount=\(updateStartedCount) updateCompletedCount=\(updateCompletedCount)")
+        // FIXME: why the if statement?
+        if settings.updateInProgress {
+            settings.updateCompleted()
         }
+
+        let dt = Date().timeIntervalSince(t0)
+        debug("GraphRenderer.draw", "done. dt=\(dt)")
     }
     
     
     private func preDraw(_ view: MTKView) {
 
+        view.clearColor = MTLClearColorMake(settings.backgroundColor.x,
+                                               settings.backgroundColor.y,
+                                               settings.backgroundColor.z,
+                                               settings.backgroundColor.w)
+
         let t0 = Date()
 
-        let projectionMatrix = parent.povController.updateProjection(yFOV: self.yFOV, zNear: self.zNear, zFar: self.zFar)
+        let projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
 
         // Update POV based on current time, in case it's moving on its own
         let modelViewMatrix = parent.povController.updateModelView(t0)
@@ -293,14 +368,14 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         wireFrame.preDraw(projectionMatrix: projectionMatrix,
                                modelViewMatrix: modelViewMatrix,
                                pov: parent.povController.pov,
-                               fadeoutOnset: self.fadeoutOnset,
-                               fadeoutDistance: self.fadeoutDistance)
-        // graphWireFrame.preDraw(parent.povController, self)
+                               fadeoutOnset: settings.fadeoutOnset,
+                               fadeoutDistance: settings.fadeoutDistance)
 
-        let dt = Date().timeIntervalSince(t0)
-        if (dt > 1/30) {
-            debug("Renderer", "predraw: elapsed time \(dt)")
-        }
+
+//        let dt = Date().timeIntervalSince(t0)
+//        if (dt > 1/30) {
+//            debug("Renderer", "predraw: elapsed time \(dt)")
+//        }
 
     }
 
