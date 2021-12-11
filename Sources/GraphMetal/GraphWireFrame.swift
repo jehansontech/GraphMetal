@@ -15,38 +15,42 @@ import Wacoma
 // This protocol is TEMPORARY:
 // Delete when refactoring is done
 // ======================================
-public protocol GraphWireFrameProperties {
+//public protocol GraphWireFrameProperties {
+//
+//    /// User-specified width in pixels of the node's dot. Ignored if nodeSizeAutomatic is true
+//    var nodeSize: Double { get set }
+//
+//    /// indicates whether node size should be automatically adjusted when the POV changes
+//    var nodeSizeAutomatic: Bool { get set }
+//
+//    /// Minimum automatic node size. Ignored if nodeSizeAutomatic is false
+//    var nodeSizeMinimum: Double { get set }
+//
+//    /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
+//    var nodeSizeMaximum: Double { get set }
+//
+//    var nodeColorDefault: SIMD4<Double> { get set }
+//
+//    var edgeColor: SIMD4<Double> { get set }
+//}
 
-    /// Width in pixels of the node's dot
-    var nodeSize: Double { get set }
-
-    /// indicates whether node size should be automatically adjusted when the POV changes
-    var nodeSizeAutomatic: Bool { get set }
-
-    /// Minimum automatic node size. Ignored if nodeSizeAutomatic is false
-    var nodeSizeMinimum: Double { get set }
-
-    /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
-    var nodeSizeMaximum: Double { get set }
-
-    var nodeColorDefault: SIMD4<Double> { get set }
-
-    var edgeColor: SIMD4<Double> { get set }
-}
-
-public class GraphWireFrameSettings: ObservableObject, GraphWireFrameProperties {
+public class GraphWireFrameSettings: ObservableObject { // }, GraphWireFrameProperties {
 
     /// EMPIRICAL
-    static let nodeSizeScaleFactor: Double = 800
+    static let nodeSizeScaleFactor: Double = 400
 
     public static let defaults = GraphWireFrameSettings()
 
+    /// User-specified width in pixels of the node's dot. Ignored if nodeSizeAutomatic is true
     @Published public var nodeSize: Double
 
+    /// indicates whether node size should be automatically adjusted when the POV changes
     @Published public var nodeSizeAutomatic: Bool
 
+    /// Minimum automatic node size. Ignored if nodeSizeAutomatic is false
     @Published public var nodeSizeMinimum: Double
 
+    /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
     @Published public var nodeSizeMaximum: Double
 
     @Published public var nodeColorDefault: SIMD4<Double>
@@ -56,7 +60,7 @@ public class GraphWireFrameSettings: ObservableObject, GraphWireFrameProperties 
     public init(nodeSize: Double = 25,
                 nodeSizeAutomatic: Bool = true,
                 nodeSizeMinimum: Double = 2,
-                nodeSizeMaximum: Double = 100,
+                nodeSizeMaximum: Double = 20,
                 nodeColorDefault: SIMD4<Double> = SIMD4<Double>(0, 0, 0, 1),
                 edgeColor: SIMD4<Double> = SIMD4<Double>(0.2, 0.2, 0.2, 1)) {
         self.nodeSize = nodeSize
@@ -97,7 +101,10 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
     // ==============================================================
     // Rendering properties -- Access these only on rendering thread
 
-    public var settings: GraphWireFrameSettings
+    weak var settings: GraphWireFrameSettings!
+
+    // needed to keep settings from being discarded when it's not passed in from outside.
+    private var _fallbackSettings: GraphWireFrameSettings? = nil
 
     // var nodeColorDefault = RendererSettings.defaults.nodeColorDefault
 
@@ -155,7 +162,20 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
             self.settings = settings
         }
         else {
-            self.settings = GraphWireFrameSettings()
+            // Q: won't this cause settings to get discarded immediately?
+            // A: yes
+            // self.settings = GraphWireFrameSettings()
+
+            // Q: will it work if I do this?
+            // A: no
+            // let settings = GraphWireFrameSettings()
+            // self.settings = settings
+
+            // Q: how about this?
+            // A: yes
+            let settings = GraphWireFrameSettings()
+            self._fallbackSettings = settings
+            self.settings = settings
         }
     }
 

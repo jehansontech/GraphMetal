@@ -13,7 +13,7 @@ public protocol RendererProperties: GraphRendererProperties  {
 
 }
 
-public struct RendererSettings: RendererProperties {
+public struct RendererSettings: GraphRendererProperties {
 
     public static let defaults = RendererSettings()
     
