@@ -24,6 +24,35 @@ enum RendererError: Error {
 }
 
 
+public class GraphRendererSettings: ObservableObject, GraphRendererProperties {
+
+    @Published public var yFOV: Float
+
+    @Published public var zNear: Float
+
+    @Published public var zFar: Float
+
+    @Published public var fadeoutOnset: Float
+
+    @Published public var fadeoutDistance: Float
+
+    @Published public var backgroundColor: SIMD4<Double>
+
+    public init(yFOV: Float = .piOverFour,
+                zNear: Float = 0.01,
+                zFar: Float = 1000,
+                fadeoutOnset: Float = 0,
+                fadeoutDistance: Float = 1000,
+                backgroundColor: SIMD4<Double> = SIMD4<Double>(0.02, 0.02, 0.02, 1)) {
+        self.yFOV = yFOV
+        self.zNear = zNear
+        self.zFar = zFar
+        self.fadeoutOnset = fadeoutOnset
+        self.fadeoutDistance = fadeoutDistance
+        self.backgroundColor = backgroundColor
+    }
+}
+
 ///
 ///
 ///
@@ -55,6 +84,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     public var zNear: Float = RendererSettings.defaults.zNear
 
     public var zFar: Float = RendererSettings.defaults.zFar
+
+    weak var settings: GraphRendererSettings!
+
+    private var _fallbackSettings: GraphRendererSettings? = nil
 
     public var updateInProgress: Bool {
         return updateStartedCount > updateCompletedCount
@@ -90,16 +123,26 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     var depthState: MTLDepthStencilState
 
-    public var wireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
+    var wireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
     
     // private var _drawCount: Int = 0
 
     public init(_ parent: GraphView<S>,
-                _ wireframeSettings: GraphWireFrameSettings?) throws {
+                _ rendererSettings: GraphRendererSettings? = nil,
+                _ wireframeSettings: GraphWireFrameSettings? = nil) throws {
 
         debug("GraphRenderer", "init")
         
         self.parent = parent
+
+        if let settings = rendererSettings {
+            self.settings = settings
+        }
+        else {
+            let settings = GraphRendererSettings()
+            self.settings = settings
+            self._fallbackSettings = settings
+        }
 
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device

@@ -30,11 +30,16 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     let longPressHandler: RendererLongPressHandler?
 
-    weak var wireframeSettings: GraphWireFrameSettings?
+    // weak?
+    var graphRendererSettings: GraphRendererSettings?
+
+    // weak?
+    var wireframeSettings: GraphWireFrameSettings?
 
     public init(_ settings: Binding<RendererSettings>,
                 _ graphHolder: S,
                 _ povController: POVController,
+                rendererSettings: GraphRendererSettings? = nil,
                 wireframeSettings: GraphWireFrameSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
@@ -44,12 +49,13 @@ public struct GraphView<S: RenderableGraphHolder> {
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
 
+        self.graphRendererSettings = rendererSettings
         self.wireframeSettings = wireframeSettings
     }
 
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
-            let renderer = try GraphRenderer<S>(self, wireframeSettings)
+            let renderer = try GraphRenderer<S>(self, graphRendererSettings, wireframeSettings)
             povController.rendererControls = renderer
             return renderer
         }
