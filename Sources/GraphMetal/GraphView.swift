@@ -10,7 +10,7 @@ import GenericGraph
 
 public struct GraphView<S: RenderableGraphHolder> {
 
-    @Binding var rendererSettings: RendererSettings
+//     @Binding var rendererSettings: RendererSettings
 
     var graphHolder: S
 
@@ -38,14 +38,13 @@ public struct GraphView<S: RenderableGraphHolder> {
     // weak?
     var wireframeSettings: GraphWireFrameSettings?
 
-    public init(_ oldStyleSettings: Binding<RendererSettings>,
-                _ graphHolder: S,
+    public init(_ graphHolder: S,
                 _ povController: POVController,
                 rendererSettings: GraphRendererSettings? = nil,
                 wireframeSettings: GraphWireFrameSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
-        self._rendererSettings = oldStyleSettings
+        // self._rendererSettings = oldStyleSettings
 
         self.graphHolder = graphHolder
         self.povController = povController
