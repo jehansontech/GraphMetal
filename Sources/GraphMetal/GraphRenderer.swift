@@ -136,6 +136,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     private var _fallbackSettings: GraphRendererSettings? = nil
 
+    weak var povController: POVController!
+
+    private var _fallbackPOVController: POVController? = nil
+
 //    public var updateInProgress: Bool {
 //        return updateStartedCount > updateCompletedCount
 //    }
@@ -187,6 +191,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     public init(_ parent: GraphView<S>,
                 _ rendererSettings: GraphRendererSettings? = nil,
+                _ povController: POVController? = nil,
                 _ wireframeSettings: GraphWireFrameSettings? = nil) throws {
 
         debug("GraphRenderer", "init")
@@ -202,6 +207,15 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
             let settings = GraphRendererSettings()
             self._fallbackSettings = settings
             self.settings = settings
+        }
+
+        if let povController = povController {
+            self.povController = povController
+        }
+        else {
+            let povController = POVController()
+            self._fallbackPOVController = povController
+            self.povController = povController
         }
 
         if let device = MTLCreateSystemDefaultDevice() {
@@ -362,14 +376,15 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     
     private func preDraw(_ view: MTKView) {
 
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
+        // Update POV here in case it's moving.
+        let pov = povController.updatePOV(Date())
 
-        // Update POV, in case it's moving on its own
-        self.modelViewMatrix = Self.makeModelViewMatrix(parent.povController.updatePOV(Date()))
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)
+        self.modelViewMatrix = Self.makeModelViewMatrix(pov)
 
         wireFrame.preDraw(projectionMatrix: projectionMatrix,
                                modelViewMatrix: modelViewMatrix,
-                               pov: parent.povController.pov,
+                               pov: pov,
                                fadeoutOnset: settings.fadeoutOnset,
                                fadeoutDistance: settings.fadeoutDistance)
 

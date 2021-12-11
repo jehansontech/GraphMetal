@@ -14,10 +14,6 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     var graphHolder: S
 
-    weak var povController: POVController!
-
-    private var _fallbackPOVController: POVController? = nil
-
     //    // NOT USED
     //    var projectionMatrix: float4x4 {
     //        return povController.projectionMatrix
@@ -33,13 +29,16 @@ public struct GraphView<S: RenderableGraphHolder> {
     let longPressHandler: RendererLongPressHandler?
 
     // weak?
-    var graphRendererSettings: GraphRendererSettings?
+    private var graphRendererSettings: GraphRendererSettings?
 
     // weak?
-    var wireframeSettings: GraphWireFrameSettings?
+    private var wireframeSettings: GraphWireFrameSettings?
+
+    // weak?
+    private var povController: POVController?
 
     public init(_ graphHolder: S,
-                _ povController: POVController,
+                povController: POVController? = nil,
                 rendererSettings: GraphRendererSettings? = nil,
                 wireframeSettings: GraphWireFrameSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
@@ -57,7 +56,7 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
-            let renderer = try GraphRenderer<S>(self, graphRendererSettings, wireframeSettings)
+            let renderer = try GraphRenderer<S>(self, graphRendererSettings, povController, wireframeSettings)
             // povController.rendererControls = renderer
             return renderer
         }
