@@ -29,7 +29,7 @@ public struct GraphView<S: RenderableGraphHolder> {
     let longPressHandler: RendererLongPressHandler?
 
     // weak?
-    private var graphRendererSettings: GraphRendererSettings?
+    private var graphRendererSettings: RenderController?
 
     // weak?
     private var wireframeSettings: GraphWireFrameSettings?
@@ -39,7 +39,7 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     public init(_ graphHolder: S,
                 povController: POVController? = nil,
-                rendererSettings: GraphRendererSettings? = nil,
+                rendererSettings: RenderController? = nil,
                 wireframeSettings: GraphWireFrameSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {

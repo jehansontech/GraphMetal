@@ -23,93 +23,10 @@ enum RendererError: Error {
     case bufferCreationFailed
 }
 
-//// =======================================================
-//// This protocol is TEMPORARY
-//// TODO: Delete when RendererSettings refactor is complete
-//// =======================================================
-//public protocol GraphRendererProperties {
-//
-//    /// Angular width, in radians, of the POV's field of view
-//    var yFOV: Float { get set }
-//
-//    /// Distance in world coordinates from the plane of the POV to the nearest renderable point
-//    var zNear: Float { get set }
-//
-//    /// Distance in world coordinates from the plane of the POV to the farthest renderable point
-//    var zFar: Float { get set }
-//
-//    /// Distance in world coordinates from from the plane of the POV  to the the point where the figure starts fading out.
-//    /// Nodes at distances less than `fadeoutOnset` are opaque.
-//    var fadeoutOnset: Float { get set }
-//
-//    /// Distance in world coordinates over which the figure fades out.
-//    /// Nodes at distances greater than`fadeoutOnset + fadeoutDistance` are transparent.
-//    var fadeoutDistance: Float { get set }
-//
-//    var backgroundColor: SIMD4<Double> { get set }
-//}
-
-
-public class GraphRendererSettings: ObservableObject { // }, GraphRendererProperties {
-
-    @Published public private(set) var updateInProgress: Bool
-
-    @Published public var yFOV: Float
-
-    @Published public var zNear: Float
-
-    @Published public var zFar: Float
-
-    @Published public var fadeoutOnset: Float
-
-    @Published public var fadeoutDistance: Float
-
-    @Published public private(set) var backgroundColor: SIMD4<Double>
-
-    private var updateStartedCount: Int = 0
-
-    private var updateCompletedCount: Int = 0
-
-    public init(yFOV: Float = .piOverFour,
-                zNear: Float = 0.01,
-                zFar: Float = 1000,
-                fadeoutOnset: Float = 0,
-                fadeoutDistance: Float = 1000,
-                backgroundColor: SIMD4<Double> = SIMD4<Double>(0.02, 0.02, 0.02, 1)) {
-        self.updateInProgress = false
-        self.yFOV = yFOV
-        self.zNear = zNear
-        self.zFar = zFar
-        self.fadeoutOnset = fadeoutOnset
-        self.fadeoutDistance = fadeoutDistance
-        self.backgroundColor = backgroundColor
-    }
-
-    func updateStarted() {
-        updateStartedCount += 1
-        debug("GraphRendererSettings", "updateStated. new updateStartedCount=\(updateStartedCount), updateCompletedCount=\(updateCompletedCount)")
-        self.updateInProgress = (updateStartedCount > updateCompletedCount)
-    }
-
-    func updateCompleted() {
-        updateCompletedCount += 1
-        debug("GraphRendererSettings", "updateCompleted. updateStartedCount=\(updateStartedCount), new updateCompletedCount=\(updateCompletedCount)")
-        self.updateInProgress = (updateStartedCount > updateCompletedCount)
-    }
-}
-
-//public protocol RendererControls: AnyObject { //, POVControllerProperties  {
-//
-//    // var updateInProgress: Bool { get }
-//
-//    func requestScreenshot()
-//}
-
-
 ///
 ///
 ///
-public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDelegate { //, RendererControls {
+public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDelegate, RenderControllerDelegate {
 
     public typealias NodeValueType = S.GraphType.NodeType.ValueType
 
@@ -132,9 +49,9 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     var viewSize: CGSize
 
-    weak var settings: GraphRendererSettings!
+    weak var settings: RenderController!
 
-    private var _fallbackSettings: GraphRendererSettings? = nil
+    private var _fallbackSettings: RenderController? = nil
 
     weak var povController: POVController!
 
@@ -190,7 +107,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     // private var _drawCount: Int = 0
 
     public init(_ parent: GraphView<S>,
-                _ rendererSettings: GraphRendererSettings? = nil,
+                _ rendererSettings: RenderController? = nil,
                 _ povController: POVController? = nil,
                 _ wireframeSettings: GraphWireFrameSettings? = nil) throws {
 
@@ -204,7 +121,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
             self.settings = settings
         }
         else {
-            let settings = GraphRendererSettings()
+            let settings = RenderController()
             self._fallbackSettings = settings
             self.settings = settings
         }
@@ -246,7 +163,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         
         super.init()
 
-        // self.applySettings(parent.rendererSettings)
+        rendererSettings?.delegate = self
+
         self.graphHasChanged(RenderableGraphChange.ALL)
         NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
     }
@@ -256,7 +174,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         // TODO remove observer at some point -- but doesn't it need to be BEFORE deinitialization?
     }
 
-    static func makeProjectionMatrix(_ viewSize: CGSize, _ settings: GraphRendererSettings) -> float4x4 {
+    static func makeProjectionMatrix(_ viewSize: CGSize, _ settings: RenderController) -> float4x4 {
         let aspectRatio = (viewSize.height > 0) ? Float(viewSize.width) / Float(viewSize.height) : 1
         return float4x4(perspectiveProjectionRHFovY: settings.yFOV,
                         aspectRatio: aspectRatio,
@@ -272,22 +190,21 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         self.screenshotRequested = true
     }
     
-//    func applySettings(_ settings: RendererSettings) {
-//        debug("Renderer", "applySettings")
-//
-//        // FIXME: this method's existence is proof of bad design
-//
-//        // self.orbitEnabled = settings.orbitEnabled
-//        // self.orbitSpeed = settings.orbitSpeed
-//        // parent.povController.settings.copyFrom(settings)
-//
-//        self.yFOV = settings.yFOV
-//        self.zNear = settings.zNear
-//        self.zFar = settings.zFar
-//        self.fadeoutOnset = settings.fadeoutOnset
-//        self.fadeoutDistance = settings.fadeoutDistance
-//        self.backgroundColor = settings.backgroundColor
-//    }
+    public func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID? {
+
+        if let (nn, _) = parent.graphHolder.graph.findNearestNode(clipLocation,
+                                                 projectionMatrix: self.projectionMatrix,
+                                                 modelViewMatrix: self.modelViewMatrix,
+                                                 zNear: self.settings.zNear,
+                                                 zFar: self.settings.zFar) {
+            return nn.id
+        }
+        else {
+            return nil
+        }
+    }
+
+
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
         if let graphChange = notification.object as? RenderableGraphChange {
