@@ -30,16 +30,16 @@ public class GraphWireFrameSettings: ObservableObject {
     /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
     @Published public var nodeSizeMaximum: Double
 
-    @Published public var nodeColorDefault: Color
+    @Published public var nodeColorDefault: SIMD4<Float>
 
-    @Published public var edgeColor: Color
+    @Published public var edgeColor: SIMD4<Float>
 
     public init(nodeSize: Double = 25,
                 nodeSizeAutomatic: Bool = true,
                 nodeSizeMinimum: Double = 2,
                 nodeSizeMaximum: Double = 20,
-                nodeColorDefault: Color = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0),
-                edgeColor: Color = Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1)) {
+                nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0,0,0,0),
+                edgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
         self.nodeSizeMinimum = nodeSizeMinimum
@@ -255,7 +255,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
         else if let newNodeColors = update.nodeColors {
 
-            let defaultColor = settings.nodeColorDefault.renderColor
+            let defaultColor = settings.nodeColorDefault
             var colorsArray = [SIMD4<Float>](repeating: defaultColor, count: nodeCount)
             for (nodeID, color) in newNodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
@@ -313,7 +313,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         uniforms[0].projectionMatrix = projectionMatrix
         uniforms[0].modelViewMatrix = modelViewMatrix
         uniforms[0].pointSize = Float(settings.adjustedNodeSize(pov))
-        uniforms[0].edgeColor = settings.edgeColor.renderColor
+        uniforms[0].edgeColor = settings.edgeColor
         uniforms[0].fadeoutOnset = fadeoutOnset
         uniforms[0].fadeoutDistance = fadeoutDistance
     }
@@ -478,9 +478,9 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         // These are guesses
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
         pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .destinationAlpha
-        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .max
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .one // WAS: .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .one // WAS: .destinationAlpha
+        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add // WAS: .max
         pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .one
         pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .one
 
@@ -519,9 +519,9 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         // These are guesses
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
         pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .destinationAlpha
-        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .max
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .one // WAS: .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .one // WAS: .destinationAlpha
+        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add // WAS: .max
         pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .one
         pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .one
 
