@@ -67,6 +67,7 @@ extension GraphView: UIViewRepresentable {
 
         mtkView.delegate = context.coordinator
         mtkView.device = context.coordinator.device
+        mtkView.framebufferOnly = false // necessary for screenshots
         mtkView.preferredFramesPerSecond = 60
         mtkView.drawableSize = mtkView.frame.size
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
@@ -142,6 +143,7 @@ extension GraphView: NSViewRepresentable {
         mtkView.delegate = context.coordinator
         mtkView.device = context.coordinator.device
         mtkView.preferredFramesPerSecond = 60
+        mtkView.framebufferOnly = false // necessary for screenshots
         mtkView.drawableSize = mtkView.frame.size
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
