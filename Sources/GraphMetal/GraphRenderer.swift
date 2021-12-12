@@ -109,7 +109,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         }
 
         // Dummy values for the matrices
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, renderController!)
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, self.renderController!)
         self.modelViewMatrix = Self.makeModelViewMatrix(POV())
 
         self.commandQueue = device.makeCommandQueue()!
@@ -129,7 +129,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         
         super.init()
 
-        renderController!.delegate = self
+        self.renderController!.delegate = self
 
         self.graphHasChanged(RenderableGraphChange.ALL)
         NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
@@ -186,8 +186,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         // modified on the main thread. Otherwise we get this runtime issue:
         // "Publishing changes from background threads is not allowed; make sure to publish values
         // from the main thread (via operators like receive(on:)) on model updates."
-        DispatchQueue.main.sync {
-            renderController.updateStarted()
+        DispatchQueue.main.async {
+            self.renderController.updateStarted()
         }
         
         wireFrame.graphHasChanged(graphHolder.graph, graphChange)
@@ -214,7 +214,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
 
         // _drawCount += 1
-        let t0 = Date()
+        // let t0 = Date()
 
         // FIXME: what's this doing here?
         if renderController.updateInProgress {
@@ -260,8 +260,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
             renderController.updateCompleted()
         }
 
-        let dt = Date().timeIntervalSince(t0)
-        debug("GraphRenderer.draw", "done. dt=\(dt)")
+//        let dt = Date().timeIntervalSince(t0)
+//        debug("GraphRenderer.draw", "done. dt=\(dt)")
     }
     
     
