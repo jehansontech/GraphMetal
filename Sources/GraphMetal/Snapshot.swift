@@ -63,12 +63,19 @@ extension GraphRendererProtocol {
 extension GraphRendererProtocol {
 
     func saveImage(_ cgImage: CGImage) {
+        let timestamp: String = makeTimestamp()
         let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
-        let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-        let destinationURL = desktopURL.appendingPathComponent("my-image.png")
+        let desktopURL = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!
+        let destinationURL = desktopURL.appendingPathComponent("snapshot.\(timestamp).png")
         if nsImage.pngWrite(to: destinationURL, options: .withoutOverwriting) {
-                       print("File saved")
+                       print("File saved to \(destinationURL)")
         }
+    }
+
+    func makeTimestamp() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd-HHmmss"
+        return formatter.string(from: Date())
     }
 }
 
