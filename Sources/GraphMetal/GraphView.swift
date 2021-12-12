@@ -51,7 +51,8 @@ public struct GraphView<S: RenderableGraphHolder> {
     }
 }
 
-#if os(iOS)
+#if os(iOS) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 extension GraphView: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
@@ -65,6 +66,7 @@ extension GraphView: UIViewRepresentable {
         mtkView.enableSetNeedsDisplay = true
         mtkView.isPaused = true
 
+        // Basic configuration
         mtkView.delegate = context.coordinator
         mtkView.device = context.coordinator.device
         mtkView.framebufferOnly = false // necessary for screenshots
@@ -78,10 +80,6 @@ extension GraphView: UIViewRepresentable {
                                                context.coordinator.renderController.backgroundColor.w)
 
         // Gestures
-
-        context.coordinator.dragHandler = povController
-        context.coordinator.pinchHandler = povController
-        context.coordinator.rotationHandler = povController
 
         if let tapHandler = self.tapHandler {
             context.coordinator.tapHandler = tapHandler
@@ -97,18 +95,19 @@ extension GraphView: UIViewRepresentable {
             mtkView.addGestureRecognizer(longPressGR)
         }
 
+        context.coordinator.dragHandler = povController
         let panGR = UIPanGestureRecognizer(target: context.coordinator,
                                            action: #selector(context.coordinator.pan))
         panGR.delegate = context.coordinator
         mtkView.addGestureRecognizer(panGR)
 
-
+        context.coordinator.pinchHandler = povController
         let pinchGR = UIPinchGestureRecognizer(target: context.coordinator,
                                                action: #selector(context.coordinator.pinch))
         pinchGR.delegate = context.coordinator
         mtkView.addGestureRecognizer(pinchGR)
 
-
+        context.coordinator.rotationHandler = povController
         let rotationGR = UIRotationGestureRecognizer(target: context.coordinator,
                                                      action: #selector(context.coordinator.rotate))
         rotationGR.delegate = context.coordinator
@@ -127,7 +126,9 @@ extension GraphView: UIViewRepresentable {
     }
 
 }
-#elseif os(macOS)
+
+#elseif os(macOS) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 extension GraphView: NSViewRepresentable {
     public typealias NSViewType = MTKView
 
@@ -140,6 +141,7 @@ extension GraphView: NSViewRepresentable {
         mtkView.enableSetNeedsDisplay = true
         mtkView.isPaused = true
 
+        // Basic configuration
         mtkView.delegate = context.coordinator
         mtkView.device = context.coordinator.device
         mtkView.preferredFramesPerSecond = 60
@@ -153,10 +155,6 @@ extension GraphView: NSViewRepresentable {
                                                context.coordinator.renderController.backgroundColor.z,
                                                context.coordinator.renderController.backgroundColor.w)
         // Gestures
-
-        context.coordinator.dragHandler = povController
-        context.coordinator.pinchHandler = povController
-        context.coordinator.rotationHandler = povController
 
         if let tapHandler = self.tapHandler {
             context.coordinator.tapHandler = tapHandler
@@ -172,18 +170,19 @@ extension GraphView: NSViewRepresentable {
             mtkView.addGestureRecognizer(longPressGR)
         }
 
+        context.coordinator.dragHandler = povController
         let panGR = NSPanGestureRecognizer(target: context.coordinator,
                                            action: #selector(context.coordinator.pan))
         panGR.delegate = context.coordinator
         mtkView.addGestureRecognizer(panGR)
 
-
+        context.coordinator.pinchHandler = povController
         let pinchGR = NSMagnificationGestureRecognizer(target: context.coordinator,
                                                        action: #selector(context.coordinator.pinch))
         pinchGR.delegate = context.coordinator
         mtkView.addGestureRecognizer(pinchGR)
 
-
+        context.coordinator.rotationHandler = povController
         let rotationGR = NSRotationGestureRecognizer(target: context.coordinator,
                                                      action: #selector(context.coordinator.rotate))
         rotationGR.delegate = context.coordinator
@@ -201,7 +200,8 @@ extension GraphView: NSViewRepresentable {
         debug("GraphView (macOS) updateNSView", "NOP")
     }
 }
-#endif
+
+#endif // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 

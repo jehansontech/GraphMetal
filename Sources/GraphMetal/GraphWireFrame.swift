@@ -30,16 +30,16 @@ public class GraphWireFrameSettings: ObservableObject {
     /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
     @Published public var nodeSizeMaximum: Double
 
-    @Published public var nodeColorDefault: SIMD4<Double>
+    @Published public var nodeColorDefault: Color
 
-    @Published public var edgeColor: SIMD4<Double>
+    @Published public var edgeColor: Color
 
     public init(nodeSize: Double = 25,
                 nodeSizeAutomatic: Bool = true,
                 nodeSizeMinimum: Double = 2,
                 nodeSizeMaximum: Double = 20,
-                nodeColorDefault: SIMD4<Double> = SIMD4<Double>(0, 0, 0, 1),
-                edgeColor: SIMD4<Double> = SIMD4<Double>(0.2, 0.2, 0.2, 1)) {
+                nodeColorDefault: Color = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0),
+                edgeColor: Color = Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1)) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
         self.nodeSizeMinimum = nodeSizeMinimum
@@ -255,10 +255,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
         else if let newNodeColors = update.nodeColors {
 
-            let defaultColor = SIMD4<Float>(Float(settings.nodeColorDefault.x),
-                                  Float(settings.nodeColorDefault.y),
-                                  Float(settings.nodeColorDefault.z),
-                                  Float(settings.nodeColorDefault.w))
+            let defaultColor = settings.nodeColorDefault.renderColor
             var colorsArray = [SIMD4<Float>](repeating: defaultColor, count: nodeCount)
             for (nodeID, color) in newNodeColors {
                 if let nodeIndex = nodeIndices[nodeID] {
@@ -316,10 +313,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         uniforms[0].projectionMatrix = projectionMatrix
         uniforms[0].modelViewMatrix = modelViewMatrix
         uniforms[0].pointSize = Float(settings.adjustedNodeSize(pov))
-        uniforms[0].edgeColor = SIMD4<Float>(Float(settings.edgeColor.x),
-                                             Float(settings.edgeColor.y),
-                                             Float(settings.edgeColor.z),
-                                             Float(settings.edgeColor.w))
+        uniforms[0].edgeColor = settings.edgeColor.renderColor
         uniforms[0].fadeoutOnset = fadeoutOnset
         uniforms[0].fadeoutDistance = fadeoutDistance
     }

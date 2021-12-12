@@ -24,7 +24,7 @@ enum RendererError: Error {
 }
 
 /// This protocol exists so that we can extend it, e.g., in Snapshots.swift
-@objc protocol GraphRendererProtocol: MTKViewDelegate {
+protocol GraphRendererProtocol: MTKViewDelegate {
 }
 
 ///
