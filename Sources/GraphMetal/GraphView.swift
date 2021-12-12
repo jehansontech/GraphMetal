@@ -49,17 +49,6 @@ public struct GraphView<S: RenderableGraphHolder> {
             fatalError("Problem creating renderer: \(error)")
         }
     }
-
-    //    // NOT USED
-    //    func updateProjection(viewSize: CGSize) {
-    //        povController.updateProjection(viewSize: viewSize)
-    //    }
-    //
-    //    // NOT USED
-    //    func updatePOV() {
-    //        povController.updateModelView(Date())
-    //    }
-
 }
 
 #if os(iOS)

@@ -11,30 +11,7 @@ import GenericGraph
 import Shaders
 import Wacoma
 
-// ======================================
-// This protocol is TEMPORARY:
-// Delete when refactoring is done
-// ======================================
-//public protocol GraphWireFrameProperties {
-//
-//    /// User-specified width in pixels of the node's dot. Ignored if nodeSizeAutomatic is true
-//    var nodeSize: Double { get set }
-//
-//    /// indicates whether node size should be automatically adjusted when the POV changes
-//    var nodeSizeAutomatic: Bool { get set }
-//
-//    /// Minimum automatic node size. Ignored if nodeSizeAutomatic is false
-//    var nodeSizeMinimum: Double { get set }
-//
-//    /// Maximum automatic node size. Ignored if nodeSizeAutomatic is false
-//    var nodeSizeMaximum: Double { get set }
-//
-//    var nodeColorDefault: SIMD4<Double> { get set }
-//
-//    var edgeColor: SIMD4<Double> { get set }
-//}
-
-public class GraphWireFrameSettings: ObservableObject { // }, GraphWireFrameProperties {
+public class GraphWireFrameSettings: ObservableObject {
 
     /// EMPIRICAL
     static let nodeSizeScaleFactor: Double = 400
@@ -71,15 +48,6 @@ public class GraphWireFrameSettings: ObservableObject { // }, GraphWireFrameProp
         self.edgeColor = edgeColor
     }
 
-//    func copyFrom(_ settings: GraphWireFrameProperties) {
-//        self.nodeSize = settings.nodeSize
-//        self.nodeSizeAutomatic = settings.nodeSizeAutomatic
-//        self.nodeSizeMinimum = settings.nodeSizeMinimum
-//        self.nodeSizeMaximum = settings.nodeSizeMaximum
-//        self.nodeColorDefault = settings.nodeColorDefault
-//        self.edgeColor = settings.edgeColor
-//    }
-    
     func adjustedNodeSize(_ pov: POV) -> Double {
         if nodeSizeAutomatic {
             let newSize = Self.nodeSizeScaleFactor / Double(pov.radius)
@@ -355,35 +323,6 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         uniforms[0].fadeoutDistance = fadeoutDistance
     }
 
-//    // FIXME: args are awkward
-//    func preDraw(_ povController: POVController, _ properties: RendererProperties) {
-//
-//        let nodeSize = properties.nodeSize
-//        let edgeColor = properties.edgeColor
-//
-//        // ======================================
-//        // Rotate the uniforms buffers
-//
-//        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
-//
-//        uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
-//
-//        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
-//
-//        // =====================================
-//        // Update content of current uniforms buffer
-//
-//        uniforms[0].projectionMatrix = povController.projectionMatrix
-//        uniforms[0].modelViewMatrix = povController.modelViewMatrix
-//        uniforms[0].pointSize = Float(nodeSize)
-//        uniforms[0].edgeColor = SIMD4<Float>(Float(edgeColor.x),
-//                                             Float(edgeColor.y),
-//                                             Float(edgeColor.z),
-//                                             Float(edgeColor.w))
-//        uniforms[0].fadeoutOnset = properties.fadeoutOnset
-//        uniforms[0].visbilityLimit = properties.fadeoutDistance
-//    }
-    
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
 
         // _drawCount += 1

@@ -53,28 +53,6 @@ struct POVControllerConstants {
 
 }
 
-//public class POVControllerSettings: ObservableObject, POVControllerProperties {
-//
-//    @Published public var pov: POV
-//
-//    @Published public var orbitEnabled: Bool
-//
-//    @Published public var orbitSpeed: Float
-//
-//    func copyFrom(_ settings: POVControllerProperties) {
-//        self.orbitEnabled = settings.orbitEnabled
-//        self.orbitSpeed = settings.orbitSpeed
-//    }
-//
-//    public init(pov: POV = POV(),
-//                orbitEnabled: Bool = false,
-//                orbitSpeed: Float = .pi/30) {
-//        self.pov = pov
-//        self.orbitEnabled = orbitEnabled
-//        self.orbitSpeed = orbitSpeed
-//    }
-//}
-
 ///
 ///
 ///
@@ -82,42 +60,12 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     var constants = POVControllerConstants()
 
-    // var settings: POVControllerSettings
-
+    // MAYBE don't publish this
     @Published public var pov: POV
-// {
-//        didSet {
-//            self.modelViewMatrix = Self.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
-//        }
-//    }
 
     @Published public var orbitEnabled: Bool
 
     @Published public var orbitSpeed: Float
-
-
-//    // for POV
-//    var location: SIMD3<Float>
-//
-//    // for POV
-//    var center: SIMD3<Float>
-//
-//    // for POV
-//    var up: SIMD3<Float>
-
-//    public var yFOV: Float
-//
-//    public var zNear: Float
-//
-//    public var zFar: Float
-//
-//    var viewSize: CGSize
-//
-    // public var projectionMatrix: float4x4
-    //
-    // public var modelViewMatrix: float4x4
-//
-//    weak var rendererControls: RendererControls? = nil
 
     private var _lastUpdateTimestamp: Date? = nil
 
@@ -132,24 +80,6 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     public var flying: Bool {
         return (flightInProgress != nil)
     }
-
-//    public var pov: POV {
-//        get {
-//            return settings.pov
-//            return POV(location: self.location,
-//                       center: self.center,
-//                       up: self.up)
-//        }
-//        set {
-//            debug("NEW POV: \(newValue)")
-//            settings.pov = newValue
-//            self.location = newValue.location
-//            self.center = newValue.center
-//            self.up = normalize(newValue.up)
-//            self.modelViewMatrix = Self.makeModelViewMatrix(location: pov.location, center: pov.center, up: pov.up)
-//            // updateRenderingParameters()
-//        }
-//    }
 
     public var povDefault: POV? = nil
 
@@ -266,29 +196,6 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.rotationInProgress = nil
     }
 
-    // NOT USED
-    //    func updateRenderingParameters() {
-    //        let povDistance = Double(simd_length(self.location - self.center))
-    //        debug("POVController", "new povDistance = \(povDistance)")
-    //        if let controls = rendererControls {
-    //            controls.adjustNodeSize(povDistance: povDistance)
-    //        }
-    //    }
-
-//    func updateProjection(yFOV: Float, zNear: Float, zFar: Float) -> float4x4 {
-//        self.zNear = zNear
-//        self.zFar = zFar
-//        self.yFOV = yFOV
-//        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
-//        return self.projectionMatrix
-//    }
-//
-//    func updateProjection(viewSize: CGSize) -> float4x4 {
-//        self.viewSize = viewSize
-//        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, yFOV, zNear, zFar)
-//        return self.projectionMatrix
-//    }
-
     func updatePOV(_ timestamp: Date) -> POV {
         var updatedPOV: POV
         if let newPOV = flightInProgress?.update(timestamp) {
@@ -315,16 +222,6 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.pov = updatedPOV // this will automatically update the modelViewMatrix
         return updatedPOV
     }
-
-//    static func makeModelViewMatrix(location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) -> float4x4 {
-//        return float4x4(lookAt: center, eye: location, up: up)
-//    }
-//
-//    /// viewBounds are (width, height, depth). All three must be > 0
-//    static func makeProjectionMatrix(_ viewSize: CGSize, _ fovyRadians: Float, _ nearZ: Float, _ farZ: Float) -> float4x4 {
-//        let aspectRatio = (viewSize.height > 0) ? Float(viewSize.width) / Float(viewSize.height) : 1
-//        return float4x4(perspectiveProjectionRHFovY: fovyRadians, aspectRatio: aspectRatio, nearZ: nearZ, farZ: farZ)
-//    }
 }
 
 // ===========================================================

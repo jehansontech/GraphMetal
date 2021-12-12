@@ -9,13 +9,6 @@ import SwiftUI
 import Wacoma
 import GenericGraph
 
-protocol RenderControllerDelegate: AnyObject {
-
-    func requestScreenshot()
-
-    func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID?
-}
-
 public class RenderController: ObservableObject, RenderControllerDelegate {
 
     @Published public private(set) var updateInProgress: Bool
@@ -74,5 +67,12 @@ public class RenderController: ObservableObject, RenderControllerDelegate {
         debug("RenderController", "updateCompleted. updateStartedCount=\(updateStartedCount), new updateCompletedCount=\(updateCompletedCount)")
         self.updateInProgress = (updateStartedCount > updateCompletedCount)
     }
+}
+
+protocol RenderControllerDelegate: AnyObject {
+
+    func requestScreenshot()
+
+    func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID?
 }
 

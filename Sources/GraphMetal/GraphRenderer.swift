@@ -109,7 +109,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         }
 
         // Dummy values for the matrices
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, renderController)
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, renderController!)
         self.modelViewMatrix = Self.makeModelViewMatrix(POV())
 
         self.commandQueue = device.makeCommandQueue()!
@@ -129,7 +129,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         
         super.init()
 
-        renderController.delegate = self
+        renderController!.delegate = self
 
         self.graphHasChanged(RenderableGraphChange.ALL)
         NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
@@ -137,7 +137,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
 
     deinit {
         debug("GraphRenderer", "deinit")
-        // TODO remove observer at some point -- but doesn't it need to be BEFORE deinitialization?
+        // MAYBE remove observer at some point -- but doesn't it need to be BEFORE deinitialization?
+        // . . . unless it automagically gets removed under the covers.
     }
 
     static func makeProjectionMatrix(_ viewSize: CGSize, _ settings: RenderController) -> float4x4 {
