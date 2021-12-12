@@ -60,8 +60,8 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
     var constants = POVControllerConstants()
 
-    // MAYBE don't publish this
-    @Published public var pov: POV
+    // Don't publish pov: causes performance issues on macOS
+    public var pov: POV
 
     @Published public var orbitEnabled: Bool
 

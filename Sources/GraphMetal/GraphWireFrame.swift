@@ -175,6 +175,7 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         self.edgeIndexBuffer = nil
     }
 
+    // runs on background thread
     func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
         G.NodeType.ValueType == NodeValueType,
         G.EdgeType.ValueType == EdgeValueType {

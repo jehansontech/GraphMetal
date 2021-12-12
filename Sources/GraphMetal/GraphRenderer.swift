@@ -171,8 +171,6 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
         }
     }
 
-
-
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
         if let graphChange = notification.object as? RenderableGraphChange {
             graphHasChanged(graphChange)
@@ -182,7 +180,16 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, MTKViewDeleg
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
         let t0 = Date()
         debug("GraphRenderer.graphHasChanged", "starting.")
-        renderController.updateStarted()
+
+        // We expect this method to be called on the background thread where the changes
+        // to the graph were made. But the render controller's updateInProgress has to be
+        // modified on the main thread. Otherwise we get this runtime issue:
+        // "Publishing changes from background threads is not allowed; make sure to publish values
+        // from the main thread (via operators like receive(on:)) on model updates."
+        DispatchQueue.main.sync {
+            renderController.updateStarted()
+        }
+        
         wireFrame.graphHasChanged(graphHolder.graph, graphChange)
         let dt = Date().timeIntervalSince(t0)
         debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
