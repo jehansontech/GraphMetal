@@ -38,7 +38,7 @@ public class GraphWireFrameSettings: ObservableObject {
                 nodeSizeAutomatic: Bool = true,
                 nodeSizeMinimum: Double = 2,
                 nodeSizeMaximum: Double = 20,
-                nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0, 1, 0, 0),
+                nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0, 0, 0, 0),
                 edgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
