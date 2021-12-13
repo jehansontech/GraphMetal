@@ -135,12 +135,12 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
                   up: pov.up))
     }
 
-    public func flyTo(_ destination: POV) {
+    public func flyTo(_ destination: POV, _ callback: (() -> ())? = nil) {
         debug("POVController.flyTo", "pov = \(pov)")
         debug("POVController.flyTo", "destination = \(destination)")
         debug("POVController.flyTo", "flying = \(flying)")
         if !flying {
-            self.flightInProgress = POVFlightAction(self.pov, destination, constants)
+            self.flightInProgress = POVFlightAction(self.pov, destination, constants, callback: callback)
         }
     }
 
@@ -393,7 +393,9 @@ class POVFlightAction {
 
     var phase: Phase = .new
 
-    init(_ pov: POV, _ destination: POV, _ constants: POVControllerConstants) {
+    var callback: (() -> ())?
+
+    init(_ pov: POV, _ destination: POV, _ constants: POVControllerConstants, callback:(() -> ())? = nil) {
         let povSequence = [pov, destination]
         self.povSequence = povSequence
         self.totalDistance = Self.calculateTotalDistance([pov, destination])
@@ -401,6 +403,7 @@ class POVFlightAction {
         self.normalizedAcceleration = constants.flyNormalizedAcceleration
         self.minSpeed = constants.flyMinSpeed
         self.maxSpeed = constants.flyMaxSpeed
+        self.callback = callback
     }
 
     static func calculateTotalDistance(_ povSequence: [POV]) -> Float {
@@ -454,6 +457,9 @@ class POVFlightAction {
                 }
             }
         case .arrived:
+            if let callback = callback {
+                callback()
+            }
             return nil
         }
 
