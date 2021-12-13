@@ -8,25 +8,21 @@ import MetalKit
 import Wacoma
 import GenericGraph
 
+fileprivate var graphViewInstanceCount: Int = 0
+
 public struct GraphView<S: RenderableGraphHolder> {
 
     var graphHolder: S
 
+    private var renderController: RenderController?
+
+    private var povController: POVController?
+
+    private var wireframeSettings: GraphWireframeSettings?
+
     let tapHandler: RendererTapHandler?
 
     let longPressHandler: RendererLongPressHandler?
-
-    private weak var renderController: RenderController!
-
-    private weak var povController: POVController!
-
-    private weak var wireframeSettings: GraphWireframeSettings!
-
-    private var _defaultRenderController = RenderController()
-
-    private var _defaultPOVController = POVController()
-
-    private var _defaultWireframeSettings = GraphWireframeSettings()
 
     public init(_ graphHolder: S,
                 renderController: RenderController? = nil,
@@ -35,33 +31,13 @@ public struct GraphView<S: RenderableGraphHolder> {
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
 
+        graphViewInstanceCount += 1
+        debug("GraphView.init", "instanceCount=\(graphViewInstanceCount)")
+        
         self.graphHolder = graphHolder
-
-        if let renderController = renderController {
-            self.renderController = renderController
-        }
-        else {
-            debug("GraphView.init", "using default render controller")
-            self.renderController = _defaultRenderController
-        }
-
-        if let povController = povController {
-            self.povController = povController
-        }
-        else {
-            debug("GraphView.init", "using default POV controller")
-            self.povController = _defaultPOVController
-
-        }
-
-        if let wireframeSettings = wireframeSettings {
-            self.wireframeSettings = wireframeSettings
-        }
-        else {
-            debug("GraphView.init", "using default wireframe settings")
-            self.wireframeSettings = _defaultWireframeSettings
-        }
-
+        self.renderController = renderController
+        self.povController = povController
+        self.wireframeSettings = wireframeSettings
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
     }

@@ -94,10 +94,12 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public init(pov: POV = POV(),
+                povDefault: POV? = nil,
                 orbitEnabled: Bool = false,
                 orbitSpeed: Float = .pi/30) {
         debug("POVController.init")
         self.pov = pov
+        self.povDefault = povDefault
         self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
     }
@@ -134,6 +136,9 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func flyTo(_ destination: POV) {
+        debug("POVController.flyTo", "pov = \(pov)")
+        debug("POVController.flyTo", "destination = \(destination)")
+        debug("POVController.flyTo", "flying = \(flying)")
         if !flying {
             self.flightInProgress = POVFlightAction(self.pov, destination, constants)
         }
@@ -407,6 +412,7 @@ class POVFlightAction {
 
     /// returns nil when finished
     func update(_ timestamp: Date) -> POV? {
+        debug("POVFlightAction.update", "phase = \(phase)")
 
         // It's essential that the first time this func is called,
         // phase = .new

@@ -27,10 +27,13 @@ enum RendererError: Error {
 protocol GraphRendererProtocol: MTKViewDelegate {
 }
 
+fileprivate var rendererInstanceCount: Int = 0
+
 ///
 ///
 ///
 public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendererProtocol, RenderControllerDelegate {
+
 
     public typealias NodeValueType = S.GraphType.NodeType.ValueType
 
@@ -41,6 +44,12 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
     weak var renderController: RenderController!
 
     weak var povController: POVController!
+
+    private let _defaultRenderController: RenderController?
+
+    private let _defaultPOVController: POVController?
+
+    private let _defaultWireframeSettings: GraphWireframeSettings?
 
     var viewSize: CGSize
 
@@ -73,15 +82,36 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
     // private var _drawCount: Int = 0
 
     public init(_ graphHolder: S,
-                renderController: RenderController,
-                povController: POVController,
-                wireframeSettings: GraphWireframeSettings) throws {
+                renderController: RenderController?,
+                povController: POVController?,
+                wireframeSettings: GraphWireframeSettings?) throws {
 
-        debug("GraphRenderer.init", "started")
+        rendererInstanceCount += 1
+        debug("GraphRenderer.init", "instanceCount=\(rendererInstanceCount)")
 
         self.graphHolder = graphHolder
-        self.renderController = renderController
-        self.povController = povController
+
+        if let renderController = renderController {
+            self._defaultRenderController = nil
+            self.renderController = renderController
+        }
+        else {
+            debug("GraphRenderer.init", "Creating default render controller")
+            let renderController = RenderController()
+            self._defaultRenderController = renderController
+            self.renderController = renderController
+        }
+
+        if let povController = povController {
+            self._defaultPOVController = nil
+            self.povController = povController
+        }
+        else {
+            debug("GraphRender.init", "Creating default POV controller")
+            let povController = POVController()
+            self._defaultPOVController = povController
+            self.povController = povController
+        }
 
         // default gesture handlers, could be replaced later by GraphView
         self.dragHandler = povController
@@ -113,8 +143,17 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
             throw RendererError.noDepthStencilState
         }
 
-        wireFrame = try GraphWireframe(device, wireframeSettings)
-        
+        if let wireframeSettings = wireframeSettings {
+            self._defaultWireframeSettings = nil
+            wireFrame = try GraphWireframe(device, wireframeSettings)
+        }
+        else {
+            debug("GraphRenderer.init", "Creating default wireframe settings")
+            let wireframeSettings = GraphWireframeSettings()
+            self._defaultWireframeSettings = wireframeSettings
+            wireFrame = try GraphWireframe(device, wireframeSettings)
+        }
+
         super.init()
 
         self.renderController!.delegate = self
