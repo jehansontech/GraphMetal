@@ -103,12 +103,31 @@ extension GraphView: UIViewRepresentable {
         mtkView.drawableSize = mtkView.frame.size
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-        mtkView.clearColor = MTLClearColorMake(context.coordinator._customRenderController.backgroundColor.x,
-                                               context.coordinator._customRenderController.backgroundColor.y,
-                                               context.coordinator._customRenderController.backgroundColor.z,
-                                               context.coordinator._customRenderController.backgroundColor.w)
 
-        // Gestures
+        mtkView.clearColor = MTLClearColorMake(context.coordinator.renderController.backgroundColor.x,
+                                               context.coordinator.renderController.backgroundColor.y,
+                                               context.coordinator.renderController.backgroundColor.z,
+                                               context.coordinator.renderController.backgroundColor.w)
+
+        // POV gestures
+
+        let panGR = UIPanGestureRecognizer(target: context.coordinator,
+                                           action: #selector(context.coordinator.pan))
+        panGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(panGR)
+
+        let pinchGR = UIPinchGestureRecognizer(target: context.coordinator,
+                                               action: #selector(context.coordinator.pinch))
+        pinchGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(pinchGR)
+
+        let rotationGR = UIRotationGestureRecognizer(target: context.coordinator,
+                                                     action: #selector(context.coordinator.rotate))
+        rotationGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(rotationGR)
+
+
+        // Other gestures
 
         if let tapHandler = self.tapHandler {
             context.coordinator.tapHandler = tapHandler
@@ -123,24 +142,6 @@ extension GraphView: UIViewRepresentable {
                                                            action: #selector(context.coordinator.longPress))
             mtkView.addGestureRecognizer(longPressGR)
         }
-
-        context.coordinator.dragHandler = povController
-        let panGR = UIPanGestureRecognizer(target: context.coordinator,
-                                           action: #selector(context.coordinator.pan))
-        panGR.delegate = context.coordinator
-        mtkView.addGestureRecognizer(panGR)
-
-        context.coordinator.pinchHandler = povController
-        let pinchGR = UIPinchGestureRecognizer(target: context.coordinator,
-                                               action: #selector(context.coordinator.pinch))
-        pinchGR.delegate = context.coordinator
-        mtkView.addGestureRecognizer(pinchGR)
-
-        context.coordinator.rotationHandler = povController
-        let rotationGR = UIRotationGestureRecognizer(target: context.coordinator,
-                                                     action: #selector(context.coordinator.rotate))
-        rotationGR.delegate = context.coordinator
-        mtkView.addGestureRecognizer(rotationGR)
 
         // Finally, update and unpause
         self.updateUIView(mtkView, context: context)
