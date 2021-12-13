@@ -302,7 +302,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
 
         // Update POV here in case it's moving.
         let pov = povController.updatePOV(Date())
-
+        // debug("GraphRenderer.preDraw", "new POV = \(pov)")
+        
         self.projectionMatrix = Self.makeProjectionMatrix(viewSize, renderController)
         self.modelViewMatrix = Self.makeModelViewMatrix(pov)
 

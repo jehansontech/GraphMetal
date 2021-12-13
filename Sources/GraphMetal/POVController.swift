@@ -229,7 +229,8 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         }
         _lastUpdateTimestamp = timestamp
 
-        self.pov = updatedPOV // this will automatically update the modelViewMatrix
+        // debug("POVController.updatePOV", "new POV = \(updatedPOV)")
+        self.pov = updatedPOV
         return updatedPOV
     }
 }
