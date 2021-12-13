@@ -225,6 +225,8 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
             debug("GraphRenderer.draw", "starting. update is currently in progress.")
         }
 
+        // snapshot is before the update -- i.e., it shows the results of prev. draw
+        // Q: what if I do it LAST?
         if screenshotRequested {
             saveSnapshot(view)
             screenshotRequested = false
@@ -246,12 +248,13 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
                let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor),
                let drawable = view.currentDrawable {
 
+                // My background is opaque and I'm not doing multipass rendering
+                // so therefore I don't care about load actions or store actions
+                // renderPassDescriptor.colorAttachments[0].loadAction = .clear
+                // renderPassDescriptor.colorAttachments[0].storeAction = .store
+
                 renderEncoder.setDepthStencilState(depthState)
-
-                wireFrame.encodeCommands(renderEncoder) //,
-                                                        // dynamicUniformBuffer,
-                                                        // uniformBufferOffset)
-
+                wireFrame.encodeCommands(renderEncoder)
                 renderEncoder.endEncoding()
                 commandBuffer.present(drawable)
             }

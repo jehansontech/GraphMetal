@@ -81,7 +81,7 @@ fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
 
     // fadeout
     // Note that distance is -z
-    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
 
 
     // transparent edges
@@ -129,7 +129,7 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a = fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {

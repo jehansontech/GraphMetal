@@ -38,7 +38,7 @@ public class GraphWireFrameSettings: ObservableObject {
                 nodeSizeAutomatic: Bool = true,
                 nodeSizeMinimum: Double = 2,
                 nodeSizeMaximum: Double = 20,
-                nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0,0,0,0),
+                nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0, 1, 0, 0),
                 edgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)) {
         self.nodeSize = nodeSize
         self.nodeSizeAutomatic = nodeSizeAutomatic
@@ -319,29 +319,18 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
     }
 
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
-
         // _drawCount += 1
-        // debug("GraphWireFrame.draw[\(_drawCount)]")
+        // debug("GraphWireFrame.encodeCommands[\(_drawCount)]")
+
         applyUpdate()
 
+        // If we don't have node positions we can't draw either nodes or edges.
         guard
             let nodePositionBuffer = self.nodePositionBuffer
         else {
-            debug("GraphWireFrame", "draw: nodePositionBuffer = nil")
             return
         }
 
-        guard
-            let nodeColorBuffer = self.nodeColorBuffer
-        else {
-            debug("GraphWireFrame", "draw: nodeColorBuffer = nil")
-            return
-        }
-
-        // debug("GraphWireFrame", "draw \(_drawCount): starting on nodes")
-
-        renderEncoder.pushDebugGroup("Draw Nodes")
-        renderEncoder.setRenderPipelineState(nodePipelineState)
         renderEncoder.setVertexBuffer(dynamicUniformBuffer,
                                       offset:uniformBufferOffset,
                                       index: BufferIndex.uniforms.rawValue)
@@ -351,27 +340,27 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         renderEncoder.setVertexBuffer(nodePositionBuffer,
                                       offset: 0,
                                       index: BufferIndex.nodePosition.rawValue)
-        renderEncoder.setVertexBuffer(nodeColorBuffer,
-                                      offset: 0,
-                                      index: BufferIndex.nodeColor.rawValue)
-        renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
-        renderEncoder.popDebugGroup()
 
-        guard
-            let edgeIndexBuffer = self.edgeIndexBuffer
-        else {
-            debug("GraphWireFrame", "draw: edgeIndexBuffer = nil")
-            return
+        if let nodeColorBuffer = self.nodeColorBuffer {
+            renderEncoder.pushDebugGroup("Draw Nodes")
+            renderEncoder.setRenderPipelineState(nodePipelineState)
+            renderEncoder.setVertexBuffer(nodeColorBuffer,
+                                          offset: 0,
+                                          index: BufferIndex.nodeColor.rawValue)
+            renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
+            renderEncoder.popDebugGroup()
         }
 
-        renderEncoder.pushDebugGroup("Draw Edges")
-        renderEncoder.setRenderPipelineState(edgePipelineState)
-        renderEncoder.drawIndexedPrimitives(type: .line,
-                                            indexCount: edgeIndexCount,
-                                            indexType: MTLIndexType.uint32,
-                                            indexBuffer: edgeIndexBuffer,
-                                            indexBufferOffset: 0)
-        renderEncoder.popDebugGroup()
+        if let edgeIndexBuffer = self.edgeIndexBuffer {
+            renderEncoder.pushDebugGroup("Draw Edges")
+            renderEncoder.setRenderPipelineState(edgePipelineState)
+            renderEncoder.drawIndexedPrimitives(type: .line,
+                                                indexCount: edgeIndexCount,
+                                                indexType: MTLIndexType.uint32,
+                                                indexBuffer: edgeIndexBuffer,
+                                                indexBufferOffset: 0)
+            renderEncoder.popDebugGroup()
+        }
 
     }
 
@@ -472,17 +461,14 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
 
-        // This doesn't support dimming
-        // pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
-        //
-        // These are guesses
+        // These are for fadeout of the nodes
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .one // WAS: .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .one // WAS: .destinationAlpha
-        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add // WAS: .max
-        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .one
-        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .one
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+
+        // I'm guessing that these might help with other things that get drawn on top
+        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
 
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
@@ -513,17 +499,14 @@ public class GraphWireFrame<N: RenderableNodeValue, E: RenderableEdgeValue> {
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
 
-        // This doesn't support dimming
-        // pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
-        //
-        // These are guesses
+        // These are for fadeout of the edges
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .one // WAS: .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .one // WAS: .destinationAlpha
-        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add // WAS: .max
-        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .one
-        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .one
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+
+        // I'm guessing that these might help with other things that get drawn on top
+        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
 
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
