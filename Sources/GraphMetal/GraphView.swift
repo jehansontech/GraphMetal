@@ -16,23 +16,51 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     let longPressHandler: RendererLongPressHandler?
 
-    private weak var renderController: RenderController?
+    private weak var renderController: RenderController!
 
-    private weak var povController: POVController?
+    private weak var povController: POVController!
 
-    private weak var wireframeSettings: GraphWireFrameSettings?
+    private weak var wireframeSettings: GraphWireframeSettings!
+
+    private var _defaultRenderController = RenderController()
+
+    private var _defaultPOVController = POVController()
+
+    private var _defaultWireframeSettings = GraphWireframeSettings()
 
     public init(_ graphHolder: S,
                 renderController: RenderController? = nil,
                 povController: POVController? = nil,
-                wireframeSettings: GraphWireFrameSettings? = nil,
+                wireframeSettings: GraphWireframeSettings? = nil,
                 tapHandler: RendererTapHandler? = nil,
                 longPressHandler: RendererLongPressHandler? = nil) {
 
         self.graphHolder = graphHolder
-        self.renderController = renderController
-        self.povController = povController
-        self.wireframeSettings = wireframeSettings
+
+        if let renderController = renderController {
+            self.renderController = renderController
+        }
+        else {
+            debug("GraphView.init", "using default render controller")
+            self.renderController = _defaultRenderController
+        }
+
+        if let povController = povController {
+            self.povController = povController
+        }
+        else {
+            debug("GraphView.init", "using default POV controller")
+            self.povController = _defaultPOVController
+
+        }
+
+        if let wireframeSettings = wireframeSettings {
+            self.wireframeSettings = wireframeSettings
+        }
+        else {
+            debug("GraphView.init", "using default wireframe settings")
+            self.wireframeSettings = _defaultWireframeSettings
+        }
 
         self.tapHandler = tapHandler
         self.longPressHandler = longPressHandler
@@ -40,13 +68,14 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
+            debug("GraphView.makeCoordinator", "creating GraphRenderer")
             return try GraphRenderer<S>(self.graphHolder,
-                                                renderController: renderController,
-                                                povController: povController,
-                                                wireframeSettings: wireframeSettings)
+                                        renderController: self.renderController,
+                                        povController: self.povController,
+                                        wireframeSettings: self.wireframeSettings)
         }
         catch {
-            fatalError("Problem creating renderer: \(error)")
+            fatalError("Problem creating coordinator: \(error)")
         }
     }
 }
@@ -74,10 +103,10 @@ extension GraphView: UIViewRepresentable {
         mtkView.drawableSize = mtkView.frame.size
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-        mtkView.clearColor = MTLClearColorMake(context.coordinator.renderController.backgroundColor.x,
-                                               context.coordinator.renderController.backgroundColor.y,
-                                               context.coordinator.renderController.backgroundColor.z,
-                                               context.coordinator.renderController.backgroundColor.w)
+        mtkView.clearColor = MTLClearColorMake(context.coordinator._customRenderController.backgroundColor.x,
+                                               context.coordinator._customRenderController.backgroundColor.y,
+                                               context.coordinator._customRenderController.backgroundColor.z,
+                                               context.coordinator._customRenderController.backgroundColor.w)
 
         // Gestures
 
@@ -154,7 +183,24 @@ extension GraphView: NSViewRepresentable {
                                                context.coordinator.renderController.backgroundColor.y,
                                                context.coordinator.renderController.backgroundColor.z,
                                                context.coordinator.renderController.backgroundColor.w)
-        // Gestures
+        // POV gestures
+
+        let panGR = NSPanGestureRecognizer(target: context.coordinator,
+                                           action: #selector(context.coordinator.pan))
+        panGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(panGR)
+
+        let pinchGR = NSMagnificationGestureRecognizer(target: context.coordinator,
+                                                       action: #selector(context.coordinator.pinch))
+        pinchGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(pinchGR)
+
+        let rotationGR = NSRotationGestureRecognizer(target: context.coordinator,
+                                                     action: #selector(context.coordinator.rotate))
+        rotationGR.delegate = context.coordinator
+        mtkView.addGestureRecognizer(rotationGR)
+
+        // Other gestures
 
         if let tapHandler = self.tapHandler {
             context.coordinator.tapHandler = tapHandler
@@ -170,23 +216,6 @@ extension GraphView: NSViewRepresentable {
             mtkView.addGestureRecognizer(longPressGR)
         }
 
-        context.coordinator.dragHandler = povController
-        let panGR = NSPanGestureRecognizer(target: context.coordinator,
-                                           action: #selector(context.coordinator.pan))
-        panGR.delegate = context.coordinator
-        mtkView.addGestureRecognizer(panGR)
-
-        context.coordinator.pinchHandler = povController
-        let pinchGR = NSMagnificationGestureRecognizer(target: context.coordinator,
-                                                       action: #selector(context.coordinator.pinch))
-        pinchGR.delegate = context.coordinator
-        mtkView.addGestureRecognizer(pinchGR)
-
-        context.coordinator.rotationHandler = povController
-        let rotationGR = NSRotationGestureRecognizer(target: context.coordinator,
-                                                     action: #selector(context.coordinator.rotate))
-        rotationGR.delegate = context.coordinator
-        mtkView.addGestureRecognizer(rotationGR)
 
         // Finally, update and unpause
         self.updateNSView(mtkView, context: context)

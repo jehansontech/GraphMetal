@@ -96,9 +96,14 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     public init(pov: POV = POV(),
                 orbitEnabled: Bool = false,
                 orbitSpeed: Float = .pi/30) {
+        debug("POVController.init")
         self.pov = pov
         self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
+    }
+
+    deinit {
+        debug("POVController.deinit")
     }
 
     public func markPOV() {
@@ -135,7 +140,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func dragBegan(at location: SIMD2<Float>) {
-        // print("POVController.dragBegan")
+        debug("POVController.dragBegan", "location=\(location.prettyString)")
         if !flying {
             self.dragInProgress = POVDragAction(self.pov, location, constants)
         }
@@ -151,7 +156,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
     }
 
     public func dragEnded() {
-        // print("POVController.dragEnded")
+        debug("POVController.dragEnded")
         self.dragInProgress = nil
     }
 

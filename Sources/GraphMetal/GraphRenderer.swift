@@ -36,33 +36,29 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
 
     public typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
-    var viewSize: CGSize
+    let graphHolder: S
 
     weak var renderController: RenderController!
 
-    private var _fallbackRenderController: RenderController? = nil
-
     weak var povController: POVController!
 
-    private var _fallbackPOVController: POVController? = nil
-
-    private var screenshotRequested: Bool = false
-
-    let graphHolder: S
+    var viewSize: CGSize
 
     var projectionMatrix: float4x4
 
     var modelViewMatrix: float4x4
 
+    var screenshotRequested: Bool = false
+
     var tapHandler: RendererTapHandler? = nil
 
     var longPressHandler: RendererLongPressHandler? = nil
 
-    var dragHandler: RendererDragHandler?
+    var dragHandler: RendererDragHandler? = nil
 
-    var pinchHandler: RendererPinchHandler?
+    var pinchHandler: RendererPinchHandler? = nil
 
-    var rotationHandler: RendererRotationHandler?
+    var rotationHandler: RendererRotationHandler? = nil
 
     let device: MTLDevice!
 
@@ -72,38 +68,30 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
 
     var depthState: MTLDepthStencilState
 
-    var wireFrame: GraphWireFrame<NodeValueType, EdgeValueType>
+    var wireFrame: GraphWireframe<NodeValueType, EdgeValueType>
     
     // private var _drawCount: Int = 0
 
     public init(_ graphHolder: S,
-                renderController: RenderController? = nil,
-                povController: POVController? = nil,
-                wireframeSettings: GraphWireFrameSettings? = nil) throws {
+                renderController: RenderController,
+                povController: POVController,
+                wireframeSettings: GraphWireframeSettings) throws {
 
-        debug("GraphRenderer", "init")
-        
+        debug("GraphRenderer.init", "started")
+
         self.graphHolder = graphHolder
+        self.renderController = renderController
+        self.povController = povController
 
+        // default gesture handlers, could be replaced later by GraphView
+        self.dragHandler = povController
+        self.pinchHandler = povController
+        self.rotationHandler = povController
+        
+        // Dummy values
         self.viewSize = CGSize(width: 100, height: 100) // dummy nonzero values
-
-        if let renderController = renderController {
-            self.renderController = renderController
-        }
-        else {
-            self._fallbackRenderController = RenderController()
-            self.renderController = self._fallbackRenderController
-        }
-
-
-        if let povController = povController {
-            self.povController = povController
-        }
-        else {
-            let povController = POVController()
-            self._fallbackPOVController = povController
-            self.povController = povController
-        }
+        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, self.renderController!)
+        self.modelViewMatrix = Self.makeModelViewMatrix(POV())
 
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
@@ -112,14 +100,10 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
             throw RendererError.noDevice
         }
 
-        // Dummy values for the matrices
-        self.projectionMatrix = Self.makeProjectionMatrix(viewSize, self.renderController!)
-        self.modelViewMatrix = Self.makeModelViewMatrix(POV())
-
         self.commandQueue = device.makeCommandQueue()!
         
         let depthStateDesciptor = MTLDepthStencilDescriptor()
-        depthStateDesciptor.depthCompareFunction = MTLCompareFunction.lessEqual
+        depthStateDesciptor.depthCompareFunction = MTLCompareFunction.less
         depthStateDesciptor.isDepthWriteEnabled = true
 
         if let state = device.makeDepthStencilState(descriptor:depthStateDesciptor) {
@@ -129,7 +113,7 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
             throw RendererError.noDepthStencilState
         }
 
-        wireFrame = try GraphWireFrame(device, wireframeSettings)
+        wireFrame = try GraphWireframe(device, wireframeSettings)
         
         super.init()
 
@@ -185,11 +169,14 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
         let t0 = Date()
         debug("GraphRenderer.graphHasChanged", "starting.")
 
-        // We expect this method to be called on the background thread where the changes
+        // We expect this method to be called on the background thread, i.e, the thread
+        // on which the changes
         // to the graph were made. But the render controller's updateInProgress has to be
         // modified on the main thread. Otherwise we get this runtime issue:
         // "Publishing changes from background threads is not allowed; make sure to publish values
         // from the main thread (via operators like receive(on:)) on model updates."
+
+        // Use async because it does sometimes get called on the main thread.
         DispatchQueue.main.async {
             self.renderController.updateStarted()
         }
@@ -361,7 +348,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
     }
 
     @objc func pan(_ gesture: UIPanGestureRecognizer) {
-        // print("Renderer.pan")
+        // debug("GraphRenderer.pan", "started")
         if var dragHandler = self.dragHandler,
            let view  = gesture.view,
            gesture.numberOfTouches > 0  {
@@ -507,7 +494,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
     }
 
     @objc func pan(_ gesture: NSPanGestureRecognizer) {
-        // print("GraphRenderer(macOS) pan")
+        debug("GraphRenderer.pan", "started")
 
         if var dragHandler = self.dragHandler,
            let view  = gesture.view  {
