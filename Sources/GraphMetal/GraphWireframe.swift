@@ -36,9 +36,9 @@ public class GraphWireframeSettings: ObservableObject {
     public var edgeColor: SIMD4<Float>
 
     public init(nodeSizeIsAdjusted: Bool = true,
-                nodeSizeDefault: Double = 25,
+                nodeSizeDefault: Double = 16,
                 nodeSizeMinimum: Double = 2,
-                nodeSizeMaximum: Double = 50,
+                nodeSizeMaximum: Double = 32,
                 nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0, 0, 0, 0),
                 edgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)) {
         self.nodeSizeIsAdjusted = nodeSizeIsAdjusted
