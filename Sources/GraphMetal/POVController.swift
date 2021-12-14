@@ -223,7 +223,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 
         if let t0 = _lastUpdateTimestamp,
            orbitEnabled {
-            // STET: multiply by -1 so that positive speed looks like earth's direction of rotation
+            // Multiply by -1 so that positive speed looks like earth's direction of rotation
             let dPhi = -1 * orbitSpeed * Float(timestamp.timeIntervalSince(t0))
             updatedPOV.location = (float4x4(rotationAround: pov.up, by: dPhi) * SIMD4<Float>(pov.location, 1)).xyz
         }

@@ -400,7 +400,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
                 dragHandler.dragBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
             case .changed:
                 let translation = gesture.translation(in: view)
-                // STET: scroll is multiplied by -1
+                // NOTE that -1 on scroll
                 dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
                                         scroll: Float(-translation.y / view.bounds.height))
             case .ended:
