@@ -144,16 +144,21 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         }
     }
 
-    public func dragBegan(at location: SIMD2<Float>) {
-        debug("POVController.dragBegan", "location=\(location.prettyString)")
+    public func dragBegan(mode: GestureMode, at location: SIMD2<Float>) {
         if !flying {
-            self.dragInProgress = POVDragAction(self.pov, location, constants)
+            debug("POVController.dragBegan", "mode=\(mode), location=\(location.prettyString)")
+            switch mode {
+            case .normal:
+                self.dragInProgress = POVRotatingDragAction(self.pov, location, constants)
+            case .option:
+                self.dragInProgress = POVSlidingDragAction(self.pov, location, constants)
+            }
         }
     }
 
     public func dragChanged(pan: Float, scroll: Float) {
-        // print("POVController.dragChanged")
         if var povDragHandler = self.dragInProgress {
+            debug("POVController.dragChanged", "pan=\(pan), scroll==\(scroll)")
             if let newPOV = povDragHandler.dragChanged(self.pov, pan: pan, scroll: scroll) {
                 self.pov = newPOV
             }
@@ -165,7 +170,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.dragInProgress = nil
     }
 
-    public func pinchBegan(at center: SIMD2<Float>) {
+    public func pinchBegan(mode: GestureMode, at center: SIMD2<Float>) {
         // print("POVController.pinchBegan")
         if !flying {
             self.pinchInProgress = POVPinchAction(self.pov, center, constants)
@@ -186,7 +191,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         pinchInProgress = nil
     }
 
-    public func rotationBegan(at location: SIMD2<Float>) {
+    public func rotationBegan(mode: GestureMode, at location: SIMD2<Float>) {
         // print("POVController.rotationBegan")
         if !flying {
             rotationInProgress = POVRotationAction(self.pov, location, constants)
@@ -239,14 +244,19 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
 // MARK:- Actions
 // ===========================================================
 
+protocol POVDragAction {
+
+    mutating func dragChanged(_ pov: POV, pan: Float, scroll: Float) -> POV?
+}
+
 ///
+/// This is a translation of the POV's center and location by the same amount in the plane perpendicular to the POV's forward vector
 ///
-///
-struct POVDragAction {
+struct POVSlidingDragAction: POVDragAction {
 
     let initialPOV: POV
 
-    let touchLocation: SIMD2<Float>
+    // let touchLocation: SIMD2<Float>
 
     let scrollSensitivity: Float
 
@@ -254,23 +264,55 @@ struct POVDragAction {
 
     init(_ pov: POV, _ touchLocation: SIMD2<Float>, _ constants: POVControllerConstants) {
         self.initialPOV = pov
-        self.touchLocation = touchLocation
+        // self.touchLocation = touchLocation
         self.scrollSensitivity = constants.scrollSensitivity
         self.panSensitivity = constants.panSensitivity
     }
 
     mutating func dragChanged(_ pov: POV, pan: Float, scroll: Float) -> POV? {
 
-        // PAN is a rotation of the POV's location about an axis that is
-        // parallel to the POV's up axis and that passes through the POV's
-        // center point
-        //
-        // SCROLL is a rotation of the location and up vectors.
-        // --location rotates about an axis that is perpendicular to both
-        //   forward and up axes and that passes through the center point
-        // --up vector rotates about the same axis
-        //
+        // FIXME this is wrong.
+        // for one thing, it's not using the up vector
 
+        let delta = SIMD3<Float>(x: -pan * panSensitivity, y: -scroll * scrollSensitivity, z: 0)
+        let translation = float4x4(translationBy: delta)
+
+        let newLocation = (translation * SIMD4<Float>(initialPOV.location, 1)).xyz
+        let newCenter = (translation * SIMD4<Float>(initialPOV.center, 1)).xyz
+        return POV(location: newLocation,
+                   center: newCenter,
+                   up: pov.up)
+    }
+}
+
+///
+/// PAN is a rotation of the POV's location about an axis that is
+/// parallel to the POV's up axis and that passes through the POV's
+/// center point
+///
+/// SCROLL is a rotation of the location and up vectors.
+/// --location rotates about an axis that is perpendicular to both
+///   forward and up axes and that passes through the center point
+/// --up vector rotates about the same axis
+///
+struct POVRotatingDragAction: POVDragAction {
+
+    let initialPOV: POV
+
+    // let touchLocation: SIMD2<Float>
+
+    let scrollSensitivity: Float
+
+    let panSensitivity: Float
+
+    init(_ pov: POV, _ touchLocation: SIMD2<Float>, _ constants: POVControllerConstants) {
+        self.initialPOV = pov
+        // self.touchLocation = touchLocation
+        self.scrollSensitivity = constants.scrollSensitivity
+        self.panSensitivity = constants.panSensitivity
+    }
+
+    mutating func dragChanged(_ pov: POV, pan: Float, scroll: Float) -> POV? {
         /// unit vector perpendicular to POV's forward and up vectors
         let perpAxis = normalize(simd_cross(initialPOV.forward, initialPOV.up))
 
@@ -295,26 +337,23 @@ struct POVDragAction {
 
 
 ///
-///
+/// This is a translation of POV's location toward or away from its center
 ///
 struct POVPinchAction {
 
     let initialPOV: POV
 
-    let touchLocation: SIMD2<Float>
+    // let touchLocation: SIMD2<Float>
 
     let magnificationSensitivity: Float
 
     init(_ pov: POV, _ touchLocation: SIMD2<Float>, _ constants: POVControllerConstants) {
         self.initialPOV = pov
-        self.touchLocation = touchLocation
+        // self.touchLocation = touchLocation
         self.magnificationSensitivity = constants.magnificationSensitivity
     }
 
     mutating func magnificationChanged(_ pov: POV, scale: Float) -> POV? {
-
-        // This is translation of POV's location toward or away from its center
-
         let displacementXYZ = initialPOV.location - initialPOV.center
         let newDisplacementXYZ = displacementXYZ / scale
         let newLocation = newDisplacementXYZ + initialPOV.center
@@ -326,26 +365,23 @@ struct POVPinchAction {
 
 
 ///
-///
+/// This is a rotation of the POV's up vector about its forward vector
 ///
 struct POVRotationAction {
 
     let initialPOV: POV
 
-    let touchLocation: SIMD2<Float>
+    // let touchLocation: SIMD2<Float>
 
     let rotationSensitivity: Float
 
     init(_ pov: POV, _ touchLocation: SIMD2<Float>, _ constants: POVControllerConstants) {
         self.initialPOV = pov
-        self.touchLocation = touchLocation
+        // self.touchLocation = touchLocation
         self.rotationSensitivity = constants.rotationSensitivity
     }
 
     mutating func rotationChanged(_ pov: POV, radians: Float) -> POV? {
-
-        // This is a rotation of the POV's up vector about its forward vector
-
         let upMatrix = float4x4(rotationAround: pov.forward, by: Float(-rotationSensitivity * radians))
         let newUp = (upMatrix * SIMD4<Float>(initialPOV.up, 1)).xyz
         return POV(location: pov.location,

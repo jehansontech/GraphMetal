@@ -333,14 +333,21 @@ public class GraphRendererBase<S: RenderableGraphHolder>: NSObject, GraphRendere
 
 public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGestureRecognizerDelegate {
 
+    func getMode(forGesture gesture: UIGestureRecognizer) -> GestureMode {
+        switch gesture.numberOfTouches {
+        case 1:
+            return .normal
+        default:
+            return .option
+        }
+    }
+
     @objc func tap(_ gesture: UITapGestureRecognizer) {
-        // print("Renderer.tap")
         if var tapHandler = self.tapHandler,
            let view = gesture.view,
            gesture.numberOfTouches > 0 {
 
-            debug("GraphRenderer(iOS)", "tap at \(gesture.location(ofTouch: 0, in: view)) -> \(clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))")
-
+            debug("GraphRenderer(iOS)", "tap at \(gesture.location(ofTouch: 0, in: view)) -> \(clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds).prettyString)")
 
             switch gesture.state {
             case .possible:
@@ -350,7 +357,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .changed:
                 break
             case .ended:
-                tapHandler.tap(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+                tapHandler.tap(mode: getMode(forGesture: gesture),
+                               at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
             case .cancelled:
                 break
             case .failed:
@@ -362,7 +370,6 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
     }
 
     @objc func longPress(_ gesture: UILongPressGestureRecognizer) {
-        // print("Renderer.longPress")
         if var longPressHandler = longPressHandler,
            let view = gesture.view,
            gesture.numberOfTouches > 0  {
@@ -371,7 +378,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .possible:
                 break
             case .began:
-                longPressHandler.longPressBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+                longPressHandler.longPressBegan(mode: getMode(forGesture: gesture),
+                                                at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
             case .changed:
                 longPressHandler.longPressEnded()
                 break
@@ -388,7 +396,6 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
     }
 
     @objc func pan(_ gesture: UIPanGestureRecognizer) {
-        // debug("GraphRenderer.pan", "started")
         if var dragHandler = self.dragHandler,
            let view  = gesture.view,
            gesture.numberOfTouches > 0  {
@@ -397,18 +404,19 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .possible:
                 break
             case .began:
-                dragHandler.dragBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+                dragHandler.dragBegan(mode: getMode(forGesture: gesture),
+                                      at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
             case .changed:
                 let translation = gesture.translation(in: view)
-                // NOTE that -1 on scroll
+                // NOTE that factor on -1 on scroll
                 dragHandler.dragChanged(pan: Float(translation.x / view.bounds.width),
                                         scroll: Float(-translation.y / view.bounds.height))
             case .ended:
                 dragHandler.dragEnded()
             case .cancelled:
-                break
+                dragHandler.dragEnded()
             case .failed:
-                break
+                dragHandler.dragEnded()
             @unknown default:
                 break
             }
@@ -425,7 +433,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .possible:
                 break
             case .began:
-                pinchHandler.pinchBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
+                pinchHandler.pinchBegan(mode: getMode(forGesture: gesture),
+                                        at: clipPoint(gesture.location(ofTouch: 0, in: view),
                                                       gesture.location(ofTouch: 1, in: view),
                                                       view.bounds))
             case .changed:
@@ -452,7 +461,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
             case .possible:
                 break
             case .began:
-                rotationHandler.rotationBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
+                rotationHandler.rotationBegan(mode: getMode(forGesture: gesture),
+                                              at: clipPoint(gesture.location(ofTouch: 0, in: view),
                                                             gesture.location(ofTouch: 1, in: view),
                                                             view.bounds))
             case .changed:
@@ -483,6 +493,15 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, UIGe
 
 public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGestureRecognizerDelegate {
 
+    func getMode(forGesture gesture: NSGestureRecognizer) -> GestureMode {
+//        switch gesture.numberOfTouches {
+//        case 1:
+            return .normal
+//        default:
+//            return .option
+//        }
+    }
+
     @objc func tap(_ gesture: NSClickGestureRecognizer) {
         // print("GraphRenderer(macOS) tap")
 
@@ -496,7 +515,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .changed:
                 break
             case .ended:
-                tapHandler.tap(at: clipPoint(gesture.location(in: view), view.bounds))
+                tapHandler.tap(mode: getMode(forGesture: gesture),
+                               at: clipPoint(gesture.location(in: view), view.bounds))
             case .cancelled:
                 break
             case .failed:
@@ -517,7 +537,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
-                longPressHandler.longPressBegan(at: clipPoint(gesture.location(in: view), view.bounds))
+                longPressHandler.longPressBegan(mode: getMode(forGesture: gesture),
+                                                at: clipPoint(gesture.location(in: view), view.bounds))
             case .changed:
                 longPressHandler.longPressEnded()
                 break
@@ -543,7 +564,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
-                dragHandler.dragBegan(at: clipPoint(gesture.location(in: view), view.bounds))
+                dragHandler.dragBegan(mode: getMode(forGesture: gesture),
+                                      at: clipPoint(gesture.location(in: view), view.bounds))
             case .changed:
                 let translation = gesture.translation(in: view)
                 // macOS uses upside-down clip coords, so the scroll value is the opposite of that on iOS
@@ -570,7 +592,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
-                pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view),
+                pinchHandler.pinchBegan(mode: getMode(forGesture: gesture),
+                                        at: clipPoint(gesture.location(in: view),
                                                       view.bounds))
             case .changed:
                 // macOS gesture's magnification=0 corresponds to iOS gesture's scale=1
@@ -597,7 +620,8 @@ public class GraphRenderer<S: RenderableGraphHolder>: GraphRendererBase<S>, NSGe
             case .possible:
                 break
             case .began:
-                rotationHandler.rotationBegan(at: clipPoint(gesture.location(in: view),
+                rotationHandler.rotationBegan(mode: getMode(forGesture: gesture),
+                                              at: clipPoint(gesture.location(in: view),
                                                             view.bounds))
             case .changed:
                 // multiply by -1 because macOS gestures use upside-down clip space
