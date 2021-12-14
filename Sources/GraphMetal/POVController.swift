@@ -144,7 +144,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         }
     }
 
-    public func dragBegan(mode: GestureMode, at location: SIMD2<Float>) {
+    public func dragBegan(at location: SIMD2<Float>, mode: GestureMode) {
         if !flying {
             debug("POVController.dragBegan", "mode=\(mode), location=\(location.prettyString)")
             switch mode {
@@ -170,7 +170,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         self.dragInProgress = nil
     }
 
-    public func pinchBegan(mode: GestureMode, at center: SIMD2<Float>) {
+    public func pinchBegan(at center: SIMD2<Float>, mode: GestureMode) {
         // print("POVController.pinchBegan")
         if !flying {
             self.pinchInProgress = POVPinchAction(self.pov, center, constants)
@@ -191,7 +191,7 @@ public class POVController: ObservableObject, CustomStringConvertible, RendererD
         pinchInProgress = nil
     }
 
-    public func rotationBegan(mode: GestureMode, at location: SIMD2<Float>) {
+    public func rotationBegan(at location: SIMD2<Float>, mode: GestureMode) {
         // print("POVController.rotationBegan")
         if !flying {
             rotationInProgress = POVRotationAction(self.pov, location, constants)

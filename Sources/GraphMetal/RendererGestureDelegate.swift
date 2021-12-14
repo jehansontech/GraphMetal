@@ -17,14 +17,14 @@ public enum GestureMode {
 public protocol RendererTapHandler {
 
     /// location is in clip space: (-1, -1) to (+1, +1)
-    mutating func tap(mode: GestureMode, at location: SIMD2<Float>)
+    mutating func tap(at location: SIMD2<Float>, mode: GestureMode)
 
 }
 
 public protocol RendererLongPressHandler {
 
     /// location is in clip space: (-1, -1) to (+1, +1)
-    mutating func longPressBegan(mode: GestureMode, at location: SIMD2<Float>)
+    mutating func longPressBegan(at location: SIMD2<Float>, mode: GestureMode)
 
     mutating func longPressEnded()
 }
@@ -33,7 +33,7 @@ public protocol RendererLongPressHandler {
 public protocol RendererDragHandler {
 
     /// location is in clip space: (-1, -1) to (+1, +1)
-    mutating func dragBegan(mode: GestureMode, at location: SIMD2<Float>)
+    mutating func dragBegan(at location: SIMD2<Float>, mode: GestureMode)
 
     /// pan is fraction of view width; negative means "to the left"
     /// scroll is fraction of view height; negative means "down"
@@ -46,7 +46,7 @@ public protocol RendererDragHandler {
 public protocol RendererPinchHandler {
 
     /// center is midpoint between two fingers
-    mutating func pinchBegan(mode: GestureMode, at center: SIMD2<Float>)
+    mutating func pinchBegan(at location: SIMD2<Float>, mode: GestureMode)
 
     /// scale goes like 1 -> 0.1 when squeezing,  1 -> 10 when stretching
     mutating func pinchChanged(by scale: Float)
@@ -59,7 +59,7 @@ public protocol RendererPinchHandler {
 public protocol RendererRotationHandler {
 
     /// center is midpoint between two fingers
-    mutating func rotationBegan(mode: GestureMode, at center: SIMD2<Float>)
+    mutating func rotationBegan(at location: SIMD2<Float>, mode: GestureMode)
 
     /// increases as the fingers rotate counterclockwise
     mutating func rotationChanged(by radians: Float)
@@ -120,8 +120,8 @@ public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
             case .changed:
                 break
             case .ended:
-                tapHandler.tap(mode: getMode(forGesture: gesture),
-                               at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+                tapHandler.tap(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds),
+                               mode: getMode(forGesture: gesture))
             case .cancelled:
                 break
             case .failed:
@@ -141,8 +141,8 @@ public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                longPressHandler.longPressBegan(mode: getMode(forGesture: gesture),
-                                                at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+                longPressHandler.longPressBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds),
+                                                mode: getMode(forGesture: gesture))
             case .changed:
                 longPressHandler.longPressEnded()
                 break
@@ -167,8 +167,8 @@ public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                dragHandler.dragBegan(mode: getMode(forGesture: gesture),
-                                      at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds))
+                dragHandler.dragBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds),
+                                      mode: getMode(forGesture: gesture))
             case .changed:
                 let translation = gesture.translation(in: view)
                 // NOTE that factor on -1 on scroll
@@ -195,10 +195,10 @@ public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                pinchHandler.pinchBegan(mode: getMode(forGesture: gesture),
-                                        at: clipPoint(gesture.location(ofTouch: 0, in: view),
+                pinchHandler.pinchBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
                                                       gesture.location(ofTouch: 1, in: view),
-                                                      view.bounds))
+                                                      view.bounds),
+                                        mode: getMode(forGesture: gesture))
             case .changed:
                 pinchHandler.pinchChanged(by: Float(gesture.scale))
             case .ended:
@@ -222,10 +222,10 @@ public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                rotationHandler.rotationBegan(mode: getMode(forGesture: gesture),
-                                              at: clipPoint(gesture.location(ofTouch: 0, in: view),
+                rotationHandler.rotationBegan(at: clipPoint(gesture.location(ofTouch: 0, in: view),
                                                             gesture.location(ofTouch: 1, in: view),
-                                                            view.bounds))
+                                                            view.bounds),
+                                              mode: getMode(forGesture: gesture))
             case .changed:
                 rotationHandler.rotationChanged(by: Float(gesture.rotation))
             case .ended:
@@ -324,8 +324,7 @@ class RendererGestureDelegate: NSObject, NSGestureRecognizerDelegate {
             case .changed:
                 break
             case .ended:
-                tapHandler.tap(mode: getMode(forGesture: gesture),
-                               at: clipPoint(gesture.location(in: view), view.bounds))
+                tapHandler.tap(at: clipPoint(gesture.location(in: view), view.bounds), mode: getMode(forGesture: gesture))
             case .cancelled:
                 break
             case .failed:
@@ -344,8 +343,8 @@ class RendererGestureDelegate: NSObject, NSGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                longPressHandler.longPressBegan(mode: getMode(forGesture: gesture),
-                                                at: clipPoint(gesture.location(in: view), view.bounds))
+                longPressHandler.longPressBegan(at: clipPoint(gesture.location(in: view), view.bounds),
+                                                mode: getMode(forGesture: gesture))
             case .changed:
                 longPressHandler.longPressEnded()
                 break
@@ -369,8 +368,8 @@ class RendererGestureDelegate: NSObject, NSGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                dragHandler.dragBegan(mode: getMode(forGesture: gesture),
-                                      at: clipPoint(gesture.location(in: view), view.bounds))
+                dragHandler.dragBegan(at: clipPoint(gesture.location(in: view), view.bounds),
+                                      mode: getMode(forGesture: gesture))
             case .changed:
                 let translation = gesture.translation(in: view)
                 // macOS uses upside-down clip coords, so the scroll value is the opposite of that on iOS
@@ -396,9 +395,8 @@ class RendererGestureDelegate: NSObject, NSGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                pinchHandler.pinchBegan(mode: getMode(forGesture: gesture),
-                                        at: clipPoint(gesture.location(in: view),
-                                                      view.bounds))
+                pinchHandler.pinchBegan(at: clipPoint(gesture.location(in: view), view.bounds),
+                                        mode: getMode(forGesture: gesture))
             case .changed:
                 // macOS gesture's magnification=0 corresponds to iOS gesture's scale=1
                 pinchHandler.pinchChanged(by: Float(1 + gesture.magnification))
@@ -422,9 +420,8 @@ class RendererGestureDelegate: NSObject, NSGestureRecognizerDelegate {
             case .possible:
                 break
             case .began:
-                rotationHandler.rotationBegan(mode: getMode(forGesture: gesture),
-                                              at: clipPoint(gesture.location(in: view),
-                                                            view.bounds))
+                rotationHandler.rotationBegan(at: clipPoint(gesture.location(in: view), view.bounds),
+                                              mode: getMode(forGesture: gesture))
             case .changed:
                 // multiply by -1 because macOS gestures use upside-down clip space
                 rotationHandler.rotationChanged(by: Float(-gesture.rotation))

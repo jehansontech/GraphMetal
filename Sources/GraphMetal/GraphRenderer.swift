@@ -177,12 +177,12 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, GraphRendererPro
     }
     
     public func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID? {
-
-        if let (nn, _) = graphHolder.graph.findNearestNode(clipLocation,
-                                                           projectionMatrix: self.projectionMatrix,
-                                                           modelViewMatrix: self.modelViewMatrix,
-                                                           zNear: self.renderController.zNear,
-                                                           zFar: self.renderController.zFar) {
+        // TODO: Q: Is it OK that we're doing this on the main thread
+        if let nn = graphHolder.graph.findNearestNode(clipLocation,
+                                                      projectionMatrix: self.projectionMatrix,
+                                                      modelViewMatrix: self.modelViewMatrix,
+                                                      zNear: self.renderController.zNear,
+                                                      zFar: self.renderController.zFar) {
             return nn.id
         }
         else {

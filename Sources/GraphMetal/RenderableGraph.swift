@@ -41,7 +41,7 @@ extension Graph where
                                 projectionMatrix: float4x4,
                                 modelViewMatrix: float4x4,
                                 zNear: Float,
-                                zFar: Float)  -> (NodeType, SIMD2<Float>)? {
+                                zFar: Float)  -> NodeType? {
         let ray0 = SIMD4<Float>(Float(clipCoordinates.x), clipCoordinates.y, 0, 1)
         var ray1 = projectionMatrix.inverse * ray0
         ray1.z = -1
@@ -78,14 +78,7 @@ extension Graph where
                 }
             }
         }
-        if let nn = nearestNode {
-            // FIXME the 2nd elem is incorrect
-            let pt = projectionMatrix * (modelViewMatrix * SIMD4<Float>(nn.value!.location,1))
-            return (nn, pt.xy)
-        }
-        else {
-            return nil
-        }
+        return nearestNode
     }
 
 }
