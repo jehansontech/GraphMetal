@@ -14,15 +14,16 @@ public enum GestureMode {
     case option
 }
 
-public protocol RendererTapHandler {
+public protocol TapHandler {
 
+    /// called when the user executes a tap gesture
     /// location is in clip space: (-1, -1) to (+1, +1)
     mutating func tap(at location: SIMD2<Float>, mode: GestureMode)
-
 }
 
-public protocol RendererLongPressHandler {
+public protocol LongPressHandler {
 
+    /// called when the user executes a long-press gesture
     /// location is in clip space: (-1, -1) to (+1, +1)
     mutating func longPressBegan(at location: SIMD2<Float>, mode: GestureMode)
 
@@ -30,8 +31,9 @@ public protocol RendererLongPressHandler {
 }
 
 
-public protocol RendererDragHandler {
+public protocol DragHandler {
 
+    /// called when the user starts executing a drag gesture
     /// location is in clip space: (-1, -1) to (+1, +1)
     mutating func dragBegan(at location: SIMD2<Float>, mode: GestureMode)
 
@@ -40,11 +42,11 @@ public protocol RendererDragHandler {
     mutating func dragChanged(pan: Float, scroll: Float)
 
     mutating func dragEnded()
-
 }
 
-public protocol RendererPinchHandler {
+public protocol PinchHandler {
 
+    /// called when the user starts executing a pinch gesture
     /// center is midpoint between two fingers
     mutating func pinchBegan(at location: SIMD2<Float>, mode: GestureMode)
 
@@ -52,12 +54,12 @@ public protocol RendererPinchHandler {
     mutating func pinchChanged(by scale: Float)
 
     mutating func pinchEnded()
-
 }
 
 
-public protocol RendererRotationHandler {
+public protocol RotationHandler {
 
+    /// called when the user starts executing a rotation gesture
     /// center is midpoint between two fingers
     mutating func rotationBegan(at location: SIMD2<Float>, mode: GestureMode)
 
@@ -70,17 +72,17 @@ public protocol RendererRotationHandler {
 
 #if os(iOS) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
+public class GestureHandlers: NSObject, UIGestureRecognizerDelegate {
 
-    var tapHandler: RendererTapHandler? = nil
+    var tapHandler: TapHandler? = nil
 
-    var longPressHandler: RendererLongPressHandler? = nil
+    var longPressHandler: LongPressHandler? = nil
 
-    var dragHandler: RendererDragHandler? = nil
+    var dragHandler: DragHandler? = nil
 
-    var pinchHandler: RendererPinchHandler? = nil
+    var pinchHandler: PinchHandler? = nil
 
-    var rotationHandler: RendererRotationHandler? = nil
+    var rotationHandler: RotationHandler? = nil
 
     func connectGestures(_ mtkView: MTKView) {
 
@@ -110,7 +112,7 @@ public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
            let view = gesture.view,
            gesture.numberOfTouches > 0 {
 
-            debug("RendererGestureDelegate(iOS)", "tap at \(gesture.location(ofTouch: 0, in: view)) -> \(clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds).prettyString)")
+            debug("GestureHandlers(iOS)", "tap at \(gesture.location(ofTouch: 0, in: view)) -> \(clipPoint(gesture.location(ofTouch: 0, in: view), view.bounds).prettyString)")
 
             switch gesture.state {
             case .possible:
@@ -278,17 +280,17 @@ public class RendererGestureDelegate: NSObject, UIGestureRecognizerDelegate {
 
 #elseif os(macOS) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-class RendererGestureDelegate: NSObject, NSGestureRecognizerDelegate {
+class GestureHandlers: NSObject, NSGestureRecognizerDelegate {
 
-    var tapHandler: RendererTapHandler? = nil
+    var tapHandler: TapHandler? = nil
 
-    var longPressHandler: RendererLongPressHandler? = nil
+    var longPressHandler: LongPressHandler? = nil
 
-    var dragHandler: RendererDragHandler? = nil
+    var dragHandler: DragHandler? = nil
 
-    var pinchHandler: RendererPinchHandler? = nil
+    var pinchHandler: PinchHandler? = nil
 
-    var rotationHandler: RendererRotationHandler? = nil
+    var rotationHandler: RotationHandler? = nil
 
     func connectGestures(_ mtkView: MTKView) {
 

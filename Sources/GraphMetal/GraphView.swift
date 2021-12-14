@@ -10,7 +10,7 @@ import GenericGraph
 
 fileprivate var graphViewInstanceCount: Int = 0
 
-public struct GraphView<S: RenderableGraphHolder> {
+public struct GraphView<S: RenderableGraphContainer> {
 
     var graphHolder: S
 
@@ -20,16 +20,16 @@ public struct GraphView<S: RenderableGraphHolder> {
 
     private var wireframeSettings: GraphWireframeSettings?
 
-    let tapHandler: RendererTapHandler?
+    let tapHandler: TapHandler?
 
-    let longPressHandler: RendererLongPressHandler?
+    let longPressHandler: LongPressHandler?
 
     public init(_ graphHolder: S,
                 renderController: RenderController? = nil,
                 povController: POVController? = nil,
                 wireframeSettings: GraphWireframeSettings? = nil,
-                tapHandler: RendererTapHandler? = nil,
-                longPressHandler: RendererLongPressHandler? = nil) {
+                tapHandler: TapHandler? = nil,
+                longPressHandler: LongPressHandler? = nil) {
 
         graphViewInstanceCount += 1
         debug("GraphView.init", "instanceCount=\(graphViewInstanceCount)")
@@ -83,9 +83,9 @@ extension GraphView: UIViewRepresentable {
                                                context.coordinator.renderController.backgroundColor.z,
                                                context.coordinator.renderController.backgroundColor.w)
 
-        context.coordinator.gestureDelegate.tapHandler = tapHandler
-        context.coordinator.gestureDelegate.longPressHandler = longPressHandler
-        context.coordinator.gestureDelegate.connectGestures(mtkView)
+        context.coordinator.gestureHandler.tapHandler = tapHandler
+        context.coordinator.gestureHandler.longPressHandler = longPressHandler
+        context.coordinator.gestureHandler.connectGestures(mtkView)
 
         // Finally, update and unpause
         self.updateUIView(mtkView, context: context)
@@ -127,9 +127,9 @@ extension GraphView: NSViewRepresentable {
                                                context.coordinator.renderController.backgroundColor.z,
                                                context.coordinator.renderController.backgroundColor.w)
 
-        context.coordinator.gestureDelegate.tapHandler = tapHandler
-        context.coordinator.gestureDelegate.longPressHandler = longPressHandler
-        context.coordinator.gestureDelegate.connectGestures(mtkView)
+        context.coordinator.gestureHandler.tapHandler = tapHandler
+        context.coordinator.gestureHandler.longPressHandler = longPressHandler
+        context.coordinator.gestureHandler.connectGestures(mtkView)
 
         // Finally, update and unpause
         self.updateNSView(mtkView, context: context)

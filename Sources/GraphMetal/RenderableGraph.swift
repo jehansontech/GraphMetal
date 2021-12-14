@@ -94,23 +94,13 @@ extension Notification.Name {
 ///
 ///
 ///
-public protocol RenderableGraphHolder: AnyObject {
+public protocol RenderableGraphContainer: AnyObject {
     associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
                                           GraphType.EdgeType.ValueType: RenderableEdgeValue
 
     var graph: GraphType { get set }
 }
 
-
-///
-///
-///
-extension RenderableGraphHolder {
-
-    public func fireGraphChange(_ change: RenderableGraphChange) {
-        NotificationCenter.default.post(name: .graphHasChanged, object: change)
-    }
-}
 
 
 ///
@@ -151,3 +141,15 @@ public struct RenderableGraphChange {
         self.edgeColors = edgeColors
     }
 }
+
+///
+///
+///
+extension RenderableGraphContainer {
+
+    public func fireGraphChange(_ change: RenderableGraphChange) {
+        NotificationCenter.default.post(name: .graphHasChanged, object: change)
+    }
+}
+
+

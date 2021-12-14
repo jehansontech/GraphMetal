@@ -56,7 +56,7 @@ struct POVControllerConstants {
 ///
 ///
 ///
-public class POVController: ObservableObject, CustomStringConvertible, RendererDragHandler, RendererPinchHandler, RendererRotationHandler  {
+public class POVController: ObservableObject, CustomStringConvertible, DragHandler, PinchHandler, RotationHandler  {
 
     var constants = POVControllerConstants()
 

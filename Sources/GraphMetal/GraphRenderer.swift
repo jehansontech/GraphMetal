@@ -32,7 +32,7 @@ fileprivate var rendererInstanceCount: Int = 0
 ///
 ///
 ///
-public class GraphRenderer<S: RenderableGraphHolder>: NSObject, GraphRendererProtocol, RenderControllerDelegate {
+public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRendererProtocol, RenderControllerDelegate {
 
     public typealias NodeValueType = S.GraphType.NodeType.ValueType
 
@@ -58,7 +58,7 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, GraphRendererPro
 
     var screenshotRequested: Bool = false
 
-    var gestureDelegate: RendererGestureDelegate
+    var gestureHandler: GestureHandlers
     
     let device: MTLDevice!
 
@@ -105,10 +105,10 @@ public class GraphRenderer<S: RenderableGraphHolder>: NSObject, GraphRendererPro
         }
 
         // NOTE the pov gesture handlers could be replaced later by GraphView
-        self.gestureDelegate = RendererGestureDelegate()
-        self.gestureDelegate.dragHandler = self.povController
-        self.gestureDelegate.pinchHandler = self.povController
-        self.gestureDelegate.rotationHandler = self.povController
+        self.gestureHandler = GestureHandlers()
+        self.gestureHandler.dragHandler = self.povController
+        self.gestureHandler.pinchHandler = self.povController
+        self.gestureHandler.rotationHandler = self.povController
 
         // Dummy values
         self.viewSize = CGSize(width: 100, height: 100) // dummy nonzero values
