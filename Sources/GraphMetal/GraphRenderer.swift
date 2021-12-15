@@ -238,17 +238,12 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
         // _drawCount += 1
         // let t0 = Date()
 
-        // FIXME: what's this doing here?
-        if renderController.updateInProgress {
-            debug("GraphRenderer.draw", "starting. update is currently in progress.")
+        // Snapshot needs to be taken before the current drawable is presented.
+        // Let's do it here; we'll get the figure that was drawn last time.
+        if snapshotRequested {
+            saveSnapshot(view)
+            snapshotRequested = false
         }
-
-//        // snapshot is before the update -- i.e., it shows the results of prev. draw
-//        // Q: what if I do it LAST?
-//        if screenshotRequested {
-//            saveSnapshot(view)
-//            screenshotRequested = false
-//        }
 
         self.preDraw(view)
 
@@ -280,13 +275,6 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             commandBuffer.commit()
         }
 
-        // snapshot after the update
-        // Q: what if I do it LAST?
-        if snapshotRequested {
-            saveSnapshot(view)
-            snapshotRequested = false
-        }
-        // FIXME: why the if statement?
         if renderController.updateInProgress {
             renderController.updateCompleted()
         }
