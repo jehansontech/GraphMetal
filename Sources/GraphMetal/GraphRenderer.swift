@@ -56,7 +56,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
 
     var modelViewMatrix: float4x4
 
-    var screenshotRequested: Bool = false
+    var snapshotRequested: Bool = false
 
     var gestureHandler: GestureHandlers
     
@@ -172,8 +172,8 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
         return float4x4(lookAt: pov.center, eye: pov.location, up: pov.up)
     }
 
-    public func requestScreenshot() {
-        self.screenshotRequested = true
+    public func requestSnapshot() {
+        self.snapshotRequested = true
     }
     
     public func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID? {
@@ -243,12 +243,12 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             debug("GraphRenderer.draw", "starting. update is currently in progress.")
         }
 
-        // snapshot is before the update -- i.e., it shows the results of prev. draw
-        // Q: what if I do it LAST?
-        if screenshotRequested {
-            saveSnapshot(view)
-            screenshotRequested = false
-        }
+//        // snapshot is before the update -- i.e., it shows the results of prev. draw
+//        // Q: what if I do it LAST?
+//        if screenshotRequested {
+//            saveSnapshot(view)
+//            screenshotRequested = false
+//        }
 
         self.preDraw(view)
 
@@ -280,6 +280,12 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             commandBuffer.commit()
         }
 
+        // snapshot after the update
+        // Q: what if I do it LAST?
+        if snapshotRequested {
+            saveSnapshot(view)
+            snapshotRequested = false
+        }
         // FIXME: why the if statement?
         if renderController.updateInProgress {
             renderController.updateCompleted()

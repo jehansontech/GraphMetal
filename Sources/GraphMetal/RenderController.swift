@@ -62,8 +62,8 @@ public class RenderController: ObservableObject, RenderControllerDelegate {
         self.zFar = RenderController.defaultZFar
     }
 
-    public func requestScreenshot() {
-        delegate?.requestScreenshot()
+    public func requestSnapshot() {
+        delegate?.requestSnapshot()
     }
 
     public func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID? {
@@ -87,7 +87,7 @@ public class RenderController: ObservableObject, RenderControllerDelegate {
 
 protocol RenderControllerDelegate: AnyObject {
 
-    func requestScreenshot()
+    func requestSnapshot()
 
     func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID?
 }
