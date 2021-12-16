@@ -12,7 +12,7 @@ fileprivate var graphViewInstanceCount: Int = 0
 
 public struct GraphView<S: RenderableGraphContainer> {
 
-    var graphHolder: S
+    var graphContainer: S
 
     private var renderController: RenderController?
 
@@ -24,7 +24,7 @@ public struct GraphView<S: RenderableGraphContainer> {
 
     let longPressHandler: LongPressHandler?
 
-    public init(_ graphHolder: S,
+    public init(_ graphContainer: S,
                 renderController: RenderController? = nil,
                 povController: POVController? = nil,
                 wireframeSettings: GraphWireframeSettings? = nil,
@@ -34,7 +34,7 @@ public struct GraphView<S: RenderableGraphContainer> {
         graphViewInstanceCount += 1
         debug("GraphView.init", "instanceCount=\(graphViewInstanceCount)")
         
-        self.graphHolder = graphHolder
+        self.graphContainer = graphContainer
         self.renderController = renderController
         self.povController = povController
         self.wireframeSettings = wireframeSettings
@@ -45,7 +45,7 @@ public struct GraphView<S: RenderableGraphContainer> {
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
             debug("GraphView.makeCoordinator", "creating GraphRenderer")
-            return try GraphRenderer<S>(self.graphHolder,
+            return try GraphRenderer<S>(self.graphContainer,
                                         renderController: self.renderController,
                                         povController: self.povController,
                                         wireframeSettings: self.wireframeSettings)

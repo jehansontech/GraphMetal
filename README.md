@@ -7,7 +7,7 @@ GraphRenderer performs the render pass, using the helper class GraphWireframe to
 
 GraphView integrates GraphRenderer with SwiftUI.
 
-In your app, create a class that adopts RendererableGraphHolder and pass it to the GraphView initializer. 
+In your app, create a class that adopts RendererableGraphContaoler and pass it to the GraphView initializer. 
 
 Modify the graph as desired, then call fireGraphChange, providing a RenderableGraphChange describing the modifications.
 fireGraphChange uses NotificationCenter to publish a notification that the graph has changed; GraphRenderer registers as an Observer for GraphChange notifications

@@ -38,7 +38,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
 
     public typealias EdgeValueType = S.GraphType.EdgeType.ValueType
 
-    let graphHolder: S
+    let graphContainer: S
 
     weak var renderController: RenderController!
 
@@ -72,7 +72,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
     
     // private var _drawCount: Int = 0
 
-    public init(_ graphHolder: S,
+    public init(_ graphContainer: S,
                 renderController: RenderController?,
                 povController: POVController?,
                 wireframeSettings: GraphWireframeSettings?) throws {
@@ -80,7 +80,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
         rendererInstanceCount += 1
         debug("GraphRenderer.init", "instanceCount=\(rendererInstanceCount)")
 
-        self.graphHolder = graphHolder
+        self.graphContainer = graphContainer
 
         if let renderController = renderController {
             self._defaultRenderController = nil
@@ -178,7 +178,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
     
     public func findNearestNode(_ clipLocation: SIMD2<Float>) -> NodeID? {
         // TODO: Q: Is it OK that we're doing this on the main thread
-        if let nn = graphHolder.graph.findNearestNode(clipLocation,
+        if let nn = graphContainer.graph.findNearestNode(clipLocation,
                                                       projectionMatrix: self.projectionMatrix,
                                                       modelViewMatrix: self.modelViewMatrix,
                                                       zNear: self.renderController.zNear,
@@ -212,7 +212,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             self.renderController.updateStarted()
         }
         
-        wireFrame.graphHasChanged(graphHolder.graph, graphChange)
+        wireFrame.graphHasChanged(graphContainer.graph, graphChange)
         let dt = Date().timeIntervalSince(t0)
         debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
     }
