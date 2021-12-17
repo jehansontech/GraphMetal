@@ -202,7 +202,7 @@ public class GestureHandlers: NSObject, UIGestureRecognizerDelegate {
                                                       view.bounds),
                                         mode: getMode(forGesture: gesture))
             case .changed:
-                pinchHandler.pinchChanged(by: Float(gesture.scale))
+                pinchHandler.pinchChanged(by: Float(gesture.scaleGraph))
             case .ended:
                 pinchHandler.pinchEnded()
             case .cancelled:

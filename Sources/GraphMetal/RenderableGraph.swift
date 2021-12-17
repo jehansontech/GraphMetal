@@ -114,6 +114,12 @@ public struct RenderableGraphChange {
                                                   edges: true,
                                                   edgeColors: true)
 
+    public static let POSITIONS = RenderableGraphChange(nodes: false,
+                                                  nodeColors: false,
+                                                  nodePositions: true,
+                                                  edges: false,
+                                                  edgeColors: false)
+
     /// indicates whether nodes have been added and/or removed
     public var nodes: Bool
 
