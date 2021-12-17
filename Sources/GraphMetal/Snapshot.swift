@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  Snapshot.swift
+//  GraphMetal
 //
 //  Created by Jim Hanson on 12/12/21.
 //
