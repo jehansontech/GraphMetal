@@ -226,11 +226,10 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
         // A: Sure, what could go wrong?
         // =======================================
 
-        if let t0 = _lastUpdateTimestamp,
-           orbitEnabled {
+        if let t0 = _lastUpdateTimestamp, orbitEnabled {
             // Multiply by -1 so that positive speed looks like earth's direction of rotation
             let dPhi = -1 * orbitSpeed * Float(timestamp.timeIntervalSince(t0))
-            updatedPOV.location = (float4x4(rotationAround: pov.up, by: dPhi) * SIMD4<Float>(pov.location, 1)).xyz
+            updatedPOV.location = (float4x4(rotationAround: updatedPOV.up, by: dPhi) * SIMD4<Float>(updatedPOV.location, 1)).xyz
         }
         _lastUpdateTimestamp = timestamp
 
@@ -432,8 +431,7 @@ class POVFlightAction {
     var callback: (() -> ())?
 
     init(_ pov: POV, _ destination: POV, _ constants: POVControllerConstants, callback:(() -> ())? = nil) {
-        let povSequence = [pov, destination]
-        self.povSequence = povSequence
+        self.povSequence = [pov, destination]
         self.totalDistance = Self.calculateTotalDistance([pov, destination])
         self.coastingThreshold = constants.flyCoastingThreshold
         self.normalizedAcceleration = constants.flyNormalizedAcceleration
@@ -453,6 +451,10 @@ class POVFlightAction {
     /// returns nil when finished
     func update(_ timestamp: Date) -> POV? {
         debug("POVFlightAction.update", "phase = \(phase)")
+
+        // ===============================================================================
+        // FIXME: This impl ONLY works if povSequence.count == 2 and currentStepIndex == 0
+        // ===============================================================================
 
         // It's essential that the first time this func is called,
         // phase = .new
@@ -494,8 +496,10 @@ class POVFlightAction {
             }
         case .arrived:
             if let callback = callback {
+                debug("POVFlightAction.update", "executing callback")
                 callback()
             }
+            debug("POVFlightAction.update", "returning nil")
             return nil
         }
 

@@ -146,6 +146,14 @@ public struct RenderableGraphChange {
         self.edges = edges
         self.edgeColors = edgeColors
     }
+
+    public mutating func merge(_ change: RenderableGraphChange) {
+        self.nodes = self.nodes || change.nodes
+        self.nodeColors = self.nodeColors || change.nodeColors
+        self.nodePositions = self.nodePositions || change.nodePositions
+        self.edges = self.edges || change.edges
+        self.edgeColors = self.edgeColors || change.edgeColors
+    }
 }
 
 ///
