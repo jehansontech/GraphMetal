@@ -150,7 +150,9 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
 
         self.renderController!.delegate = self
 
-        self.graphHasChanged(RenderableGraphChange.ALL)
+        // NO: must not be called here b/c this runs on the main thread
+        // self.graphHasChanged(RenderableGraphChange.ALL)
+
         NotificationCenter.default.addObserver(self, selector: #selector(notifyGraphHasChanged), name: .graphHasChanged, object: nil)
     }
 
@@ -197,7 +199,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
     }
 
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
-        let t0 = Date()
+        // let t0 = Date()
         // debug("GraphRenderer.graphHasChanged", "starting.")
 
         // We expect this method to be called on the background thread, i.e, the thread

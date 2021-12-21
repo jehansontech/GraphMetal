@@ -166,13 +166,14 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     // runs on background thread
     func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
-        G.NodeType.ValueType == NodeValueType,
-        G.EdgeType.ValueType == EdgeValueType {
+    G.NodeType.ValueType == NodeValueType,
+    G.EdgeType.ValueType == EdgeValueType {
 
         // debug("GraphWireframe", "graphHasChanged: started. bufferUpdate=\(String(describing: bufferUpdate))")
 
+        var bufferUpdate: BufferUpdate? = nil
         if change.nodes {
-            self.bufferUpdate = self.prepareTopologyUpdate(graph)
+            bufferUpdate = self.prepareTopologyUpdate(graph)
         }
         else {
             var newPositions: [SIMD3<Float>]? = nil
@@ -187,17 +188,24 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
             }
 
             if (newPositions != nil || newColors != nil) {
-                self.bufferUpdate = BufferUpdate(nodeCount: self.nodeCount,
-                                                 nodePositions: newPositions,
-                                                 nodeColors: newColors,
-                                                 edgeIndexCount: self.edgeIndexCount,
-                                                 edgeIndices: nil)
+                bufferUpdate = BufferUpdate(nodeCount: nil,
+                                            nodePositions: newPositions,
+                                            nodeColors: newColors,
+                                            edgeIndexCount: nil,
+                                            edgeIndices: nil)
             }
         }
 
-//        if self.bufferUpdate != nil {
-//            debug("GraphWireframe", "graphHasChanged: done. bufferUpdate=\(String(describing: bufferUpdate))")
-//        }
+
+        // write to self.bufferUpdate on the main thread
+        // in order to avoid a data race
+        DispatchQueue.main.sync {
+            self.bufferUpdate = bufferUpdate
+        }
+
+        //        if self.bufferUpdate != nil {
+        //            debug("GraphWireframe", "graphHasChanged: done. bufferUpdate=\(String(describing: bufferUpdate))")
+        //        }
     }
 
     /// Runs on rendering thread
@@ -213,9 +221,10 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         // debug("GraphWireframe", "applying bufferUpdate")
         self.bufferUpdate = nil
 
-        if self.nodeCount != update.nodeCount {
-            // debug("GraphWireframe", "updating nodeCount: \(nodeCount) -> \(update.nodeCount)")
-                nodeCount = update.nodeCount
+        if let updatedNodeCount = update.nodeCount,
+           self.nodeCount != updatedNodeCount {
+            // debug("GraphWireframe", "updating nodeCount: \(nodeCount) -> \(updatedNodeCount)")
+            nodeCount = updatedNodeCount
         }
 
         if nodeCount == 0 {
@@ -259,9 +268,10 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                                 options: [])
         }
 
-        if self.edgeIndexCount != update.edgeIndexCount {
-            // debug("GraphWireframe", "updating edgeIndexCount: \(edgeIndexCount) -> \(update.edgeIndexCount)")
-            self.edgeIndexCount = update.edgeIndexCount
+        if let updatedEdgeIndexCount = update.edgeIndexCount,
+           self.edgeIndexCount != update.edgeIndexCount {
+            // debug("GraphWireframe", "updating edgeIndexCount: \(edgeIndexCount) -> \(updatedEdgeIndexCount)")
+            self.edgeIndexCount = updatedEdgeIndexCount
         }
 
         if edgeIndexCount == 0 {
@@ -506,9 +516,9 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
 }
 
 struct BufferUpdate {
-    let nodeCount: Int
+    let nodeCount: Int?
     let nodePositions: [SIMD3<Float>]?
     let nodeColors: [NodeID: SIMD4<Float>]?
-    let edgeIndexCount: Int
+    let edgeIndexCount: Int?
     let edgeIndices: [UInt32]?
 }

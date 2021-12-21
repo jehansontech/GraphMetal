@@ -108,31 +108,31 @@ public protocol RenderableGraphContainer: AnyObject {
 ///
 public struct RenderableGraphChange {
 
-    public static let ALL = RenderableGraphChange(nodes: true,
+    public static let all = RenderableGraphChange(nodes: true,
                                                   nodeColors: true,
                                                   nodePositions: true,
                                                   edges: true,
                                                   edgeColors: true)
 
-    public static let POSITIONS = RenderableGraphChange(nodes: false,
+    public static let positions = RenderableGraphChange(nodes: false,
                                                   nodeColors: false,
                                                   nodePositions: true,
                                                   edges: false,
                                                   edgeColors: false)
 
-    /// indicates whether nodes have been added and/or removed
+    /// indicates whether any nodes have been added and/or removed
     public var nodes: Bool
 
-    /// indicates whether one or more nodes have changed color
+    /// indicates whether any nodes have changed color
     public var nodeColors: Bool
 
-    /// indicates whether one or more nodes have changed position
+    /// indicates whether any nodes have changed position
     public var nodePositions: Bool
 
-    /// indicates whether edges have been added and/or removed
+    /// indicates whether any edges have been added and/or removed
     public var edges: Bool
 
-    /// indicates whether one or more edges have changed color
+    /// indicates whether any edges have changed color
     public var edgeColors: Bool
 
     public init(nodes: Bool = false,
