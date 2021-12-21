@@ -78,7 +78,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
                 wireframeSettings: GraphWireframeSettings?) throws {
 
         rendererInstanceCount += 1
-        debug("GraphRenderer.init", "instanceCount=\(rendererInstanceCount)")
+        // debug("GraphRenderer.init", "instanceCount=\(rendererInstanceCount)")
 
         self.graphContainer = graphContainer
 
@@ -87,7 +87,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             self.renderController = renderController
         }
         else {
-            debug("GraphRenderer.init", "Creating default render controller")
+            // debug("GraphRenderer.init", "Creating default render controller")
             let renderController = RenderController()
             self._defaultRenderController = renderController
             self.renderController = renderController
@@ -98,7 +98,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             self.povController = povController
         }
         else {
-            debug("GraphRender.init", "Creating default POV controller")
+            // debug("GraphRender.init", "Creating default POV controller")
             let povController = POVController()
             self._defaultPOVController = povController
             self.povController = povController
@@ -140,7 +140,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             wireFrame = try GraphWireframe(device, wireframeSettings)
         }
         else {
-            debug("GraphRenderer.init", "Creating default wireframe settings")
+            // debug("GraphRenderer.init", "Creating default wireframe settings")
             let wireframeSettings = GraphWireframeSettings()
             self._defaultWireframeSettings = wireframeSettings
             wireFrame = try GraphWireframe(device, wireframeSettings)
@@ -155,7 +155,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
     }
 
     deinit {
-        debug("GraphRenderer", "deinit")
+        // debug("GraphRenderer", "deinit")
         // MAYBE remove observer at some point -- but doesn't it need to be BEFORE deinitialization?
         // . . . unless it automagically gets removed under the covers.
     }
@@ -198,7 +198,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
 
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
         let t0 = Date()
-        debug("GraphRenderer.graphHasChanged", "starting.")
+        // debug("GraphRenderer.graphHasChanged", "starting.")
 
         // We expect this method to be called on the background thread, i.e, the thread
         // on which the changes
@@ -213,12 +213,12 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
         }
         
         wireFrame.graphHasChanged(graphContainer.graph, graphChange)
-        let dt = Date().timeIntervalSince(t0)
-        debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
+        // let dt = Date().timeIntervalSince(t0)
+        // debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        debug("GraphRenderer.mtkView(size)", "started. size=\(size)")
+        // debug("GraphRenderer.mtkView(size)", "started. size=\(size)")
 
         self.viewSize = size
         // let projectionMatrix = Self.makeProjectionMatrix(viewSize, settings)

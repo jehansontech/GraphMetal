@@ -32,7 +32,7 @@ public struct GraphView<S: RenderableGraphContainer> {
                 longPressHandler: LongPressHandler? = nil) {
 
         graphViewInstanceCount += 1
-        debug("GraphView.init", "instanceCount=\(graphViewInstanceCount)")
+        // debug("GraphView.init", "instanceCount=\(graphViewInstanceCount)")
         
         self.graphContainer = graphContainer
         self.renderController = renderController
@@ -44,7 +44,7 @@ public struct GraphView<S: RenderableGraphContainer> {
 
     public func makeCoordinator() -> GraphRenderer<S> {
         do {
-            debug("GraphView.makeCoordinator", "creating GraphRenderer")
+            // debug("GraphView.makeCoordinator", "creating GraphRenderer")
             return try GraphRenderer<S>(self.graphContainer,
                                         renderController: self.renderController,
                                         povController: self.povController,
@@ -63,7 +63,7 @@ extension GraphView: UIViewRepresentable {
     public typealias UIViewType = MTKView
 
     public func makeUIView(context: Context) -> MTKView {
-        debug("GraphView (iOS) makeUIView", "started")
+        // debug("GraphView (iOS) makeUIView", "started")
 
         let mtkView = MTKView()
 
@@ -96,7 +96,7 @@ extension GraphView: UIViewRepresentable {
     }
 
     public func updateUIView(_ mtkView: MTKView, context: Context) {
-        debug("GraphView (iOS) updateUIView", "NOP")
+        // debug("GraphView (iOS) updateUIView", "NOP")
     }
 
 }
@@ -107,7 +107,7 @@ extension GraphView: NSViewRepresentable {
     public typealias NSViewType = MTKView
 
     public func makeNSView(context: Context) -> MTKView {
-        debug("GraphView (macOS) makeNSView", "started")
+        // debug("GraphView (macOS) makeNSView", "started")
 
         let mtkView = MTKView()
 
@@ -140,7 +140,7 @@ extension GraphView: NSViewRepresentable {
     }
 
     public func updateNSView(_ mtkView: MTKView, context: Context) {
-        debug("GraphView (macOS) updateNSView", "NOP")
+        // debug("GraphView (macOS) updateNSView", "NOP")
     }
 }
 

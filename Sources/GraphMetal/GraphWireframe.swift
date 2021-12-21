@@ -121,7 +121,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
     // ==============================================================
 
     init(_ device: MTLDevice, _ settings: GraphWireframeSettings) throws {
-        debug("GraphWireframe.init", "started")
+        // debug("GraphWireframe.init", "started")
         if let library = Shaders.makeLibrary(device) {
             self.library = library
         }
@@ -131,15 +131,15 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
         self.device = device
         self.settings = settings
-        debug("GraphWireframe.init", "done")
+        // debug("GraphWireframe.init", "done")
     }
 
     deinit {
-        debug("GraphWireframe", "deinit")
+        // debug("GraphWireframe", "deinit")
     }
 
     func setup(_ view: MTKView) throws {
-        debug("GraphWireframe", "setup. library functions: \(library.functionNames)")
+        // debug("GraphWireframe", "setup. library functions: \(library.functionNames)")
 
         if dynamicUniformBuffer == nil {
             try buildUniforms()
@@ -155,7 +155,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
     }
 
     func teardown() {
-        debug("GraphWireframe", "teardown")
+        // debug("GraphWireframe", "teardown")
         // TODO: maybe dynamicUniformBuffer and uniforms ... if so change declarations from ! to ?
         // TODO: maybe nodePipelineState ... ditto
         // TODO: maybe edgePipelineState ... ditto
@@ -210,17 +210,17 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
             return
         }
 
-        debug("GraphWireframe", "applying bufferUpdate")
+        // debug("GraphWireframe", "applying bufferUpdate")
         self.bufferUpdate = nil
 
         if self.nodeCount != update.nodeCount {
-            debug("GraphWireframe", "updating nodeCount: \(nodeCount) -> \(update.nodeCount)")
+            // debug("GraphWireframe", "updating nodeCount: \(nodeCount) -> \(update.nodeCount)")
                 nodeCount = update.nodeCount
         }
 
         if nodeCount == 0 {
             if nodePositionBuffer != nil {
-                debug("GraphWireframe", "discarding nodePositionBuffer")
+                // debug("GraphWireframe", "discarding nodePositionBuffer")
                 nodePositionBuffer = nil
             }
         }
@@ -229,7 +229,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
                 fatalError("Failed sanity check: nodeCount=\(nodeCount) but newNodePositions.count=\(newNodePositions.count)")
             }
 
-            debug("GraphWireframe", "creating nodePositionBuffer")
+            // debug("GraphWireframe", "creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
             nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
                                                    length: nodePositionBufLen,
@@ -238,7 +238,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
         if nodeCount == 0 {
             if nodeColorBuffer != nil {
-                debug("GraphWireframe", "discarding nodeColorBuffer")
+                // debug("GraphWireframe", "discarding nodeColorBuffer")
                 nodeColorBuffer = nil
             }
         }
@@ -252,7 +252,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
                 }
             }
 
-            debug("GraphWireframe", "creating nodeColorBuffer")
+            // debug("GraphWireframe", "creating nodeColorBuffer")
             let nodeColorBufLen = nodeCount * MemoryLayout<SIMD4<Float>>.size
             nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
                                                 length: nodeColorBufLen,
@@ -260,13 +260,13 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
 
         if self.edgeIndexCount != update.edgeIndexCount {
-            debug("GraphWireframe", "updating edgeIndexCount: \(edgeIndexCount) -> \(update.edgeIndexCount)")
+            // debug("GraphWireframe", "updating edgeIndexCount: \(edgeIndexCount) -> \(update.edgeIndexCount)")
             self.edgeIndexCount = update.edgeIndexCount
         }
 
         if edgeIndexCount == 0 {
             if edgeIndexBuffer != nil {
-                debug("GraphWireframe", "discarding edgeIndexBuffer")
+                // debug("GraphWireframe", "discarding edgeIndexBuffer")
                 self.edgeIndexBuffer = nil
             }
         }
@@ -275,7 +275,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
                 fatalError("Failed sanity check: edgeIndexCount=\(edgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
             }
 
-            debug("GraphWireframe", "creating edgeIndexBuffer")
+            // debug("GraphWireframe", "creating edgeIndexBuffer")
             let bufLen = newEdgeIndices.count * MemoryLayout<UInt32>.size
             self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices, length: bufLen)
         }

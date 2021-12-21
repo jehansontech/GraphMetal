@@ -97,7 +97,7 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
                 povDefault: POV? = nil,
                 orbitEnabled: Bool = false,
                 orbitSpeed: Float = .pi/30) {
-        debug("POVController.init")
+        // debug("POVController.init")
         self.pov = pov
         self.povDefault = povDefault
         self.orbitEnabled = orbitEnabled
@@ -105,7 +105,7 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
     }
 
     deinit {
-        debug("POVController.deinit")
+        // debug("POVController.deinit")
     }
 
     public func markPOV() {
@@ -136,9 +136,9 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
     }
 
     public func flyTo(_ destination: POV, _ callback: (() -> ())? = nil) {
-        debug("POVController.flyTo", "pov = \(pov)")
-        debug("POVController.flyTo", "destination = \(destination)")
-        debug("POVController.flyTo", "flying = \(flying)")
+        // debug("POVController.flyTo", "pov = \(pov)")
+        // debug("POVController.flyTo", "destination = \(destination)")
+        // debug("POVController.flyTo", "flying = \(flying)")
         if !flying {
             self.flightInProgress = POVFlightAction(self.pov, destination, constants, callback: callback)
         }
@@ -146,7 +146,7 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
 
     public func dragBegan(at location: SIMD2<Float>, mode: GestureMode) {
         if !flying {
-            debug("POVController.dragBegan", "mode=\(mode), location=\(location.prettyString)")
+            // debug("POVController.dragBegan", "mode=\(mode), location=\(location.prettyString)")
             switch mode {
             case .normal:
                 self.dragInProgress = POVRotatingDragAction(self.pov, location, constants)
@@ -158,7 +158,7 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
 
     public func dragChanged(pan: Float, scroll: Float) {
         if var povDragHandler = self.dragInProgress {
-            debug("POVController.dragChanged", "pan=\(pan), scroll==\(scroll)")
+            // debug("POVController.dragChanged", "pan=\(pan), scroll==\(scroll)")
             if let newPOV = povDragHandler.dragChanged(self.pov, pan: pan, scroll: scroll) {
                 self.pov = newPOV
             }
@@ -166,7 +166,7 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
     }
 
     public func dragEnded() {
-        debug("POVController.dragEnded")
+        // debug("POVController.dragEnded")
         self.dragInProgress = nil
     }
 
@@ -450,7 +450,7 @@ class POVFlightAction {
 
     /// returns nil when finished
     func update(_ timestamp: Date) -> POV? {
-        debug("POVFlightAction.update", "phase = \(phase)")
+        // debug("POVFlightAction.update", "phase = \(phase)")
 
         // ===============================================================================
         // FIXME: This impl ONLY works if povSequence.count == 2 and currentStepIndex == 0
@@ -496,10 +496,10 @@ class POVFlightAction {
             }
         case .arrived:
             if let callback = callback {
-                debug("POVFlightAction.update", "executing callback")
+                // debug("POVFlightAction.update", "executing callback")
                 callback()
             }
-            debug("POVFlightAction.update", "returning nil")
+            // debug("POVFlightAction.update", "returning nil")
             return nil
         }
 
