@@ -159,7 +159,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         self.edgeIndexBuffer = nil
     }
 
-    func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
+    func prepareBufferUpdate<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
     G.NodeType.ValueType == NodeValueType,
     G.EdgeType.ValueType == EdgeValueType {
 
@@ -340,18 +340,8 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
                                       offset: 0,
                                       index: BufferIndex.nodePosition.rawValue)
 
-        if let nodeColorBuffer = self.nodeColorBuffer {
-            renderEncoder.pushDebugGroup("Draw Nodes")
-            renderEncoder.setRenderPipelineState(nodePipelineState)
-            renderEncoder.setVertexBuffer(nodeColorBuffer,
-                                          offset: 0,
-                                          index: BufferIndex.nodeColor.rawValue)
-            renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
-            renderEncoder.popDebugGroup()
-        }
-
         if let edgeIndexBuffer = self.edgeIndexBuffer {
-            renderEncoder.pushDebugGroup("Draw Edges")
+            renderEncoder.pushDebugGroup("Edges")
             renderEncoder.setRenderPipelineState(edgePipelineState)
             renderEncoder.drawIndexedPrimitives(type: .line,
                                                 indexCount: edgeIndexCount,
@@ -361,9 +351,19 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
             renderEncoder.popDebugGroup()
         }
 
+        if let nodeColorBuffer = self.nodeColorBuffer {
+            renderEncoder.pushDebugGroup("Nodes")
+            renderEncoder.setRenderPipelineState(nodePipelineState)
+            renderEncoder.setVertexBuffer(nodeColorBuffer,
+                                          offset: 0,
+                                          index: BufferIndex.nodeColor.rawValue)
+            renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
+            renderEncoder.popDebugGroup()
+        }
     }
 
-    private func prepareTopologyUpdate<G: Graph>(_ graph: G) -> BufferUpdate where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+    private func prepareTopologyUpdate<G: Graph>(_ graph: G) -> BufferUpdate
+    where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
 
         var newNodeIndices = [NodeID: Int]()
         var newNodePositions = [SIMD3<Float>]()
@@ -371,8 +371,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
         var nodeIndex: Int = 0
         for node in graph.nodes {
-            if let nodeValue = node.value,
-               !nodeValue.hidden {
+            if let nodeValue = node.value {
                 newNodeIndices[node.id] = nodeIndex
                 newNodePositions.insert(nodeValue.location, at: nodeIndex)
                 nodeIndex += 1
@@ -410,8 +409,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         var newNodePositions = [SIMD3<Float>]()
         for node in graph.nodes {
             if let nodeIndex = nodeIndices[node.id],
-               let nodeValue = node.value,
-               !nodeValue.hidden {
+               let nodeValue = node.value {
                 newNodePositions.insert(nodeValue.location, at: nodeIndex)
             }
         }

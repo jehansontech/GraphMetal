@@ -194,11 +194,11 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
 
     @objc public func notifyGraphHasChanged(_ notification: Notification) {
         if let graphChange = notification.object as? RenderableGraphChange {
-            graphHasChanged(graphChange)
+            updateFigure(graphChange)
         }
     }
 
-    public func graphHasChanged(_ graphChange: RenderableGraphChange) {
+    public func updateFigure(_ graphChange: RenderableGraphChange) {
         // let t0 = Date()
         // debug("GraphRenderer.graphHasChanged", "starting. time = \(t0)")
 
@@ -218,7 +218,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             }
         }
 
-        wireFrame.graphHasChanged(graphContainer.graph, graphChange)
+        wireFrame.prepareBufferUpdate(graphContainer.graph, graphChange)
 
         // let dt = Date().timeIntervalSince(t0)
         // debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")

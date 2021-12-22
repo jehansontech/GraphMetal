@@ -1,24 +1,38 @@
 # GraphMetal
-3D Rendering for GenericGraph
+3D Rendering of labeled directed multigraphs
 
-### GraphRenderer
+A rendered graph looks like a ball-and-stick figure floating in space.
 
-GraphRenderer performs the render pass, using the helper class GraphWireframe to issue drawing commands to the render pipeline.
+GraphMetal depends on the GenericGraph package for the graphs that it renders.
 
-GraphView integrates GraphRenderer with SwiftUI.
+## Rendering
 
-In your app, create a class that adopts RendererableGraphContaoler and pass it to the GraphView initializer. 
+**`GraphRenderer`** performs the render pass, calling on **`GraphWireframe`** to add the
+actual drawing commands to the render pipeline.
 
-Modify the graph as desired, then call fireGraphChange, providing a RenderableGraphChange describing the modifications.
-fireGraphChange uses NotificationCenter to publish a notification that the graph has changed; GraphRenderer registers as an Observer for GraphChange notifications
+**`GraphView`** integrates GraphRenderer with SwiftUI. It works on both macOS and iOS.
 
-When GraphRenderer receives a  notification it reads the graph and generates the data needed to update the Metal buffers. This data is held in a temporary variable until the next draw cycle.
+**`RenderController`** provides a few settable properties that affect the rendered figure
 
-If the graph is going to be large and/or modifications frequent, it may be appropriate to execute the modifications on a background thread, e.g., using a dispatch queue. That will permit the graph to be modified without impacting graphics performance.
+In your app, create a class that adopts RendererableGraphContainer and pass it to the
+GraphView initializer. 
 
-### POVController
+You app can modify the graph as desired then call `fireGraphChange` on the container class,
+providing a RenderableGraphChange describing the modifications. fireGraphChange uses
+NotificationCenter to publish a notification that the graph has changed, which is then
+picked up by GraphRenderer.
 
-POV defines the point of view, a/k/a eye or camera.
+When GraphRenderer receives a notification it reads the graph and generates the data needed
+to update the Metal buffers. This data is held in a temporary variable until the next draw cycle.
 
-POVController manages the POV and provides handlers for certain gestures
+GraphRenderer supports cases where the graph is modified on a background thread, as well as
+cases where it's modified on the main thread. If the graph is going to be large and/or
+modifications frequent, it may be appropriate to execute the modifications on a background
+thread, e.g., using a dispatch queue. 
 
+## Point of View
+
+**`POV`** defines the point of view, a/k/a eye or camera.
+
+**`POVController`** manages the POV and provides support for certain gestures. These let you move
+the figure around, zoom in or out, and change the POV's orientation.

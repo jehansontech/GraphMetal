@@ -10,10 +10,7 @@ import simd
 
 public protocol RenderableNodeValue: EmbeddedNodeValue {
 
-    /// if true, the node will not be rendered
-    var hidden: Bool { get }
-
-    /// Color of the node
+    /// Color and opacity of the rendered node
     var color: SIMD4<Float>? { get }
 }
 
@@ -99,8 +96,19 @@ public protocol RenderableGraphContainer: AnyObject {
                                           GraphType.EdgeType.ValueType: RenderableEdgeValue
 
     var graph: GraphType { get set }
+
+    func fireGraphChange(_ change: RenderableGraphChange)
 }
 
+///
+///
+///
+extension RenderableGraphContainer {
+
+    public func fireGraphChange(_ change: RenderableGraphChange) {
+        NotificationCenter.default.post(name: .graphHasChanged, object: change)
+    }
+}
 
 
 ///
@@ -155,15 +163,4 @@ public struct RenderableGraphChange {
         self.edgeColors = self.edgeColors || change.edgeColors
     }
 }
-
-///
-///
-///
-extension RenderableGraphContainer {
-
-    public func fireGraphChange(_ change: RenderableGraphChange) {
-        NotificationCenter.default.post(name: .graphHasChanged, object: change)
-    }
-}
-
 

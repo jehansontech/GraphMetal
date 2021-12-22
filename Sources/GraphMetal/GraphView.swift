@@ -97,6 +97,7 @@ extension GraphView: UIViewRepresentable {
 
     public func updateUIView(_ mtkView: MTKView, context: Context) {
         // debug("GraphView (iOS) updateUIView", "NOP")
+        context.coordinator.updateFigure(.all)
     }
 
 }
@@ -141,6 +142,7 @@ extension GraphView: NSViewRepresentable {
 
     public func updateNSView(_ mtkView: MTKView, context: Context) {
         // debug("GraphView (macOS) updateNSView", "NOP")
+        context.coordinator.updateFigure(.all)
     }
 }
 
