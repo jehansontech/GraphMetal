@@ -200,21 +200,26 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
 
     public func graphHasChanged(_ graphChange: RenderableGraphChange) {
         // let t0 = Date()
-        // debug("GraphRenderer.graphHasChanged", "starting.")
+        // debug("GraphRenderer.graphHasChanged", "starting. time = \(t0)")
 
-        // We expect this method to be called on the background thread, i.e, the thread
-        // on which the changes
-        // to the graph were made. But the render controller's updateInProgress has to be
-        // modified on the main thread. Otherwise we get this runtime issue:
-        // "Publishing changes from background threads is not allowed; make sure to publish values
-        // from the main thread (via operators like receive(on:)) on model updates."
+        // We expect this method to be called on the thread on which the graph was changed
+        // which might be a background thread. But the renderController's update counters have
+        // to be written on the main thread because it updateInProgress flag is @Published.
+        // Otherwise we get this runtime issue:
+        // > "Publishing changes from background threads is not allowed; make sure to publish values
+        // > from the main thread (via operators like receive(on:)) on model updates."
 
-        // Use async because it does sometimes get called on the main thread.
-        DispatchQueue.main.async {
+        if Thread.current.isMainThread {
             self.renderController.updateStarted()
         }
-        
+        else {
+            DispatchQueue.main.sync {
+                self.renderController.updateStarted()
+            }
+        }
+
         wireFrame.graphHasChanged(graphContainer.graph, graphChange)
+
         // let dt = Date().timeIntervalSince(t0)
         // debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
     }
@@ -240,8 +245,9 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
         // _drawCount += 1
         // let t0 = Date()
 
-        // Snapshot needs to be taken before the current drawable is presented.
-        // Let's do it here; we'll get the figure that was drawn last time.
+        // Swift compiler sez that the snapshot needs to be taken before
+        // the current drawable is presented. (This means it will capture
+        // the figure that was drawn last time.)
         if snapshotRequested {
             saveSnapshot(view)
             snapshotRequested = false
@@ -263,8 +269,8 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
                let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor),
                let drawable = view.currentDrawable {
 
-                // My background is opaque and I'm not doing multipass rendering
-                // so therefore I don't care about load actions or store actions
+                // The figure's background is opaque and we doing single-pass rendering
+                // so we don't care about loadAction or storeAction
                 // renderPassDescriptor.colorAttachments[0].loadAction = .clear
                 // renderPassDescriptor.colorAttachments[0].storeAction = .store
 

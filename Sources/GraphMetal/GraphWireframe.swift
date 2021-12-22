@@ -107,18 +107,13 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
 
     var uniforms: UnsafeMutablePointer<Uniforms>!
 
+    private var bufferUpdate: BufferUpdate? = nil
+
     // ==============================================================
     // Derived graph properties -- Access only on graph-update thread
 
     private var nodeIndices = [NodeID: Int]()
 
-    // ==========================================
-    // Shared properties -- Written on graph-update thread, read on rendering thread
-
-    private var bufferUpdate: BufferUpdate? = nil
-
-
-    // ==============================================================
 
     init(_ device: MTLDevice, _ settings: GraphWireframeSettings) throws {
         // debug("GraphWireframe.init", "started")
@@ -164,7 +159,6 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         self.edgeIndexBuffer = nil
     }
 
-    // runs on background thread
     func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
     G.NodeType.ValueType == NodeValueType,
     G.EdgeType.ValueType == EdgeValueType {
@@ -197,19 +191,20 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         }
 
 
-        // write to self.bufferUpdate on the main thread
+        // write bufferUpdate to self.bufferUpdate on the main thread
         // in order to avoid a data race
-        DispatchQueue.main.sync {
+        if Thread.current.isMainThread {
             self.bufferUpdate = bufferUpdate
         }
-
-        //        if self.bufferUpdate != nil {
-        //            debug("GraphWireframe", "graphHasChanged: done. bufferUpdate=\(String(describing: bufferUpdate))")
-        //        }
+        else {
+            DispatchQueue.main.sync {
+                self.bufferUpdate = bufferUpdate
+            }
+        }
     }
 
-    /// Runs on rendering thread
-    func applyUpdate() {
+    /// Runs on the rendering thread (i.e., the main thread) once per frame
+    func applyBufferUpdateIfPresent() {
 
         guard
             let update = self.bufferUpdate
@@ -315,13 +310,18 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         uniforms[0].edgeColor = settings.edgeColor
         uniforms[0].fadeoutOnset = fadeoutOnset
         uniforms[0].fadeoutDistance = fadeoutDistance
+
+        // =====================================
+        // Possibly update contents of the other buffers
+
+        applyBufferUpdateIfPresent()
+
     }
 
     func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
         // _drawCount += 1
         // debug("GraphWireframe.encodeCommands[\(_drawCount)]")
 
-        applyUpdate()
 
         // If we don't have node positions we can't draw either nodes or edges.
         guard
