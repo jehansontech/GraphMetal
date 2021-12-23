@@ -60,7 +60,7 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
 
     var constants = POVControllerConstants()
 
-    // Don't publish pov: causes performance issues on macOS
+    // Don't publish pov: its frequent changes cause performance issues
     public var pov: POV
 
     @Published public var orbitEnabled: Bool

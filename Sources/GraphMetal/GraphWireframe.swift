@@ -11,7 +11,7 @@ import GenericGraph
 import Shaders
 import Wacoma
 
-public class GraphWireframeSettings: ObservableObject {
+public class GraphWireframeSettings {
 
     /// EMPIRICAL
     static let nodeSizeScaleFactor: Double = 800
