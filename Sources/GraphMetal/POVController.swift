@@ -67,6 +67,14 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
 
     @Published public var orbitSpeed: Float
 
+    @Published public var markIsSet: Bool = false
+
+    public var flying: Bool {
+        return (flightInProgress != nil)
+    }
+
+    public var povDefault: POV? = nil
+
     private var _lastUpdateTimestamp: Date? = nil
 
     private var dragInProgress: POVDragAction? = nil
@@ -77,17 +85,11 @@ public class POVController: ObservableObject, CustomStringConvertible, DragHandl
 
     private var flightInProgress: POVFlightAction? = nil
 
-    public var flying: Bool {
-        return (flightInProgress != nil)
+    private var _povMark: POV? = nil {
+        didSet {
+            markIsSet = (_povMark != nil)
+        }
     }
-
-    public var povDefault: POV? = nil
-
-    public var markIsSet: Bool {
-        return _povMark != nil
-    }
-
-    private var _povMark: POV? = nil
 
     public var description: String {
         return "POVController POV: posn=\(pov.location.prettyString) cntr=\(pov.center.prettyString) up=\(pov.up.prettyString)"
