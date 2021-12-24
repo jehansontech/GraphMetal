@@ -70,7 +70,7 @@ public class GraphWireframeSettings {
 }
 
 
-public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
+public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableShape {
 
     typealias NodeValueType = N
 
@@ -159,7 +159,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue> {
         self.edgeIndexBuffer = nil
     }
 
-    func prepareBufferUpdate<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
+    func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
     G.NodeType.ValueType == NodeValueType,
     G.EdgeType.ValueType == EdgeValueType {
 

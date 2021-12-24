@@ -29,6 +29,21 @@ protocol GraphRendererProtocol: MTKViewDelegate {
 
 fileprivate var rendererInstanceCount: Int = 0
 
+protocol RenderableShape {
+
+    func setup(_ view: MTKView) throws
+
+    func teardown()
+
+    func preDraw(projectionMatrix: float4x4,
+                 modelViewMatrix: float4x4,
+                 pov: POV,
+                 fadeoutOnset: Float,
+                 fadeoutDistance: Float)
+
+    func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder)
+}
+
 ///
 ///
 ///
@@ -218,7 +233,7 @@ public class GraphRenderer<S: RenderableGraphContainer>: NSObject, GraphRenderer
             }
         }
 
-        wireFrame.prepareBufferUpdate(graphContainer.graph, graphChange)
+        wireFrame.graphHasChanged(graphContainer.graph, graphChange)
 
         // let dt = Date().timeIntervalSince(t0)
         // debug("GraphRenderer.graphHasChanged", "done. dt=\(dt)")
