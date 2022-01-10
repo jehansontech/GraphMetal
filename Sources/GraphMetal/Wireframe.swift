@@ -1,5 +1,5 @@
 //
-//  GraphWireframe.swift
+//  Wireframe.swift
 //  GraphMetal
 //
 
@@ -11,12 +11,12 @@ import GenericGraph
 import Shaders
 import Wacoma
 
-public class GraphWireframeSettings {
+public struct WireframeSettings {
 
     /// EMPIRICAL
     static let nodeSizeScaleFactor: Double = 800
 
-    public static let defaults = GraphWireframeSettings()
+    public static let defaults = WireframeSettings()
 
     /// indicates whether node size should be automatically adjusted when the POV changes
     public var nodeSizeIsAdjusted: Bool
@@ -49,7 +49,7 @@ public class GraphWireframeSettings {
         self.edgeColor = edgeColor
     }
 
-    public func reset() {
+    public mutating func reset() {
         self.nodeSizeIsAdjusted = Self.defaults.nodeSizeIsAdjusted
         self.nodeSizeDefault = Self.defaults.nodeSizeDefault
         self.nodeSizeMinimum = Self.defaults.nodeSizeMinimum
@@ -58,9 +58,9 @@ public class GraphWireframeSettings {
         self.edgeColor = Self.defaults.edgeColor
     }
 
-    func nodeSize(forPOV pov: POV) -> Double {
-        if nodeSizeIsAdjusted {
-            let newSize = Self.nodeSizeScaleFactor / Double(pov.radius)
+    func nodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Double {
+        if let bbox = bbox, nodeSizeIsAdjusted {
+            let newSize = Self.nodeSizeScaleFactor / Double(distance(pov.location, bbox.center))
             return newSize.clamp(nodeSizeMinimum, nodeSizeMaximum)
         }
         else {
@@ -69,21 +69,21 @@ public class GraphWireframeSettings {
     }
 }
 
+public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
-public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: RenderableShape {
-
-    typealias NodeValueType = N
-
-    typealias EdgeValueType = E
+    /// The 256 byte aligned size of our uniform structure
+    let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
 
     // ==============================================================
-    // Rendering properties -- Access these only on rendering thread
+    // Rendering properties -- Access these only on main thread
 
-    weak var settings: GraphWireframeSettings!
+    public var settings: WireframeSettings
 
-    var device: MTLDevice
+    var bbox: BoundingBox? = nil
 
-    var library: MTLLibrary
+    weak var device: MTLDevice!
+
+    var library: MTLLibrary!
 
     var nodePipelineState: MTLRenderPipelineState!
 
@@ -107,34 +107,97 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
 
     var uniforms: UnsafeMutablePointer<Uniforms>!
 
-    private var bufferUpdate: BufferUpdate? = nil
+    private var isSetup: Bool = false
+
+    private var bufferUpdate: BufferUpdate2? = nil
 
     // ==============================================================
-    // Derived graph properties -- Access only on graph-update thread
+    // Graph properties -- Access only on graph-update thread (which
+    // may or may not be main)
+
+    private weak var graphContainer: Container!
 
     private var nodeIndices = [NodeID: Int]()
 
+    public func findNearestNode(_ touchLocation: SIMD2<Float>,
+                                _ povController: POVController,
+                                _ fovController: FOVController) -> NodeID? {
 
-    init(_ device: MTLDevice, _ settings: GraphWireframeSettings) throws {
-        // debug("GraphWireframe.init", "started")
-        if let library = Shaders.makeLibrary(device) {
-            self.library = library
-        }
-        else {
-            throw RendererError.noDefaultLibrary
-        }
+        let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
+        var ray1 = fovController.projectionMatrix.inverse * ray0
+        ray1.z = -1
+        ray1.w = 0
 
-        self.device = device
-        self.settings = settings
-        // debug("GraphWireframe.init", "done")
+        // modelViewMatrix == viewMatrix b/c our model matrix is the identity
+        let modelViewMatrix = povController.viewMatrix
+        let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
+        let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
+
+        var nearestNode: Container.GraphType.NodeType? = nil
+        var nearestD2 = Float.greatestFiniteMagnitude
+        var shortestRayDistance = Float.greatestFiniteMagnitude
+        for node in graphContainer.graph.nodes {
+
+            if let nodeLoc = node.value?.location {
+
+                let nodeDisplacement = nodeLoc - rayOrigin
+
+                /// distance along the ray to the point closest to the node
+                let rayDistance = simd_dot(nodeDisplacement, rayDirection)
+
+                if (rayDistance < fovController.zNear || rayDistance > fovController.zFar) {
+                    // Node is not in rendered volume
+                    continue
+                }
+
+                /// nodeD2 is the square of the distance from ray to the node
+                let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
+                // print("\(node) distance to ray: \(sqrt(nodeD2))")
+
+                if (nodeD2 < nearestD2 || (nodeD2 == nearestD2 && rayDistance < shortestRayDistance)) {
+                    shortestRayDistance = rayDistance
+                    nearestD2 = nodeD2
+                    nearestNode = node
+                }
+            }
+        }
+        return nearestNode?.id
     }
+
+    // ==============================================================
+
+    public init(_ graphContainer: Container) {
+        self.graphContainer = graphContainer
+        self.settings = WireframeSettings()
+    }
+
+//    public init(_ graphContainer: Container, _ settings: WireframeSettings){
+//        self.graphContainer = graphContainer
+//        self.settings = settings
+//    }
 
     deinit {
         // debug("GraphWireframe", "deinit")
     }
 
     func setup(_ view: MTKView) throws {
-        // debug("GraphWireframe", "setup. library functions: \(library.functionNames)")
+        debug("GraphWireframe2.setup", "started")
+
+        if let device = view.device {
+            self.device = device
+        }
+        else {
+            throw RenderError.noDevice
+        }
+
+        if let device = view.device,
+           let library = Shaders.makeLibrary(device) {
+            self.library = library
+            // debug("GraphWireframe", "setup. library functions: \(library.functionNames)")
+        }
+        else {
+            throw RenderError.noDefaultLibrary
+        }
 
         if dynamicUniformBuffer == nil {
             try buildUniforms()
@@ -147,6 +210,10 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         if edgePipelineState == nil {
             try buildEdgePipeline(view)
         }
+
+        updateFigure(.all)
+        NotificationCenter.default.addObserver(self, selector: #selector(graphHasChanged), name: .graphHasChanged, object: nil)
+        isSetup = true
     }
 
     func teardown() {
@@ -159,30 +226,37 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         self.edgeIndexBuffer = nil
     }
 
-    func graphHasChanged<G: Graph>(_ graph: G, _ change: RenderableGraphChange) where
-    G.NodeType.ValueType == NodeValueType,
-    G.EdgeType.ValueType == EdgeValueType {
+    @objc public func graphHasChanged(_ notification: Notification) {
+        if let graphChange = notification.object as? RenderableGraphChange {
+            updateFigure(graphChange)
+        }
+    }
 
-        // debug("GraphWireframe", "graphHasChanged: started. bufferUpdate=\(String(describing: bufferUpdate))")
+    public func updateFigure(_ change: RenderableGraphChange) {
 
-        var bufferUpdate: BufferUpdate? = nil
+        // debug("GraphWireframe", "updateFigure: started. bufferUpdate=\(String(describing: bufferUpdate))")
+
+        var bufferUpdate: BufferUpdate2? = nil
         if change.nodes {
-            bufferUpdate = self.prepareTopologyUpdate(graph)
+            bufferUpdate = self.prepareTopologyUpdate(graphContainer.graph)
         }
         else {
             var newPositions: [SIMD3<Float>]? = nil
             var newColors: [NodeID : SIMD4<Float>]? = nil
+            var newBBox: BoundingBox? = nil
 
             if change.nodePositions {
-                newPositions = self.makeNodePositions(graph)
+                newPositions = self.makeNodePositions(graphContainer.graph)
+                newBBox = graphContainer.graph.makeBoundingBox()
             }
 
             if change.nodeColors {
-                newColors = graph.makeNodeColors()
+                newColors = graphContainer.graph.makeNodeColors()
             }
 
             if (newPositions != nil || newColors != nil) {
-                bufferUpdate = BufferUpdate(nodeCount: nil,
+                bufferUpdate = BufferUpdate2(bbox: newBBox,
+                                             nodeCount: nil,
                                             nodePositions: newPositions,
                                             nodeColors: newColors,
                                             edgeIndexCount: nil,
@@ -215,6 +289,10 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
 
         // debug("GraphWireframe", "applying bufferUpdate")
         self.bufferUpdate = nil
+
+        if let bbox = update.bbox {
+            self.bbox = bbox
+        }
 
         if let updatedNodeCount = update.nodeCount,
            self.nodeCount != updatedNodeCount {
@@ -286,16 +364,22 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         }
     }
 
-    func preDraw(projectionMatrix: float4x4,
-                 modelViewMatrix: float4x4,
-                 pov: POV,
-                 fadeoutOnset: Float,
-                 fadeoutDistance: Float) {
+
+    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings) {
+        // print("prepareToDraw -- started. renderSettings=\(renderSettings)")
+        if !isSetup {
+            do {
+                try setup(mtkView)
+            }
+            catch {
+                fatalError("Problem in setup: \(error)")
+            }
+        }
 
         // ======================================
         // Rotate the uniforms buffers
 
-        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
+        uniformBufferIndex = (uniformBufferIndex + 1) % Renderer.maxBuffersInFlight
 
         uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
 
@@ -303,13 +387,17 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
 
         // =====================================
         // Update content of current uniforms buffer
+        //
+        // NOTE uniforms.modelViewMatrix is equal to renderSettings.viewMatrix
+        // because we are drawing the graph in world coordinates, i.e., our model
+        // matrix is the identity.
 
-        uniforms[0].projectionMatrix = projectionMatrix
-        uniforms[0].modelViewMatrix = modelViewMatrix
-        uniforms[0].pointSize = Float(settings.nodeSize(forPOV: pov))
-        uniforms[0].edgeColor = settings.edgeColor
-        uniforms[0].fadeoutOnset = fadeoutOnset
-        uniforms[0].fadeoutDistance = fadeoutDistance
+        uniforms[0].projectionMatrix = renderSettings.projectionMatrix
+        uniforms[0].modelViewMatrix = renderSettings.viewMatrix
+        uniforms[0].pointSize = Float(self.settings.nodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
+        uniforms[0].edgeColor = self.settings.edgeColor
+        uniforms[0].fadeoutOnset = renderSettings.fadeoutOnset
+        uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
 
         // =====================================
         // Possibly update contents of the other buffers
@@ -318,7 +406,7 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
 
     }
 
-    func encodeCommands(_ renderEncoder: MTLRenderCommandEncoder) {
+    public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
         // _drawCount += 1
         // debug("GraphWireframe.encodeCommands[\(_drawCount)]")
 
@@ -330,40 +418,39 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
             return
         }
 
-        renderEncoder.setVertexBuffer(dynamicUniformBuffer,
+        encoder.setVertexBuffer(dynamicUniformBuffer,
                                       offset:uniformBufferOffset,
                                       index: BufferIndex.uniforms.rawValue)
-        renderEncoder.setFragmentBuffer(dynamicUniformBuffer,
+        encoder.setFragmentBuffer(dynamicUniformBuffer,
                                         offset:uniformBufferOffset,
                                         index: BufferIndex.uniforms.rawValue)
-        renderEncoder.setVertexBuffer(nodePositionBuffer,
+        encoder.setVertexBuffer(nodePositionBuffer,
                                       offset: 0,
                                       index: BufferIndex.nodePosition.rawValue)
 
         if let edgeIndexBuffer = self.edgeIndexBuffer {
-            renderEncoder.pushDebugGroup("Edges")
-            renderEncoder.setRenderPipelineState(edgePipelineState)
-            renderEncoder.drawIndexedPrimitives(type: .line,
+            encoder.pushDebugGroup("Edges")
+            encoder.setRenderPipelineState(edgePipelineState)
+            encoder.drawIndexedPrimitives(type: .line,
                                                 indexCount: edgeIndexCount,
                                                 indexType: MTLIndexType.uint32,
                                                 indexBuffer: edgeIndexBuffer,
                                                 indexBufferOffset: 0)
-            renderEncoder.popDebugGroup()
+            encoder.popDebugGroup()
         }
 
         if let nodeColorBuffer = self.nodeColorBuffer {
-            renderEncoder.pushDebugGroup("Nodes")
-            renderEncoder.setRenderPipelineState(nodePipelineState)
-            renderEncoder.setVertexBuffer(nodeColorBuffer,
+            encoder.pushDebugGroup("Nodes")
+            encoder.setRenderPipelineState(nodePipelineState)
+            encoder.setVertexBuffer(nodeColorBuffer,
                                           offset: 0,
                                           index: BufferIndex.nodeColor.rawValue)
-            renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
-            renderEncoder.popDebugGroup()
+            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
+            encoder.popDebugGroup()
         }
     }
 
-    private func prepareTopologyUpdate<G: Graph>(_ graph: G) -> BufferUpdate
-    where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+    private func prepareTopologyUpdate(_ graph: Container.GraphType) -> BufferUpdate2 {
 
         var newNodeIndices = [NodeID: Int]()
         var newNodePositions = [SIMD3<Float>]()
@@ -396,7 +483,8 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
             }
         }
 
-        return BufferUpdate(
+        return BufferUpdate2(
+            bbox: graph.makeBoundingBox(),
             nodeCount: newNodePositions.count,
             nodePositions: newNodePositions,
             nodeColors: graph.makeNodeColors(),
@@ -405,7 +493,8 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
         )
     }
 
-    private func makeNodePositions<G: Graph>(_ graph: G) -> [SIMD3<Float>] where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+    private func makeNodePositions(_ graph: Container.GraphType) -> [SIMD3<Float>] {
+//    private func makeNodePositions<G: Graph>(_ graph: G) -> [SIMD3<Float>] where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
         var newNodePositions = [SIMD3<Float>]()
         for node in graph.nodes {
             if let nodeIndex = nodeIndices[node.id],
@@ -417,14 +506,14 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
     }
 
     private func buildUniforms() throws {
-        let uniformBufferSize = alignedUniformsSize * maxBuffersInFlight
+        let uniformBufferSize = alignedUniformsSize * Renderer.maxBuffersInFlight
         if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
             self.dynamicUniformBuffer = buffer
             self.dynamicUniformBuffer.label = "UniformBuffer"
             self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
         }
         else {
-            throw RendererError.bufferCreationFailed
+            throw RenderError.bufferCreationFailed
         }
     }
 
@@ -513,7 +602,8 @@ public class GraphWireframe<N: RenderableNodeValue, E: RenderableEdgeValue>: Ren
     }
 }
 
-struct BufferUpdate {
+struct BufferUpdate2 {
+    let bbox: BoundingBox?
     let nodeCount: Int?
     let nodePositions: [SIMD3<Float>]?
     let nodeColors: [NodeID: SIMD4<Float>]?

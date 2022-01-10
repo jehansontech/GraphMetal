@@ -22,7 +22,7 @@ public protocol RenderableEdgeValue {
 }
 
 extension Graph where
-    NodeType.ValueType: RenderableNodeValue {
+NodeType.ValueType: RenderableNodeValue {
 
     func makeNodeColors() -> [NodeID: SIMD4<Float>] {
         var nodeColors = [NodeID: SIMD4<Float>]()
@@ -33,51 +33,6 @@ extension Graph where
         }
         return nodeColors
     }
-
-    public func findNearestNode(_ clipCoordinates: SIMD2<Float>,
-                                projectionMatrix: float4x4,
-                                modelViewMatrix: float4x4,
-                                zNear: Float,
-                                zFar: Float)  -> NodeType? {
-        let ray0 = SIMD4<Float>(Float(clipCoordinates.x), clipCoordinates.y, 0, 1)
-        var ray1 = projectionMatrix.inverse * ray0
-        ray1.z = -1
-        ray1.w = 0
-
-        let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
-        let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
-
-        var nearestNode: NodeType? = nil
-        var nearestD2 = Float.greatestFiniteMagnitude
-        var shortestRayDistance = Float.greatestFiniteMagnitude
-        for node in self.nodes {
-
-            if let nodeLoc = node.value?.location {
-
-                let nodeDisplacement = nodeLoc - rayOrigin
-
-                /// distance along the ray to the point closest to the node
-                let rayDistance = simd_dot(nodeDisplacement, rayDirection)
-
-                if (rayDistance < zNear || rayDistance > zFar) {
-                    // Node is not in rendered volume
-                    continue
-                }
-
-                /// nodeD2 is the square of the distance from ray to the node
-                let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
-                // print("\(node) distance to ray: \(sqrt(nodeD2))")
-
-                if (nodeD2 < nearestD2 || (nodeD2 == nearestD2 && rayDistance < shortestRayDistance)) {
-                    shortestRayDistance = rayDistance
-                    nearestD2 = nodeD2
-                    nearestNode = node
-                }
-            }
-        }
-        return nearestNode
-    }
-
 }
 
 ///
@@ -123,10 +78,40 @@ public struct RenderableGraphChange {
                                                   edgeColors: true)
 
     public static let positions = RenderableGraphChange(nodes: false,
-                                                  nodeColors: false,
-                                                  nodePositions: true,
-                                                  edges: false,
-                                                  edgeColors: false)
+                                                        nodeColors: false,
+                                                        nodePositions: true,
+                                                        edges: false,
+                                                        edgeColors: false)
+
+    public static let topology = RenderableGraphChange(nodes: true,
+                                                       nodeColors: false,
+                                                       nodePositions: false,
+                                                       edges: true,
+                                                       edgeColors: false)
+
+    public static let geometry = RenderableGraphChange(nodes: false,
+                                                       nodeColors: false,
+                                                       nodePositions: true,
+                                                       edges: false,
+                                                       edgeColors: false)
+
+    public static let color = RenderableGraphChange(nodes: false,
+                                                    nodeColors: true,
+                                                    nodePositions: false,
+                                                    edges: false,
+                                                    edgeColors: true)
+
+    public static let nodes = RenderableGraphChange(nodes: true,
+                                                    nodeColors: false,
+                                                    nodePositions: false,
+                                                    edges: false,
+                                                    edgeColors: false)
+
+    public static let edges = RenderableGraphChange(nodes: false,
+                                                    nodeColors: false,
+                                                    nodePositions: false,
+                                                    edges: true,
+                                                    edgeColors: false)
 
     /// indicates whether any nodes have been added and/or removed
     public var nodes: Bool
