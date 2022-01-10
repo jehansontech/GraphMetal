@@ -177,11 +177,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 //    }
 
     deinit {
-        // debug("GraphWireframe", "deinit")
+        // debug("Wireframe", "deinit")
     }
 
     func setup(_ view: MTKView) throws {
-        debug("GraphWireframe2.setup", "started")
+        // debug("Wireframe.setup", "started")
 
         if let device = view.device {
             self.device = device
@@ -193,7 +193,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         if let device = view.device,
            let library = Shaders.makeLibrary(device) {
             self.library = library
-            // debug("GraphWireframe", "setup. library functions: \(library.functionNames)")
+            // debug("Wireframe", "setup. library functions: \(library.functionNames)")
         }
         else {
             throw RenderError.noDefaultLibrary
@@ -217,7 +217,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     }
 
     func teardown() {
-        // debug("GraphWireframe", "teardown")
+        // debug("Wireframe", "teardown")
         // TODO: maybe dynamicUniformBuffer and uniforms ... if so change declarations from ! to ?
         // TODO: maybe nodePipelineState ... ditto
         // TODO: maybe edgePipelineState ... ditto
@@ -232,9 +232,9 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         }
     }
 
+    /// Expect this to be called on the thread that made the change to the graph, which  may or may not be the main thread
     public func updateFigure(_ change: RenderableGraphChange) {
-
-        // debug("GraphWireframe", "updateFigure: started. bufferUpdate=\(String(describing: bufferUpdate))")
+        // debug("Wireframe", "updateFigure: started. change=\(change)")
 
         var bufferUpdate: BufferUpdate2? = nil
         if change.nodes {
@@ -265,7 +265,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         }
 
 
-        // write bufferUpdate to self.bufferUpdate on the main thread
+        // Gotta write bufferUpdate to self.bufferUpdate on the main thread
         // in order to avoid a data race
         if Thread.current.isMainThread {
             self.bufferUpdate = bufferUpdate
@@ -283,11 +283,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         guard
             let update = self.bufferUpdate
         else {
-            // debug("GraphWireframe", "No bufferUpdate to apply")
+            // debug("Wireframe", "No bufferUpdate to apply")
             return
         }
 
-        // debug("GraphWireframe", "applying bufferUpdate")
+        // debug("Wireframe", "applying bufferUpdate")
         self.bufferUpdate = nil
 
         if let bbox = update.bbox {
@@ -296,13 +296,13 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
         if let updatedNodeCount = update.nodeCount,
            self.nodeCount != updatedNodeCount {
-            // debug("GraphWireframe", "updating nodeCount: \(nodeCount) -> \(updatedNodeCount)")
+            // debug("Wireframe", "updating nodeCount: \(nodeCount) -> \(updatedNodeCount)")
             nodeCount = updatedNodeCount
         }
 
         if nodeCount == 0 {
             if nodePositionBuffer != nil {
-                // debug("GraphWireframe", "discarding nodePositionBuffer")
+                // debug("Wireframe", "discarding nodePositionBuffer")
                 nodePositionBuffer = nil
             }
         }
@@ -311,7 +311,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
                 fatalError("Failed sanity check: nodeCount=\(nodeCount) but newNodePositions.count=\(newNodePositions.count)")
             }
 
-            // debug("GraphWireframe", "creating nodePositionBuffer")
+            // debug("Wireframe", "creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
             nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
                                                    length: nodePositionBufLen,
@@ -320,7 +320,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
         if nodeCount == 0 {
             if nodeColorBuffer != nil {
-                // debug("GraphWireframe", "discarding nodeColorBuffer")
+                // debug("Wireframe", "discarding nodeColorBuffer")
                 nodeColorBuffer = nil
             }
         }
@@ -334,7 +334,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
                 }
             }
 
-            // debug("GraphWireframe", "creating nodeColorBuffer")
+            // debug("Wireframe", "creating nodeColorBuffer")
             let nodeColorBufLen = nodeCount * MemoryLayout<SIMD4<Float>>.size
             nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
                                                 length: nodeColorBufLen,
@@ -343,13 +343,13 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
         if let updatedEdgeIndexCount = update.edgeIndexCount,
            self.edgeIndexCount != update.edgeIndexCount {
-            // debug("GraphWireframe", "updating edgeIndexCount: \(edgeIndexCount) -> \(updatedEdgeIndexCount)")
+            // debug("Wireframe", "updating edgeIndexCount: \(edgeIndexCount) -> \(updatedEdgeIndexCount)")
             self.edgeIndexCount = updatedEdgeIndexCount
         }
 
         if edgeIndexCount == 0 {
             if edgeIndexBuffer != nil {
-                // debug("GraphWireframe", "discarding edgeIndexBuffer")
+                // debug("Wireframe", "discarding edgeIndexBuffer")
                 self.edgeIndexBuffer = nil
             }
         }
@@ -358,7 +358,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
                 fatalError("Failed sanity check: edgeIndexCount=\(edgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
             }
 
-            // debug("GraphWireframe", "creating edgeIndexBuffer")
+            // debug("Wireframe", "creating edgeIndexBuffer")
             let bufLen = newEdgeIndices.count * MemoryLayout<UInt32>.size
             self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices, length: bufLen)
         }
@@ -408,7 +408,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
         // _drawCount += 1
-        // debug("GraphWireframe.encodeCommands[\(_drawCount)]")
+        // debug("Wireframe.encodeCommands[\(_drawCount)]")
 
 
         // If we don't have node positions we can't draw either nodes or edges.
