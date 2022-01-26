@@ -12,22 +12,22 @@
 
 using namespace metal;
 
-typedef NS_ENUM(NSInteger, BufferIndex)
+//typedef NS_ENUM(NSInteger, BufferIndex)
+//{
+//    BufferIndexNodePosition = 0,
+//    BufferIndexNodeColor = 1,
+//    BufferIndexUniforms   = 2
+//};
+
+typedef NS_ENUM(NSInteger, WireframeVertexAttribute)
 {
-    BufferIndexNodePosition = 0,
-    BufferIndexNodeColor = 1,
-    BufferIndexUniforms   = 2
+    WireframeVertexAttributePosition  = 0,
+    WireframeVertexAttributeColor   = 1,
 };
 
-typedef NS_ENUM(NSInteger, VertexAttribute)
+typedef NS_ENUM(NSInteger, WireframeTextureIndex)
 {
-    VertexAttributePosition  = 0,
-    VertexAttributeColor   = 1,
-};
-
-typedef NS_ENUM(NSInteger, TextureIndex)
-{
-    TextureIndexColor    = 0,
+    WireframeTextureIndexColor    = 0,
 };
 
 typedef struct
@@ -38,11 +38,11 @@ typedef struct
     simd_float4 edgeColor;
     float fadeoutOnset;
     float fadeoutDistance;
-} Uniforms;
+} WireframeUniforms;
 
 
 struct NetVertexIn {
-    float3 position [[attribute(VertexAttributePosition)]];
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
 };
 
 struct NetVertexOut {
@@ -62,8 +62,11 @@ float fadeout(float z, float onset, float distance) {
     return (fade < 0) ? 0 : (fade > 1) ? 1 : fade;
 }
 
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
 vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
-                               const device Uniforms&  uniforms [[ buffer(2) ]]) {
+                               const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -76,8 +79,11 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
 fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
-                             const device Uniforms&  uniforms [[ buffer(2) ]]) {
+                             const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
 
     // fadeout
     // Note that distance is -z
@@ -97,8 +103,8 @@ fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
 // =============================================================================
 
 struct NodeVertexIn {
-    float3 position [[attribute(VertexAttributePosition)]];
-    float4 color    [[attribute(VertexAttributeColor)]];
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
+    float4 color    [[attribute(WireframeVertexAttributeColor)]];
 };
 
 struct NodeVertexOut {
@@ -108,8 +114,11 @@ struct NodeVertexOut {
     float4 color;
 };
 
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
 vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
-                                 const device Uniforms&  uniforms [[ buffer(2) ]]) {
+                                 const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -123,9 +132,12 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
 fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]],
                               float2 pointCoord                    [[point_coord]],
-                              const device Uniforms&  uniforms     [[ buffer(2) ]]) {
+                              const device WireframeUniforms&  uniforms     [[ buffer(0) ]]) {
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z

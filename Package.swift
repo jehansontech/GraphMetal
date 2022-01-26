@@ -9,9 +9,9 @@ let package = Package(
         .macOS(.v11), .iOS(.v14)
     ],
     products: [
-        .library(
-            name: "Shaders",
-            targets: ["Shaders"]),
+//        .library(
+//            name: "Shaders",
+//            targets: ["Shaders"]),
         .library(
             name: "GraphMetal",
             targets: ["GraphMetal"])
@@ -21,12 +21,13 @@ let package = Package(
         .package(url: "git@github.com:jehansontech/Wacoma.git", .branch("dev")),
     ],
     targets: [
-        .target(
-            name: "Shaders",
-            dependencies: []),
+//        .target(
+//            name: "Shaders",
+//            dependencies: []),
         .target(
             name: "GraphMetal",
-            dependencies: ["GenericGraph", "Shaders", "Wacoma"]),
+//            dependencies: ["GenericGraph", "Shaders", "Wacoma"]),
+            dependencies: ["GenericGraph", "Wacoma"]),
         .testTarget(
             name: "GraphMetalTests",
             dependencies: ["GraphMetal"])

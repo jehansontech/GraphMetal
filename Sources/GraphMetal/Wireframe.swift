@@ -8,7 +8,7 @@ import SwiftUI
 import Metal
 import MetalKit
 import GenericGraph
-import Shaders
+//import Shaders
 import Wacoma
 
 public struct WireframeSettings {
@@ -72,7 +72,7 @@ public struct WireframeSettings {
 public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     /// The 256 byte aligned size of our uniform structure
-    let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
+    let alignedUniformsSize = (MemoryLayout<WireframeUniforms>.size + 0xFF) & -0x100
 
     // ==============================================================
     // Rendering properties -- Access these only on main thread
@@ -89,7 +89,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     var nodeCount: Int = 0
 
+    var nodePositionBufferIndex: Int = WireframeBufferIndex.nodePosition.rawValue
+
     var nodePositionBuffer: MTLBuffer? = nil
+
+    var nodeColorBufferIndex: Int = WireframeBufferIndex.nodeColor.rawValue
 
     var nodeColorBuffer: MTLBuffer? = nil
 
@@ -99,13 +103,15 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     var edgeIndexBuffer: MTLBuffer? = nil
 
+    var dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniforms.rawValue
+
     var dynamicUniformBuffer: MTLBuffer!
 
     var uniformBufferOffset = 0
 
     var uniformBufferIndex = 0
 
-    var uniforms: UnsafeMutablePointer<Uniforms>!
+    var uniforms: UnsafeMutablePointer<WireframeUniforms>!
 
     private var isSetup: Bool = false
 
@@ -171,10 +177,10 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         self.settings = WireframeSettings()
     }
 
-//    public init(_ graphContainer: Container, _ settings: WireframeSettings){
-//        self.graphContainer = graphContainer
-//        self.settings = settings
-//    }
+    //    public init(_ graphContainer: Container, _ settings: WireframeSettings){
+    //        self.graphContainer = graphContainer
+    //        self.settings = settings
+    //    }
 
     deinit {
         // debug("Wireframe", "deinit")
@@ -191,7 +197,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         }
 
         if let device = view.device,
-           let library = Shaders.makeLibrary(device) {
+           let library = WireframeShaders.makeLibrary(device) {
             self.library = library
             // debug("Wireframe", "setup. library functions: \(library.functionNames)")
         }
@@ -257,10 +263,10 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
             if (newPositions != nil || newColors != nil) {
                 bufferUpdate = BufferUpdate2(bbox: newBBox,
                                              nodeCount: nil,
-                                            nodePositions: newPositions,
-                                            nodeColors: newColors,
-                                            edgeIndexCount: nil,
-                                            edgeIndices: nil)
+                                             nodePositions: newPositions,
+                                             nodeColors: newColors,
+                                             edgeIndexCount: nil,
+                                             edgeIndices: nil)
             }
         }
 
@@ -383,7 +389,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
         uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
 
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
+        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:WireframeUniforms.self, capacity:1)
 
         // =====================================
         // Update content of current uniforms buffer
@@ -410,32 +416,35 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         // _drawCount += 1
         // debug("Wireframe.encodeCommands[\(_drawCount)]")
 
+        // Do the uniforms no matter what.
 
-        // If we don't have node positions we can't draw either nodes or edges.
+        encoder.setVertexBuffer(dynamicUniformBuffer,
+                                offset:uniformBufferOffset,
+                                index: dynamicUniformBufferIndex)
+        encoder.setFragmentBuffer(dynamicUniformBuffer,
+                                  offset:uniformBufferOffset,
+                                  index: dynamicUniformBufferIndex)
+
+        // If we don't have node positions we can't draw either nodes or edges
+        // so we should return early.
         guard
             let nodePositionBuffer = self.nodePositionBuffer
         else {
             return
         }
 
-        encoder.setVertexBuffer(dynamicUniformBuffer,
-                                      offset:uniformBufferOffset,
-                                      index: BufferIndex.uniforms.rawValue)
-        encoder.setFragmentBuffer(dynamicUniformBuffer,
-                                        offset:uniformBufferOffset,
-                                        index: BufferIndex.uniforms.rawValue)
         encoder.setVertexBuffer(nodePositionBuffer,
-                                      offset: 0,
-                                      index: BufferIndex.nodePosition.rawValue)
+                                offset: 0,
+                                index: nodePositionBufferIndex)
 
         if let edgeIndexBuffer = self.edgeIndexBuffer {
             encoder.pushDebugGroup("Edges")
             encoder.setRenderPipelineState(edgePipelineState)
             encoder.drawIndexedPrimitives(type: .line,
-                                                indexCount: edgeIndexCount,
-                                                indexType: MTLIndexType.uint32,
-                                                indexBuffer: edgeIndexBuffer,
-                                                indexBufferOffset: 0)
+                                          indexCount: edgeIndexCount,
+                                          indexType: MTLIndexType.uint32,
+                                          indexBuffer: edgeIndexBuffer,
+                                          indexBufferOffset: 0)
             encoder.popDebugGroup()
         }
 
@@ -443,8 +452,8 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
             encoder.pushDebugGroup("Nodes")
             encoder.setRenderPipelineState(nodePipelineState)
             encoder.setVertexBuffer(nodeColorBuffer,
-                                          offset: 0,
-                                          index: BufferIndex.nodeColor.rawValue)
+                                    offset: 0,
+                                    index: nodeColorBufferIndex)
             encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
             encoder.popDebugGroup()
         }
@@ -494,7 +503,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     }
 
     private func makeNodePositions(_ graph: Container.GraphType) -> [SIMD3<Float>] {
-//    private func makeNodePositions<G: Graph>(_ graph: G) -> [SIMD3<Float>] where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+        //    private func makeNodePositions<G: Graph>(_ graph: G) -> [SIMD3<Float>] where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
         var newNodePositions = [SIMD3<Float>]()
         for node in graph.nodes {
             if let nodeIndex = nodeIndices[node.id],
@@ -510,7 +519,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
             self.dynamicUniformBuffer = buffer
             self.dynamicUniformBuffer.label = "UniformBuffer"
-            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:WireframeUniforms.self, capacity:1)
         }
         else {
             throw RenderError.bufferCreationFailed
@@ -523,21 +532,21 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         let fragmentFunction = library.makeFunction(name: "node_fragment")
         let vertexDescriptor = MTLVertexDescriptor()
 
-        vertexDescriptor.attributes[VertexAttribute.position.rawValue].format = MTLVertexFormat.float3
-        vertexDescriptor.attributes[VertexAttribute.position.rawValue].offset = 0
-        vertexDescriptor.attributes[VertexAttribute.position.rawValue].bufferIndex = BufferIndex.nodePosition.rawValue
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].offset = 0
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
 
-        vertexDescriptor.attributes[VertexAttribute.color.rawValue].format = MTLVertexFormat.float4
-        vertexDescriptor.attributes[VertexAttribute.color.rawValue].offset = 0
-        vertexDescriptor.attributes[VertexAttribute.color.rawValue].bufferIndex = BufferIndex.nodeColor.rawValue
+        vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].format = MTLVertexFormat.float4
+        vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].offset = 0
+        vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].bufferIndex = WireframeBufferIndex.nodeColor.rawValue
 
-        vertexDescriptor.layouts[BufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
-        vertexDescriptor.layouts[BufferIndex.nodePosition.rawValue].stepRate = 1
-        vertexDescriptor.layouts[BufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
+        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
+        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
+        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
 
-        vertexDescriptor.layouts[BufferIndex.nodeColor.rawValue].stride = MemoryLayout<SIMD4<Float>>.stride
-        vertexDescriptor.layouts[BufferIndex.nodeColor.rawValue].stepRate = 1
-        vertexDescriptor.layouts[BufferIndex.nodeColor.rawValue].stepFunction = MTLVertexStepFunction.perVertex
+        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stride = MemoryLayout<SIMD4<Float>>.stride
+        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepRate = 1
+        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepFunction = MTLVertexStepFunction.perVertex
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
 
@@ -570,13 +579,13 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
         let vertexDescriptor = MTLVertexDescriptor()
 
-        vertexDescriptor.attributes[VertexAttribute.position.rawValue].format = MTLVertexFormat.float3
-        vertexDescriptor.attributes[VertexAttribute.position.rawValue].offset = 0
-        vertexDescriptor.attributes[VertexAttribute.position.rawValue].bufferIndex = BufferIndex.nodePosition.rawValue
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].offset = 0
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
 
-        vertexDescriptor.layouts[BufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
-        vertexDescriptor.layouts[BufferIndex.nodePosition.rawValue].stepRate = 1
-        vertexDescriptor.layouts[BufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
+        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
+        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
+        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         pipelineDescriptor.label = "EdgePipeline"
