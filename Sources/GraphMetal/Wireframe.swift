@@ -14,7 +14,7 @@ import Wacoma
 public struct WireframeSettings {
 
     /// EMPIRICAL
-    static let nodeSizeScaleFactor: Double = 800
+    static let nodeSizeScaleFactor: Double = 600
 
     public static let defaults = WireframeSettings()
 
