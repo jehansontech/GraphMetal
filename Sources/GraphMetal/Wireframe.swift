@@ -177,6 +177,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         self.settings = WireframeSettings()
     }
 
+    public init(_ graphContainer: Container, _ initialSettings: WireframeSettings) {
+        self.graphContainer = graphContainer
+        self.settings = initialSettings
+    }
+
     //    public init(_ graphContainer: Container, _ settings: WireframeSettings){
     //        self.graphContainer = graphContainer
     //        self.settings = settings
