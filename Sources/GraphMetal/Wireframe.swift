@@ -14,15 +14,17 @@ import Wacoma
 public struct WireframeSettings {
 
     /// EMPIRICAL
-    static let nodeSizeScaleFactor: Double = 600
+    static let nodeSizeScaleFactor: Double = 40
 
     public static let defaults = WireframeSettings()
 
     /// indicates whether node size should be automatically adjusted when the POV changes
     public var nodeSizeIsAdjusted: Bool
 
-    /// Default node size, i.e.,  width in pixels of the node's dot. Ignored if nodeSizeAutomatic is true
-    public var nodeSizeDefault: Double
+    /// Size of a node sprite.
+    /// if nodeSizeIsAdjusted is false, equal to the node's width in pixels.
+    /// if nodeSizeIsAdjusted is true, used as  a scaling factor on the width
+    public var nodeSize: Double
 
     /// Minimum automatic node size. Ignored if nodeSizeIsAdjusted is false
     public var nodeSizeMinimum: Double
@@ -42,7 +44,7 @@ public struct WireframeSettings {
                 nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0, 0, 0, 0),
                 edgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)) {
         self.nodeSizeIsAdjusted = nodeSizeIsAdjusted
-        self.nodeSizeDefault = nodeSizeDefault
+        self.nodeSize = nodeSizeDefault
         self.nodeSizeMinimum = nodeSizeMinimum
         self.nodeSizeMaximum = nodeSizeMaximum
         self.nodeColorDefault = nodeColorDefault
@@ -51,7 +53,7 @@ public struct WireframeSettings {
 
     public mutating func reset() {
         self.nodeSizeIsAdjusted = Self.defaults.nodeSizeIsAdjusted
-        self.nodeSizeDefault = Self.defaults.nodeSizeDefault
+        self.nodeSize = Self.defaults.nodeSize
         self.nodeSizeMinimum = Self.defaults.nodeSizeMinimum
         self.nodeSizeMaximum = Self.defaults.nodeSizeMaximum
         self.nodeColorDefault = Self.defaults.nodeColorDefault
@@ -60,11 +62,11 @@ public struct WireframeSettings {
 
     func nodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Double {
         if let bbox = bbox, nodeSizeIsAdjusted {
-            let newSize = Self.nodeSizeScaleFactor / Double(distance(pov.location, bbox.center))
+            let newSize = Self.nodeSizeScaleFactor  * nodeSize / Double(distance(pov.location, bbox.center))
             return newSize.clamp(nodeSizeMinimum, nodeSizeMaximum)
         }
         else {
-            return nodeSizeDefault
+            return nodeSize
         }
     }
 }
