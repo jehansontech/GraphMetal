@@ -18,6 +18,8 @@ public struct WireframeSettings {
 
     public static let defaults = WireframeSettings()
 
+    public var nodeStyle: NodeStyle = .dot
+
     /// indicates whether node size should be automatically adjusted when the POV changes
     public var nodeSizeIsAdjusted: Bool
 
@@ -69,6 +71,13 @@ public struct WireframeSettings {
             return nodeSize
         }
     }
+
+    public enum NodeStyle {
+        case dot
+        case ring
+        case square
+        case diamond
+    }
 }
 
 public class Wireframe<Container: RenderableGraphContainer>: Renderable {
@@ -99,6 +108,18 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     var nodeColorBuffer: MTLBuffer? = nil
 
+    var nodeFragmentFunctionName: String {
+        switch (settings.nodeStyle) {
+        case .dot:
+            return "node_fragment_dot"
+        case .ring:
+            return "node_fragment_ring"
+        case .square:
+            return "node_fragment_square"
+        case .diamond:
+            return "node_fragment_diamond"
+        }
+    }
     var edgePipelineState: MTLRenderPipelineState!
 
     var edgeIndexCount: Int = 0
@@ -536,7 +557,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     private func buildNodePipeline(_ view: MTKView) throws {
 
         let vertexFunction = library.makeFunction(name: "node_vertex")
-        let fragmentFunction = library.makeFunction(name: "node_fragment")
+        let fragmentFunction = library.makeFunction(name: nodeFragmentFunctionName)
         let vertexDescriptor = MTLVertexDescriptor()
 
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3

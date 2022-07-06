@@ -135,9 +135,46 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
 /*
  That '0' in buffer(0) is buffer index assigned to uniforms buffer.
  */
-fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]],
-                              float2 pointCoord                    [[point_coord]],
-                              const device WireframeUniforms&  uniforms     [[ buffer(0) ]]) {
+vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
+                                 const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+
+    float4x4 mv_Matrix = uniforms.modelViewMatrix;
+    float4x4 proj_Matrix = uniforms.projectionMatrix;
+
+    NodeVertexOut vertexOut;
+    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
+    vertexOut.pointSize = 2 * uniforms.pointSize;
+    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = vertexIn.color;
+
+    return vertexOut;
+}
+
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
+vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
+                                    const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+
+    float4x4 mv_Matrix = uniforms.modelViewMatrix;
+    float4x4 proj_Matrix = uniforms.projectionMatrix;
+
+    NodeVertexOut vertexOut;
+    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
+    vertexOut.pointSize = 3 * uniforms.pointSize;
+    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = vertexIn.color;
+
+    return vertexOut;
+}
+
+
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
+fragment float4 node_fragment_square(NodeVertexOut interpolated                [[ stage_in ]],
+                                     float2 pointCoord                         [[point_coord]],
+                                     const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
@@ -148,10 +185,109 @@ fragment float4 node_fragment(NodeVertexOut interpolated           [[ stage_in ]
         discard_fragment();
     }
 
-    // round nodes
+    return interpolated.color;
+}
+
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
+fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ stage_in ]],
+                                  float2 pointCoord                         [[point_coord]],
+                                  const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+
+    // fadeout
+    // NOTE that distance = -interpolated.fragmentPosition.z
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+
+    // transparent nodes
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
+
+    // solid circle inscribed in the unit square
     if (length(pointCoord - float2(0.5)) > 0.5) {
         discard_fragment();
     }
 
     return interpolated.color;
 }
+
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
+fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ stage_in ]],
+                                   float2 pointCoord                         [[point_coord]],
+                                   const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+
+    // fadeout
+    // NOTE that distance = -interpolated.fragmentPosition.z
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+
+    // transparent nodes
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
+
+    // circular ring inscribed in the unit square
+    float r = length(pointCoord - float2(0.5));
+    if (r < 0.4 || r > 0.5) {
+        discard_fragment();
+    }
+
+    return interpolated.color;
+}
+
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
+fragment float4 node_fragment_diamond(NodeVertexOut interpolated                [[ stage_in ]],
+                                     float2 pointCoord                         [[point_coord]],
+                                     const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+
+    // fadeout
+    // NOTE that distance = -interpolated.fragmentPosition.z
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+
+    // transparent nodes
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
+
+    // diamond 2x as taller than wide, inscribed in the unit square
+    if (pointCoord.x > 0.5) {
+        if (pointCoord.y > 0.5) {
+            // upper right quadrant
+            float p = pointCoord.y + 2 * pointCoord.x;
+            if (p < 1.9 || p > 2) {
+                discard_fragment();
+            }
+        }
+        else {
+            // lower right quadrant
+            float p = pointCoord.y - 2 * pointCoord.x;
+            if (p > -0.9 || p < -1) {
+                discard_fragment();
+            }
+        }
+    }
+    else {
+        if (pointCoord.y > 0.5) {
+            // upper left quadrant
+            float p = pointCoord.y - 2 * pointCoord.x;
+            if (p < -0.1 || p > 0) {
+                discard_fragment();
+            }
+        }
+        else {
+            // lower left quadrant
+            float p = pointCoord.y + 2 * pointCoord.x;
+            if (p > 1.1 || p < 1) {
+                discard_fragment();
+            }
+        }
+    }
+
+    return interpolated.color;
+}
+
+
