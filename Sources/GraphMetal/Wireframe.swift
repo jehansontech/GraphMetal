@@ -82,6 +82,8 @@ public struct WireframeSettings {
 
 public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
+    let referenceDate = Date()
+
     /// The 256 byte aligned size of our uniform structure
     let alignedUniformsSize = (MemoryLayout<WireframeUniforms>.size + 0xFF) & -0x100
 
@@ -139,6 +141,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     private var isSetup: Bool = false
 
     private var bufferUpdate: BufferUpdate2? = nil
+
+    private var pulsePhase: Float {
+        let millisSinceReferenceDate = Int(Date().timeIntervalSince(referenceDate) * 1000)
+        return 0.001 * Float(millisSinceReferenceDate % 1000)
+    }
 
     // ==============================================================
     // Graph properties -- Access only on graph-update thread (which
@@ -432,6 +439,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         uniforms[0].edgeColor = self.settings.edgeColor
         uniforms[0].fadeoutOnset = renderSettings.fadeoutOnset
         uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
+        uniforms[0].pulsePhase = pulsePhase
 
         // =====================================
         // Possibly update contents of the other buffers

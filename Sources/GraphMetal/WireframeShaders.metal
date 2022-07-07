@@ -38,6 +38,7 @@ typedef struct
     simd_float4 edgeColor;
     float fadeoutOnset;
     float fadeoutDistance;
+    float pulsePhase;
 } WireframeUniforms;
 
 
@@ -60,6 +61,14 @@ struct NetVertexOut {
 float fadeout(float z, float onset, float distance) {
     float fade = 1 - (z - onset) / distance;
     return (fade < 0) ? 0 : (fade > 1) ? 1 : fade;
+}
+
+/*
+ Returns the given value multiplied by the given phase.
+ Phase assumed to be a number between 0 and 1
+ */
+float pulseAmplitude(float v, float phase) {
+    return v * phase;
 }
 
 /*
@@ -162,6 +171,24 @@ vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
     NodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.pointSize = 3 * uniforms.pointSize;
+    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = vertexIn.color;
+
+    return vertexOut;
+}
+
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
+vertex NodeVertexOut node_vertex_size4(NodeVertexIn vertexIn [[stage_in]],
+                                       const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+
+    float4x4 mv_Matrix = uniforms.modelViewMatrix;
+    float4x4 proj_Matrix = uniforms.projectionMatrix;
+
+    NodeVertexOut vertexOut;
+    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
+    vertexOut.pointSize = 4 * uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
@@ -282,6 +309,63 @@ fragment float4 node_fragment_diamond(NodeVertexOut interpolated                
             // lower left quadrant
             float p = pointCoord.y + 2 * pointCoord.x;
             if (p > 1.1 || p < 1) {
+                discard_fragment();
+            }
+        }
+    }
+
+    return interpolated.color;
+}
+
+/*
+ That '0' in buffer(0) is buffer index assigned to uniforms buffer.
+ */
+fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       [[ stage_in ]],
+                                      float2 pointCoord                         [[point_coord]],
+                                      const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+
+    // fadeout
+    // NOTE that distance = -interpolated.fragmentPosition.z
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.r += (1 - pulseAmplitude(1, uniforms.pulsePhase));
+    interpolated.color.g += (1 - pulseAmplitude(1, uniforms.pulsePhase));
+    interpolated.color.b += (1 - pulseAmplitude(1, uniforms.pulsePhase));
+
+    // transparent nodes
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
+
+    // diamond 2x as taller than wide, inscribed in the unit square
+    float lineThickness = 0.1 + (0.4 - pulseAmplitude(0.4, uniforms.pulsePhase));
+    if (pointCoord.x > 0.5) {
+        if (pointCoord.y > 0.5) {
+            // upper right quadrant
+            float p = pointCoord.y + 2 * pointCoord.x;
+            if (p < (2 - lineThickness) || p > 2) {
+                discard_fragment();
+            }
+        }
+        else {
+            // lower right quadrant
+            float p = pointCoord.y - 2 * pointCoord.x;
+            if (p > (-1 + lineThickness) || p < -1) {
+                discard_fragment();
+            }
+        }
+    }
+    else {
+        if (pointCoord.y > 0.5) {
+            // upper left quadrant
+            float p = pointCoord.y - 2 * pointCoord.x;
+            if (p < -lineThickness || p > 0) {
+                discard_fragment();
+            }
+        }
+        else {
+            // lower left quadrant
+            float p = pointCoord.y + 2 * pointCoord.x;
+            if (p > (1 + lineThickness) || p < 1) {
                 discard_fragment();
             }
         }

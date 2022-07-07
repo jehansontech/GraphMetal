@@ -23,6 +23,7 @@ public struct WireframeUniforms {
     public var edgeColor: simd_float4
     public var fadeoutOnset: Float
     public var fadeoutDistance: Float
+    public var pulsePhase: Float
 }
 
 public struct WireframeShaders {
