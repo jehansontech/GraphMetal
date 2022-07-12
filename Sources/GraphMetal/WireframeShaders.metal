@@ -327,17 +327,15 @@ fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
-    interpolated.color.r += (1 - pulseAmplitude(1, uniforms.pulsePhase));
-    interpolated.color.g += (1 - pulseAmplitude(1, uniforms.pulsePhase));
-    interpolated.color.b += (1 - pulseAmplitude(1, uniforms.pulsePhase));
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
         discard_fragment();
     }
 
-    // diamond 2x as taller than wide, inscribed in the unit square
-    float lineThickness = 0.1 + (0.4 - pulseAmplitude(0.4, uniforms.pulsePhase));
+    // diamond 2x taller than wide, inscribed in the unit square
+    // start out filled, gradually thin toward the edges
+    float lineThickness = 0. + (0.5 - pulseAmplitude(0.5, uniforms.pulsePhase));
     if (pointCoord.x > 0.5) {
         if (pointCoord.y > 0.5) {
             // upper right quadrant
