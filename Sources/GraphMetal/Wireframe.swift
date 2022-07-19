@@ -155,7 +155,9 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     private var nodeIndices = [NodeID: Int]()
 
+    /// touchLocation is in pick coordinates, i.e., x and y in [-1, 1]
     public func findNearestNode(_ touchLocation: SIMD2<Float>,
+                                _ touchRadius: Float,
                                 _ povController: POVController,
                                 _ fovController: FOVController) -> NodeID? {
 
