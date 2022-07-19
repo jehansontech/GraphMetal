@@ -155,14 +155,16 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     private var nodeIndices = [NodeID: Int]()
 
-    /// touchLocation is in pick coordinates, i.e., x and y in [-1, 1]
+    /// touchLocation and touchBounds are in pick coordinates, i.e., x and y in [-1, 1]
     public func findNearestNode(_ touchLocation: SIMD2<Float>,
-                                _ touchRadius: Float,
+                                _ touchBounds: CGSize,
                                 _ povController: POVController,
                                 _ fovController: FOVController) -> NodeID? {
 
+        print("findNearestNode. touchLocation: \(touchLocation.prettyString), touchBounds: \(touchBounds.width)x\(touchBounds.height)")
         let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
         var ray1 = fovController.projectionMatrix.inverse * ray0
+
         ray1.z = -1
         ray1.w = 0
 
@@ -180,17 +182,22 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
                 let nodeDisplacement = nodeLoc - rayOrigin
 
-                /// distance along the ray to the point closest to the node
+                /// z-distance along the ray to the point closest to the node
                 let rayDistance = simd_dot(nodeDisplacement, rayDirection)
+                // print("\(node) rayDistance: \(rayDistance)")
 
-                if (rayDistance < fovController.zNear || rayDistance > fovController.zFar) {
-                    // Node is not in rendered volume
+                if !fovController.isInVisibleSlice(z: rayDistance) {
                     continue
                 }
 
                 /// nodeD2 is the square of the distance from ray to the node
                 let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
-                // print("\(node) distance to ray: \(sqrt(nodeD2))")
+//                print("\(node) distance to ray: \(sqrt(nodeD2))")
+
+                // TODO: apply touchRadius.
+                // In world coordinates, the selection bounds form a squashed cone with the ray as its axis.
+                // I need to calculate the perpendicular distance from the ray to the cone along the line
+                // that passes through node.
 
                 if (nodeD2 < nearestD2 || (nodeD2 == nearestD2 && rayDistance < shortestRayDistance)) {
                     shortestRayDistance = rayDistance
@@ -199,6 +206,9 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
                 }
             }
         }
+
+        print("nearestNode perpendicular distance from ray: \(sqrt(nearestD2))")
+
         return nearestNode?.id
     }
 
