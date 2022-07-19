@@ -437,7 +437,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         uniforms[0].modelViewMatrix = renderSettings.viewMatrix
         uniforms[0].pointSize = Float(self.settings.nodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
         uniforms[0].edgeColor = self.settings.edgeColor
-        uniforms[0].fadeoutOnset = renderSettings.fadeoutOnset
+        uniforms[0].fadeoutMidpoint = renderSettings.fadeoutMidpoint
         uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
         uniforms[0].pulsePhase = pulsePhase
 

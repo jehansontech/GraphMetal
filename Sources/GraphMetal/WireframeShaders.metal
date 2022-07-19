@@ -36,7 +36,7 @@ typedef struct
     simd_float4x4 modelViewMatrix;
     float pointSize;
     simd_float4 edgeColor;
-    float fadeoutOnset;
+    float fadeoutMidpoint;
     float fadeoutDistance;
     float pulsePhase;
 } WireframeUniforms;
@@ -58,9 +58,20 @@ struct NetVertexOut {
  Expects z >= 0.
  Clamps the return value to [0, 1].
  */
-float fadeout(float z, float onset, float distance) {
+float fadeout1(float z, float onset, float distance) {
     float fade = 1 - (z - onset) / distance;
     return (fade < 0) ? 0 : (fade > 1) ? 1 : fade;
+}
+
+/*
+ Returns a value that decreases linearly with increasing distance z from the
+ plane of POV (in either direction), such that alpha = 1 at z = midpoint and
+ alpha = 0 at z = midpoint +/- distance. Expects z >= 0.
+ Clamps the return value to [0, 1].
+ */
+float fadeout(float z, float midpoint, float distance) {
+    float w = 1 - abs(z - midpoint) / distance;
+    return (w < 0) ? 0 : (w > 1) ? 1 : w;
 }
 
 /*
@@ -96,7 +107,7 @@ fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
 
     // fadeout
     // Note that distance is -z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
 
     // transparent edges
@@ -205,7 +216,7 @@ fragment float4 node_fragment_square(NodeVertexOut interpolated                [
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -224,7 +235,7 @@ fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ s
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -248,7 +259,7 @@ fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ 
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -273,7 +284,7 @@ fragment float4 node_fragment_diamond(NodeVertexOut interpolated                
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -326,7 +337,7 @@ fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutOnset, uniforms.fadeoutDistance);
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
