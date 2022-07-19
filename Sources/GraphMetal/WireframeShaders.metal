@@ -54,17 +54,6 @@ struct NetVertexOut {
 
 /*
  Returns a value that decreases linearly with increasing distance z from the
- plane of POV, such that alpha=1 at z=onset and alpha=0 at z=onset + distance.
- Expects z >= 0.
- Clamps the return value to [0, 1].
- */
-float fadeout1(float z, float onset, float distance) {
-    float fade = 1 - (z - onset) / distance;
-    return (fade < 0) ? 0 : (fade > 1) ? 1 : fade;
-}
-
-/*
- Returns a value that decreases linearly with increasing distance z from the
  plane of POV (in either direction), such that alpha = 1 at z = midpoint and
  alpha = 0 at z = midpoint +/- distance. Expects z >= 0.
  Clamps the return value to [0, 1].
