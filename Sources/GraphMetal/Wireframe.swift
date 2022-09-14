@@ -77,6 +77,7 @@ public struct WireframeSettings {
         case ring
         case square
         case diamond
+        case none
     }
 }
 
@@ -120,8 +121,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
             return "node_fragment_square"
         case .diamond:
             return "node_fragment_diamond"
+        default:
+            return "node_fragment_square"
         }
     }
+
     var edgePipelineState: MTLRenderPipelineState!
 
     var edgeIndexCount: Int = 0
@@ -303,7 +307,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
                 newBBox = graphContainer.graph.makeBoundingBox()
             }
 
-            if change.nodeColors {
+            if change.nodeColors && settings.nodeStyle != .none {
                 newColors = graphContainer.graph.makeNodeColors()
             }
 
@@ -544,7 +548,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
             bbox: graph.makeBoundingBox(),
             nodeCount: newNodePositions.count,
             nodePositions: newNodePositions,
-            nodeColors: graph.makeNodeColors(),
+            nodeColors: settings.nodeStyle == .none ? nil : graph.makeNodeColors(),
             edgeIndexCount: newEdgeIndexData.count,
             edgeIndices: newEdgeIndexData
         )
