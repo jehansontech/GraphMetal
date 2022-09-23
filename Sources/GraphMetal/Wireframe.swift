@@ -663,11 +663,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     }
 }
 
-struct BufferUpdate2 {
-    let bbox: BoundingBox?
-    let nodeCount: Int?
-    let nodePositions: [SIMD3<Float>]?
-    let nodeColors: [NodeID: SIMD4<Float>]?
-    let edgeIndexCount: Int?
-    let edgeIndices: [UInt32]?
+public struct BufferUpdate2 {
+    public let bbox: BoundingBox?
+    public let nodeCount: Int?
+    public let nodePositions: [SIMD3<Float>]?
+    public let nodeColors: [NodeID: SIMD4<Float>]?
+    public let edgeIndexCount: Int?
+    public let edgeIndices: [UInt32]?
 }
