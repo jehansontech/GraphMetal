@@ -62,7 +62,7 @@ public struct WireframeSettings {
         self.edgeColor = Self.defaults.edgeColor
     }
 
-    func nodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Double {
+    public func getNodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Double {
         if let bbox = bbox, nodeSizeIsAdjusted {
             let newSize = Self.nodeSizeScaleFactor  * nodeSize / Double(distance(pov.location, bbox.center))
             return newSize.clamp(nodeSizeMinimum, nodeSizeMaximum)
@@ -144,7 +144,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     private var isSetup: Bool = false
 
-    private var bufferUpdate: BufferUpdate2? = nil
+    private var bufferUpdate: WireframeBufferUpdate? = nil
 
     private var pulsePhase: Float {
         let millisSinceReferenceDate = Int(Date().timeIntervalSince(referenceDate) * 1000)
@@ -293,7 +293,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     public func updateFigure(_ change: RenderableGraphChange) {
         // debug("Wireframe", "updateFigure: started. change=\(change)")
 
-        var bufferUpdate: BufferUpdate2? = nil
+        var bufferUpdate: WireframeBufferUpdate? = nil
         if change.nodes {
             bufferUpdate = self.prepareTopologyUpdate(graphContainer.graph)
         }
@@ -312,7 +312,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
             }
 
             if (newPositions != nil || newColors != nil) {
-                bufferUpdate = BufferUpdate2(bbox: newBBox,
+                bufferUpdate = WireframeBufferUpdate(bbox: newBBox,
                                              nodeCount: nil,
                                              nodePositions: newPositions,
                                              nodeColors: newColors,
@@ -370,9 +370,14 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
             // debug("Wireframe", "creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
-            nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
+
+            // KNOWN TO WORK
+             nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
                                                    length: nodePositionBufLen,
                                                    options: [])
+            // UNTESTED BUT PROBABLY MORE EFFICIENT
+            // nodePositionBuffer?.contents().copyMemory(from: newNodePositions, byteCount: nodePositionBufLen)
+
         }
 
         if nodeCount == 0 {
@@ -393,9 +398,14 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
             // debug("Wireframe", "creating nodeColorBuffer")
             let nodeColorBufLen = nodeCount * MemoryLayout<SIMD4<Float>>.size
+
+            // KNOWN TO WORK
             nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
                                                 length: nodeColorBufLen,
                                                 options: [])
+            // UNTESTED BUT PROBABLY MORE EFFICIENT
+            // nodeColorBuffer?.contents().copyMemory(from: colorsArray, byteCount: nodeColorBufLen)
+
         }
 
         if let updatedEdgeIndexCount = update.edgeIndexCount,
@@ -417,7 +427,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
             // debug("Wireframe", "creating edgeIndexBuffer")
             let bufLen = newEdgeIndices.count * MemoryLayout<UInt32>.size
+
+            // KNOWN TO WORK
             self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices, length: bufLen)
+            // UNTESTED BUT PROBABLY MORE EFFICIENT
+            // edgeIndexBuffer?.contents().copyMemory(from: newEdgeIndices, byteCount: bufLen)
         }
     }
 
@@ -451,7 +465,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
         uniforms[0].projectionMatrix = renderSettings.projectionMatrix
         uniforms[0].modelViewMatrix = renderSettings.viewMatrix
-        uniforms[0].pointSize = Float(self.settings.nodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
+        uniforms[0].pointSize = Float(self.settings.getNodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
         uniforms[0].edgeColor = self.settings.edgeColor
         uniforms[0].fadeoutMidpoint = renderSettings.fadeoutMidpoint
         uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
@@ -511,7 +525,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         }
     }
 
-    private func prepareTopologyUpdate(_ graph: Container.GraphType) -> BufferUpdate2 {
+    private func prepareTopologyUpdate(_ graph: Container.GraphType) -> WireframeBufferUpdate {
 
         var newNodeIndices = [NodeID: Int]()
         var newNodePositions = [SIMD3<Float>]()
@@ -544,7 +558,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
             }
         }
 
-        return BufferUpdate2(
+        return WireframeBufferUpdate(
             bbox: graph.makeBoundingBox(),
             nodeCount: newNodePositions.count,
             nodePositions: newNodePositions,
@@ -663,7 +677,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     }
 }
 
-public struct BufferUpdate2 {
+public struct WireframeBufferUpdate {
     public let bbox: BoundingBox?
     public let nodeCount: Int?
     public let nodePositions: [SIMD3<Float>]?
