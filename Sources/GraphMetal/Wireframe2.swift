@@ -262,9 +262,9 @@ public class Wireframe2: Renderable {
             nodePositionBuffer = nil
         }
         else if let newNodePositions = update.nodePositions {
-            if newNodePositions.count != newNodeCount {
-                fatalError("Failed sanity check: newNodeCount=\(newNodeCount) but newNodePositions.count=\(newNodePositions.count)")
-            }
+//            if newNodePositions.count != newNodeCount {
+//                fatalError("Failed sanity check: newNodeCount=\(newNodeCount) but newNodePositions.count=\(newNodePositions.count)")
+//            }
 
             if nodePositionBuffer == nil || newNodeCount != oldNodeCount {
                 nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
@@ -276,9 +276,9 @@ public class Wireframe2: Renderable {
                                                           byteCount: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size)
             }
         }
-        else if newNodeCount != oldNodeCount {
-            fatalError("Failed sanity check: nodeCount changed but newNodePositions is nil")
-        }
+//        else if newNodeCount != oldNodeCount {
+//            fatalError("Failed sanity check: nodeCount changed but newNodePositions is nil")
+//        }
 
 
         // ====================
@@ -318,9 +318,9 @@ public class Wireframe2: Renderable {
             self.edgeIndexBuffer = nil
         }
         else if let newEdgeIndices = update.edgeIndices {
-            if newEdgeIndices.count != edgeIndexCount {
-                fatalError("Failed sanity check: newEdgeIndexCount=\(newEdgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
-            }
+//            if newEdgeIndices.count != edgeIndexCount {
+//                fatalError("Failed sanity check: newEdgeIndexCount=\(newEdgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
+//            }
 
             if edgeIndexBuffer == nil || newEdgeIndexCount != oldEdgeIndexCount {
                 edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
@@ -331,10 +331,9 @@ public class Wireframe2: Renderable {
                                                        byteCount: newEdgeIndices.count * MemoryLayout<UInt32>.size)
             }
         }
-        else if newEdgeIndexCount != oldEdgeIndexCount {
-            fatalError("Failed sanity check: edgeIndexCount changed but newEdgeIndices is nil")
-
-        }
+//        else if newEdgeIndexCount != oldEdgeIndexCount {
+//            fatalError("Failed sanity check: edgeIndexCount changed but newEdgeIndices is nil")
+//        }
     }
 
     private func buildUniforms() throws {
