@@ -69,49 +69,42 @@ extension RenderableGraphContainer {
 ///
 ///
 ///
-public struct RenderableGraphChange {
+public struct RenderableGraphChange: Codable, Sendable {
 
     public static let all = RenderableGraphChange(nodes: true,
                                                   nodeColors: true,
                                                   nodePositions: true,
-                                                  edges: true,
-                                                  edgeColors: true)
-
-    public static let positions = RenderableGraphChange(nodes: false,
-                                                        nodeColors: false,
-                                                        nodePositions: true,
-                                                        edges: false,
-                                                        edgeColors: false)
+                                                  edges: true)
 
     public static let topology = RenderableGraphChange(nodes: true,
                                                        nodeColors: false,
                                                        nodePositions: false,
-                                                       edges: true,
-                                                       edgeColors: false)
+                                                       edges: true)
 
     public static let geometry = RenderableGraphChange(nodes: false,
                                                        nodeColors: false,
                                                        nodePositions: true,
-                                                       edges: false,
-                                                       edgeColors: false)
+                                                       edges: false)
 
     public static let color = RenderableGraphChange(nodes: false,
                                                     nodeColors: true,
                                                     nodePositions: false,
-                                                    edges: false,
-                                                    edgeColors: true)
+                                                    edges: false)
+
+    public static let geometryAndColor = RenderableGraphChange(nodes: false,
+                                                    nodeColors: true,
+                                                    nodePositions: true,
+                                                    edges: false)
 
     public static let nodes = RenderableGraphChange(nodes: true,
                                                     nodeColors: false,
                                                     nodePositions: false,
-                                                    edges: false,
-                                                    edgeColors: false)
+                                                    edges: false)
 
     public static let edges = RenderableGraphChange(nodes: false,
                                                     nodeColors: false,
                                                     nodePositions: false,
-                                                    edges: true,
-                                                    edgeColors: false)
+                                                    edges: true)
 
     /// indicates whether any nodes have been added and/or removed
     public var nodes: Bool
@@ -125,19 +118,14 @@ public struct RenderableGraphChange {
     /// indicates whether any edges have been added and/or removed
     public var edges: Bool
 
-    /// indicates whether any edges have changed color
-    public var edgeColors: Bool
-
     public init(nodes: Bool = false,
                 nodeColors: Bool = false,
                 nodePositions: Bool = false,
-                edges: Bool = false,
-                edgeColors: Bool = false) {
+                edges: Bool = false) {
         self.nodes = nodes
         self.nodeColors = nodeColors
         self.nodePositions = nodePositions
         self.edges = edges
-        self.edgeColors = edgeColors
     }
 
     public mutating func merge(_ change: RenderableGraphChange) {
@@ -145,7 +133,6 @@ public struct RenderableGraphChange {
         self.nodeColors = self.nodeColors || change.nodeColors
         self.nodePositions = self.nodePositions || change.nodePositions
         self.edges = self.edges || change.edges
-        self.edgeColors = self.edgeColors || change.edgeColors
     }
 }
 

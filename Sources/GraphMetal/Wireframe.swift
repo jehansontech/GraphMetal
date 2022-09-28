@@ -370,14 +370,9 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
             // debug("Wireframe", "creating nodePositionBuffer")
             let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
-
-            // KNOWN TO WORK
-             nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
+            nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
                                                    length: nodePositionBufLen,
                                                    options: [])
-            // UNTESTED BUT PROBABLY MORE EFFICIENT
-            // nodePositionBuffer?.contents().copyMemory(from: newNodePositions, byteCount: nodePositionBufLen)
-
         }
 
         if nodeCount == 0 {
@@ -398,14 +393,9 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
             // debug("Wireframe", "creating nodeColorBuffer")
             let nodeColorBufLen = nodeCount * MemoryLayout<SIMD4<Float>>.size
-
-            // KNOWN TO WORK
             nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
                                                 length: nodeColorBufLen,
                                                 options: [])
-            // UNTESTED BUT PROBABLY MORE EFFICIENT
-            // nodeColorBuffer?.contents().copyMemory(from: colorsArray, byteCount: nodeColorBufLen)
-
         }
 
         if let updatedEdgeIndexCount = update.edgeIndexCount,
@@ -427,11 +417,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
             // debug("Wireframe", "creating edgeIndexBuffer")
             let bufLen = newEdgeIndices.count * MemoryLayout<UInt32>.size
-
-            // KNOWN TO WORK
             self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices, length: bufLen)
-            // UNTESTED BUT PROBABLY MORE EFFICIENT
-            // edgeIndexBuffer?.contents().copyMemory(from: newEdgeIndices, byteCount: bufLen)
         }
     }
 
