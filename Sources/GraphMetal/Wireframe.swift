@@ -18,7 +18,7 @@ public struct WireframeSettings {
 
     public static let defaults = WireframeSettings()
 
-    public var nodeStyle: NodeStyle = .dot
+    public var nodeStyle: NodeStyle
 
     /// indicates whether node size should be automatically adjusted when the POV changes
     public var nodeSizeIsAdjusted: Bool
@@ -39,12 +39,14 @@ public struct WireframeSettings {
 
     public var edgeColor: SIMD4<Float>
 
-    public init(nodeSizeIsAdjusted: Bool = true,
+    public init(nodeStyle: NodeStyle = .dot,
+                nodeSizeIsAdjusted: Bool = true,
                 nodeSize: Double = 16,
                 nodeSizeMinimum: Double = 2,
                 nodeSizeMaximum: Double = 32,
                 nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0, 0, 0, 0),
                 edgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)) {
+        self.nodeStyle = nodeStyle
         self.nodeSizeIsAdjusted = nodeSizeIsAdjusted
         self.nodeSize = nodeSize
         self.nodeSizeMinimum = nodeSizeMinimum
