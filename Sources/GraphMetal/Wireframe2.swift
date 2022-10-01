@@ -88,11 +88,11 @@ public class Wireframe2: Renderable {
     }
 
     deinit {
-        // debug("Wireframe", "deinit")
+        // debug("Wireframe2.deinit", "started")
     }
 
     func setup(_ view: MTKView) throws {
-        // debug("Wireframe.setup", "started")
+        // debug("Wireframe2.setup", "started")
 
         if let device = view.device {
             self.device = device
@@ -104,7 +104,7 @@ public class Wireframe2: Renderable {
         if let device = view.device,
            let library = WireframeShaders.makeLibrary(device) {
             self.library = library
-            // debug("Wireframe", "setup. library functions: \(library.functionNames)")
+            // debug("Wireframe2.setup", "library functions: \(library.functionNames)")
         }
         else {
             throw RenderError.noDefaultLibrary
@@ -128,7 +128,7 @@ public class Wireframe2: Renderable {
     }
 
     func teardown() {
-        // debug("Wireframe", "teardown")
+        // debug("Wireframe2.teardown", "started")
         // TODO: maybe dynamicUniformBuffer and uniforms ... if so change declarations from ! to ?
         // TODO: maybe nodePipelineState ... ditto
         // TODO: maybe edgePipelineState ... ditto
@@ -139,9 +139,11 @@ public class Wireframe2: Renderable {
 
     public func updateBuffers(_ bufferUpdate: WireframeBufferUpdate2) {
         if self.bufferUpdate == nil {
+            // print("Wireframe2.updateBuffers: replacing bufferUpdate")
             self.bufferUpdate = bufferUpdate
         }
         else {
+            // print("Wireframe2.updateBuffers: merging bufferUpdate")
             self.bufferUpdate!.merge(bufferUpdate)
         }
     }
@@ -189,7 +191,7 @@ public class Wireframe2: Renderable {
 
     public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
         // _drawCount += 1
-        // debug("Wireframe.encodeCommands[\(_drawCount)]")
+        // debug("Wireframe2.encodeDrawCommands[\(_drawCount)]")
 
         // Do the uniforms no matter what.
 
@@ -240,11 +242,11 @@ public class Wireframe2: Renderable {
         guard
             let update = self.bufferUpdate
         else {
-            // debug("Wireframe", "No bufferUpdate to apply")
+            // debug("Wireframe2.applyBufferUpdateIfPresent", "No bufferUpdate to apply")
             return
         }
 
-        // debug("Wireframe", "applying bufferUpdate")
+        // print("Wireframe2.applyBufferUpdateIfPresent: applying bufferUpdate")
         self.bufferUpdate = nil
 
         if let bbox = update.bbox {
@@ -565,7 +567,7 @@ public struct WireframePicker {
                                 _ fovController: FOVController) -> NodeID?
     where GraphType.NodeType.ValueType: RenderableNodeValue {
 
-        print("findNearestNode. touchLocation: \(touchLocation.prettyString), touchBounds: \(touchBounds.width)x\(touchBounds.height)")
+        // print("findNearestNode. touchLocation: \(touchLocation.prettyString), touchBounds: \(touchBounds.width)x\(touchBounds.height)")
         let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
         var ray1 = fovController.projectionMatrix.inverse * ray0
 
@@ -596,7 +598,7 @@ public struct WireframePicker {
 
                 /// nodeD2 is the square of the distance from ray to the node
                 let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
-                //                print("\(node) distance to ray: \(sqrt(nodeD2))")
+                // print("\(node) distance to ray: \(sqrt(nodeD2))")
 
                 // TODO: apply touchRadius.
                 // In world coordinates, the selection bounds form a squashed cone with the ray as its axis.
@@ -611,7 +613,7 @@ public struct WireframePicker {
             }
         }
 
-        print("nearestNode perpendicular distance from ray: \(sqrt(nearestD2))")
+        // print("nearestNode perpendicular distance from ray: \(sqrt(nearestD2))")
 
         return nearestNode?.id
     }
@@ -642,7 +644,7 @@ public class WireframeUpdateObserver<Container: RenderableGraphContainer>  {
 
     /// Expect this to be called on the thread that made the change to the graph, which  may or may not be the main thread
     public func updateFigure(_ change: RenderableGraphChange) {
-        // debug("Wireframe", "updateFigure: started. change=\(change)")
+        // debug("WireframeUpdateObserver.updateFigure", "started. change=\(change)")
 
         if let bufferUpdate = generator.generateBufferUpdate(graphContainer.graph, change) {
             
