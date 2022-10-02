@@ -137,6 +137,17 @@ public class Wireframe2: Renderable {
         self.edgeIndexBuffer = nil
     }
 
+    public func addBufferUpdate(_ bufferUpdate: WireframeBufferUpdate2?) {
+        if self.bufferUpdate == nil {
+            // print("Wireframe2.updateBuffers: replacing bufferUpdate")
+            self.bufferUpdate = bufferUpdate
+        }
+        else if let bufferUpdate {
+            // print("Wireframe2.updateBuffers: merging bufferUpdate")
+            self.bufferUpdate!.merge(bufferUpdate)
+        }
+    }
+    
     public func updateBuffers(_ bufferUpdate: WireframeBufferUpdate2) {
         if self.bufferUpdate == nil {
             // print("Wireframe2.updateBuffers: replacing bufferUpdate")
