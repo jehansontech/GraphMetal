@@ -260,6 +260,8 @@ public class Wireframe2: Renderable {
         // print("Wireframe2.applyBufferUpdateIfPresent: applying bufferUpdate")
         self.bufferUpdate = nil
 
+        let t0 = Date()
+
         if let bbox = update.bbox {
             self.bbox = bbox
         }
@@ -347,6 +349,11 @@ public class Wireframe2: Renderable {
 //        else if newEdgeIndexCount != oldEdgeIndexCount {
 //            fatalError("Failed sanity check: edgeIndexCount changed but newEdgeIndices is nil")
 //        }
+
+        let dt = Date().timeIntervalSince(t0)
+        if dt > 0.1 {
+            print("Slow applyBufferUpdate dt: \(dt)")
+        }
     }
 
     private func buildUniforms() throws {
