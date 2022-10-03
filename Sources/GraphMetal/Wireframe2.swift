@@ -685,6 +685,15 @@ public struct WireframeBufferUpdate2: Sendable, Codable {
         return nodeCount != nil
     }
 
+    public static func emptyGraph() -> WireframeBufferUpdate2 {
+        return WireframeBufferUpdate2(bbox: BoundingBox.centeredCube(1),
+                                      nodeCount: 0,
+                                      nodePositions: nil,
+                                      nodeColors: nil,
+                                      edgeIndexCount: 0,
+                                      edgeIndices: nil)
+    }
+
     public mutating func merge(_ update: WireframeBufferUpdate2) {
 
         if update.isNodesetChange {
