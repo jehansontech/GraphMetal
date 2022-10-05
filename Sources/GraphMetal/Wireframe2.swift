@@ -72,7 +72,7 @@ public class Wireframe2: Renderable {
 
     private var isSetup: Bool = false
 
-    private var bufferUpdate: WireframeBufferUpdate2? = nil
+    private var bufferUpdate: WireframeUpdate2? = nil
 
     private var pulsePhase: Float {
         let millisSinceReferenceDate = Int(Date().timeIntervalSince(referenceDate) * 1000)
@@ -137,7 +137,7 @@ public class Wireframe2: Renderable {
         self.edgeIndexBuffer = nil
     }
 
-    public func addBufferUpdate(_ bufferUpdate: WireframeBufferUpdate2?) {
+    public func addBufferUpdate(_ bufferUpdate: WireframeUpdate2?) {
         if self.bufferUpdate == nil {
             // print("Wireframe2.updateBuffers: replacing bufferUpdate")
             self.bufferUpdate = bufferUpdate
@@ -148,7 +148,7 @@ public class Wireframe2: Renderable {
         }
     }
     
-    public func updateBuffers(_ bufferUpdate: WireframeBufferUpdate2) {
+    public func updateBuffers(_ bufferUpdate: WireframeUpdate2) {
         if self.bufferUpdate == nil {
             // print("Wireframe2.updateBuffers: replacing bufferUpdate")
             self.bufferUpdate = bufferUpdate
@@ -453,7 +453,7 @@ public class Wireframe2: Renderable {
     }
 }
 
-public struct WireframeUpdateGenerator {
+public struct WireframeUpdateGenerator2 {
 
     var generateNodeColors: Bool
 
@@ -463,11 +463,11 @@ public struct WireframeUpdateGenerator {
         self.generateNodeColors = generateNodeColors
     }
 
-    public mutating func generateBufferUpdate<GraphType: Graph>(_ graph: GraphType, _ change: RenderableGraphChange) -> WireframeBufferUpdate2?
+    public mutating func makeUpdate<GraphType: Graph>(_ graph: GraphType, _ change: RenderableGraphChange) -> WireframeUpdate2?
     where GraphType.NodeType.ValueType: RenderableNodeValue,
           GraphType.EdgeType.ValueType: RenderableEdgeValue {
 
-        var bufferUpdate: WireframeBufferUpdate2? = nil
+        var bufferUpdate: WireframeUpdate2? = nil
 
         if change.nodes {
             bufferUpdate = self.prepareTopologyUpdate(graph)
@@ -490,7 +490,7 @@ public struct WireframeUpdateGenerator {
             }
 
             if (newPositions != nil || newColors != nil) {
-                bufferUpdate = WireframeBufferUpdate2(bbox: newBBox,
+                bufferUpdate = WireframeUpdate2(bbox: newBBox,
                                                       nodeCount: nil,
                                                       nodePositions: newPositions,
                                                       nodeColors: newColors,
@@ -501,7 +501,7 @@ public struct WireframeUpdateGenerator {
         return bufferUpdate
     }
 
-    private mutating func prepareTopologyUpdate<GraphType: Graph>(_ graph: GraphType) -> WireframeBufferUpdate2
+    private mutating func prepareTopologyUpdate<GraphType: Graph>(_ graph: GraphType) -> WireframeUpdate2
     where GraphType.NodeType.ValueType: RenderableNodeValue,
           GraphType.EdgeType.ValueType: RenderableEdgeValue {
 
@@ -536,7 +536,7 @@ public struct WireframeUpdateGenerator {
             }
         }
 
-        return WireframeBufferUpdate2(
+        return WireframeUpdate2(
             bbox: graph.makeBoundingBox(),
             nodeCount: newNodePositions.count,
             nodePositions: newNodePositions,
@@ -575,101 +575,7 @@ public struct WireframeUpdateGenerator {
     }
 }
 
-public struct WireframePicker {
-
-    /// touchLocation and touchBounds are in pick coordinates, i.e., x and y in [-1, 1]
-    public static func findNearestNode<GraphType: Graph>(_ touchLocation: SIMD2<Float>,
-                                _ touchBounds: CGSize,
-                                _ graph: GraphType,
-                                _ povController: POVController,
-                                _ fovController: FOVController) -> NodeID?
-    where GraphType.NodeType.ValueType: RenderableNodeValue {
-
-        // modelViewMatrix == viewMatrix b/c our model matrix is the identity
-        // let modelViewMatrix = povController.viewMatrix
-        // let projectionMatrix = fovController.projectionMatrix
-        // let zNear = fovController.zNear
-        // let zFar = fovController.zFar
-        // let fadeoutMidpoint = fovController.fadeoutMidpoint
-        // let fadeoutDistance = fovController.fadeoutDistance
-        // let zMin = max(zNear, fadeoutMidpoint-fadeoutDistance)
-        // let zMax = min(zFar, fadeoutMidpoint+fadeoutDistance)
-
-        return findNearestNode2(touchLocation,
-                                graph,
-                                povController.viewMatrix,
-                                fovController.projectionMatrix,
-                                fovController.visibleZ)
-    }
-
-    public static func findNearestNode2<GraphType: Graph>(
-        _ touchLocation: SIMD2<Float>,
-        _ graph: GraphType,
-        _ modelViewMatrix: float4x4,
-        _ projectionMatrix: float4x4,
-        _ visibleZ: ClosedRange<Float>)  -> NodeID?
-    where GraphType.NodeType.ValueType: RenderableNodeValue {
-
-        // print("findNearestNode. touchLocation: \(touchLocation.prettyString)")
-        let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
-        var ray1 = projectionMatrix.inverse * ray0
-        ray1.z = -1
-        ray1.w = 0
-
-        let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
-        let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
-
-        let node = graph.findNearestNode(rayOrigin: rayOrigin,
-                                         rayDirection: rayDirection,
-                                         zRange: visibleZ)
-        return node?.id ?? nil
-    }
-}
-
-public class WireframeUpdateObserver<Container: RenderableGraphContainer>  {
-
-    private var wireframe: Wireframe2
-
-    private var generator: WireframeUpdateGenerator
-
-    private weak var graphContainer: Container!
-
-    public init(_ wireframe: Wireframe2, _ graphContainer: Container, _ generateNodeColors: Bool = true) {
-        self.wireframe = wireframe
-        self.generator = .init(generateNodeColors)
-        self.graphContainer = graphContainer
-
-        NotificationCenter.default.addObserver(self, selector: #selector(graphHasChanged), name: .graphHasChanged, object: nil)
-    }
-
-
-    @objc public func graphHasChanged(_ notification: Notification) {
-        if let graphChange = notification.object as? RenderableGraphChange {
-            updateFigure(graphChange)
-        }
-    }
-
-    /// Expect this to be called on the thread that made the change to the graph, which  may or may not be the main thread
-    public func updateFigure(_ change: RenderableGraphChange) {
-        // debug("WireframeUpdateObserver.updateFigure", "started. change=\(change)")
-
-        if let bufferUpdate = generator.generateBufferUpdate(graphContainer.graph, change) {
-            
-            // Gotta write bufferUpdate to wireframe.bufferUpdate on the main thread
-            // in order to avoid a data race
-            if Thread.current.isMainThread {
-                wireframe.updateBuffers(bufferUpdate)
-            }
-            else {
-                DispatchQueue.main.sync {
-                    wireframe.updateBuffers(bufferUpdate)
-                }
-            }
-        }
-    }
-}
-
-public struct WireframeBufferUpdate2: Sendable, Codable {
+public struct WireframeUpdate2: Sendable, Codable {
     public var bbox: BoundingBox?
     public var nodeCount: Int?
     public var nodePositions: [SIMD3<Float>]?
@@ -681,8 +587,8 @@ public struct WireframeBufferUpdate2: Sendable, Codable {
         return nodeCount != nil
     }
 
-    public static func emptyGraph() -> WireframeBufferUpdate2 {
-        return WireframeBufferUpdate2(bbox: BoundingBox.centeredCube(1),
+    public static func emptyGraph() -> WireframeUpdate2 {
+        return WireframeUpdate2(bbox: BoundingBox.centeredCube(1),
                                       nodeCount: 0,
                                       nodePositions: nil,
                                       nodeColors: nil,
@@ -690,7 +596,7 @@ public struct WireframeBufferUpdate2: Sendable, Codable {
                                       edgeIndices: nil)
     }
 
-    public mutating func merge(_ update: WireframeBufferUpdate2) {
+    public mutating func merge(_ update: WireframeUpdate2) {
 
         if update.isNodesetChange {
             self.bbox = update.bbox
@@ -716,3 +622,98 @@ public struct WireframeBufferUpdate2: Sendable, Codable {
         }
     }
 }
+
+//public struct WireframePicker {
+//
+//    /// touchLocation and touchBounds are in pick coordinates, i.e., x and y in [-1, 1]
+//    public static func findNearestNode<GraphType: Graph>(_ touchLocation: SIMD2<Float>,
+//                                _ touchBounds: CGSize,
+//                                _ graph: GraphType,
+//                                _ povController: POVController,
+//                                _ fovController: FOVController) -> NodeID?
+//    where GraphType.NodeType.ValueType: RenderableNodeValue {
+//
+//        // modelViewMatrix == viewMatrix b/c our model matrix is the identity
+//        // let modelViewMatrix = povController.viewMatrix
+//        // let projectionMatrix = fovController.projectionMatrix
+//        // let zNear = fovController.zNear
+//        // let zFar = fovController.zFar
+//        // let fadeoutMidpoint = fovController.fadeoutMidpoint
+//        // let fadeoutDistance = fovController.fadeoutDistance
+//        // let zMin = max(zNear, fadeoutMidpoint-fadeoutDistance)
+//        // let zMax = min(zFar, fadeoutMidpoint+fadeoutDistance)
+//
+//        return findNearestNode2(touchLocation,
+//                                graph,
+//                                povController.viewMatrix,
+//                                fovController.projectionMatrix,
+//                                fovController.visibleZ)
+//    }
+//
+//    public static func findNearestNode2<GraphType: Graph>(
+//        _ touchLocation: SIMD2<Float>,
+//        _ graph: GraphType,
+//        _ modelViewMatrix: float4x4,
+//        _ projectionMatrix: float4x4,
+//        _ visibleZ: ClosedRange<Float>)  -> NodeID?
+//    where GraphType.NodeType.ValueType: RenderableNodeValue {
+//
+//        // print("findNearestNode. touchLocation: \(touchLocation.prettyString)")
+//        let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
+//        var ray1 = projectionMatrix.inverse * ray0
+//        ray1.z = -1
+//        ray1.w = 0
+//
+//        let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
+//        let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
+//
+//        let node = graph.findNearestNode(rayOrigin: rayOrigin,
+//                                         rayDirection: rayDirection,
+//                                         zRange: visibleZ)
+//        return node?.id ?? nil
+//    }
+//}
+//
+//public class WireframeUpdateObserver<Container: RenderableGraphContainer>  {
+//
+//    private var wireframe: Wireframe2
+//
+//    private var generator: WireframeUpdateGenerator
+//
+//    private weak var graphContainer: Container!
+//
+//    public init(_ wireframe: Wireframe2, _ graphContainer: Container, _ generateNodeColors: Bool = true) {
+//        self.wireframe = wireframe
+//        self.generator = .init(generateNodeColors)
+//        self.graphContainer = graphContainer
+//
+//        NotificationCenter.default.addObserver(self, selector: #selector(graphHasChanged), name: .graphHasChanged, object: nil)
+//    }
+//
+//
+//    @objc public func graphHasChanged(_ notification: Notification) {
+//        if let graphChange = notification.object as? RenderableGraphChange {
+//            updateFigure(graphChange)
+//        }
+//    }
+//
+//    /// Expect this to be called on the thread that made the change to the graph, which  may or may not be the main thread
+//    public func updateFigure(_ change: RenderableGraphChange) {
+//        // debug("WireframeUpdateObserver.updateFigure", "started. change=\(change)")
+//
+//        if let bufferUpdate = generator.generateBufferUpdate(graphContainer.graph, change) {
+//
+//            // Gotta write bufferUpdate to wireframe.bufferUpdate on the main thread
+//            // in order to avoid a data race
+//            if Thread.current.isMainThread {
+//                wireframe.updateBuffers(bufferUpdate)
+//            }
+//            else {
+//                DispatchQueue.main.sync {
+//                    wireframe.updateBuffers(bufferUpdate)
+//                }
+//            }
+//        }
+//    }
+//}
+
