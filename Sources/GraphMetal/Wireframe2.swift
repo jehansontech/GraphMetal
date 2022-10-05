@@ -585,55 +585,44 @@ public struct WireframePicker {
                                 _ fovController: FOVController) -> NodeID?
     where GraphType.NodeType.ValueType: RenderableNodeValue {
 
-        // print("findNearestNode. touchLocation: \(touchLocation.prettyString), touchBounds: \(touchBounds.width)x\(touchBounds.height)")
-        let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
-        var ray1 = fovController.projectionMatrix.inverse * ray0
+        // modelViewMatrix == viewMatrix b/c our model matrix is the identity
+        // let modelViewMatrix = povController.viewMatrix
+        // let projectionMatrix = fovController.projectionMatrix
+        // let zNear = fovController.zNear
+        // let zFar = fovController.zFar
+        // let fadeoutMidpoint = fovController.fadeoutMidpoint
+        // let fadeoutDistance = fovController.fadeoutDistance
+        // let zMin = max(zNear, fadeoutMidpoint-fadeoutDistance)
+        // let zMax = min(zFar, fadeoutMidpoint+fadeoutDistance)
 
+        return findNearestNode2(touchLocation,
+                                graph,
+                                povController.viewMatrix,
+                                fovController.projectionMatrix,
+                                fovController.visibleZ)
+    }
+
+    public static func findNearestNode2<GraphType: Graph>(
+        _ touchLocation: SIMD2<Float>,
+        _ graph: GraphType,
+        _ modelViewMatrix: float4x4,
+        _ projectionMatrix: float4x4,
+        _ visibleZ: ClosedRange<Float>)  -> NodeID?
+    where GraphType.NodeType.ValueType: RenderableNodeValue {
+
+        // print("findNearestNode. touchLocation: \(touchLocation.prettyString)")
+        let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
+        var ray1 = projectionMatrix.inverse * ray0
         ray1.z = -1
         ray1.w = 0
 
-        // modelViewMatrix == viewMatrix b/c our model matrix is the identity
-        let modelViewMatrix = povController.viewMatrix
         let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
         let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
 
-        var nearestNode: GraphType.NodeType? = nil
-        var nearestD2 = Float.greatestFiniteMagnitude
-        var shortestRayDistance = Float.greatestFiniteMagnitude
-        for node in graph.nodes {
-
-            if let nodeLoc = node.value?.location {
-
-                let nodeDisplacement = nodeLoc - rayOrigin
-
-                /// z-distance along the ray to the point closest to the node
-                let rayDistance = simd_dot(nodeDisplacement, rayDirection)
-                // print("\(node) rayDistance: \(rayDistance)")
-
-                if !fovController.isInVisibleSlice(z: rayDistance) {
-                    continue
-                }
-
-                /// nodeD2 is the square of the distance from ray to the node
-                let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
-                // print("\(node) distance to ray: \(sqrt(nodeD2))")
-
-                // TODO: apply touchRadius.
-                // In world coordinates, the selection bounds form a squashed cone with the ray as its axis.
-                // I need to calculate the perpendicular distance from the ray to the cone along the line
-                // that passes through node.
-
-                if (nodeD2 < nearestD2 || (nodeD2 == nearestD2 && rayDistance < shortestRayDistance)) {
-                    shortestRayDistance = rayDistance
-                    nearestD2 = nodeD2
-                    nearestNode = node
-                }
-            }
-        }
-
-        // print("nearestNode perpendicular distance from ray: \(sqrt(nearestD2))")
-
-        return nearestNode?.id
+        let node = graph.findNearestNode(rayOrigin: rayOrigin,
+                                         rayDirection: rayDirection,
+                                         zRange: visibleZ)
+        return node?.id ?? nil
     }
 }
 
