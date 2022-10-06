@@ -6,7 +6,7 @@
 import Foundation
 import GenericGraph
 import simd
-
+import Wacoma
 
 public protocol RenderableNodeValue: EmbeddedNodeValue {
 
@@ -21,8 +21,7 @@ public protocol RenderableEdgeValue {
     var hidden: Bool { get }
 }
 
-extension Graph where
-NodeType.ValueType: RenderableNodeValue {
+extension Graph where NodeType.ValueType: RenderableNodeValue {
 
     func makeNodeColors() -> [NodeID: SIMD4<Float>] {
         var nodeColors = [NodeID: SIMD4<Float>]()
@@ -32,6 +31,47 @@ NodeType.ValueType: RenderableNodeValue {
             }
         }
         return nodeColors
+    }
+}
+
+extension Graph where NodeType.ValueType: EmbeddedNodeValue {
+
+    /// see RenderController.ray(...)
+    public func findNearestNode(rayOrigin: SIMD3<Float>,
+                                rayDirection: SIMD3<Float>,
+                                zRange: ClosedRange<Float>) -> NodeType?
+    {
+        var nearestNode: NodeType? = nil
+        var bestD2 = Float.greatestFiniteMagnitude
+        var bestRayZ = Float.greatestFiniteMagnitude
+        nodes.forEach {
+            if let nodeLocation = $0.value?.location {
+
+                let nodeDisplacement = nodeLocation - rayOrigin
+
+                // rayZ is the z-distance from rayOrigin to the point on the ray
+                // that is closest to the node
+                let rayZ = simd_dot(nodeDisplacement, rayDirection)
+                // print("\(node) rayZ: \(rayZ)")
+
+                // STET: nodeLocation.z does not work
+                // because zRange is INCORRECT
+                if zRange.contains(rayZ) {
+                    // nodeD2 is the square of the distance from the node to the ray
+                    // (i.e., to the point on the ray that is closest to the node)
+                    let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayZ * rayZ
+                    // print("\(node) distance to ray: \(sqrt(nodeD2))")
+
+                    // smaller is better
+                    if (nodeD2 < bestD2 || (nodeD2 == bestD2 && rayZ < bestRayZ)) {
+                        bestD2 = nodeD2
+                        bestRayZ = rayZ
+                        nearestNode = $0
+                    }
+                }
+            }
+        }
+        return nearestNode
     }
 }
 
@@ -92,9 +132,9 @@ public struct RenderableGraphChange: Codable, Sendable {
                                                     edges: false)
 
     public static let geometryAndColor = RenderableGraphChange(nodes: false,
-                                                    nodeColors: true,
-                                                    nodePositions: true,
-                                                    edges: false)
+                                                               nodeColors: true,
+                                                               nodePositions: true,
+                                                               edges: false)
 
     public static let nodes = RenderableGraphChange(nodes: true,
                                                     nodeColors: false,
