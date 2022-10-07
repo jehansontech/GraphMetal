@@ -111,6 +111,8 @@ extension RenderableGraphContainer {
 ///
 public struct RenderableGraphChange: Codable, Sendable {
 
+    public static let none = RenderableGraphChange()
+    
     public static let all = RenderableGraphChange(nodes: true,
                                                   nodeColors: true,
                                                   nodePositions: true,
