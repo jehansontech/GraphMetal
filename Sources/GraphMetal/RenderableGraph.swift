@@ -36,10 +36,8 @@ extension Graph where NodeType.ValueType: RenderableNodeValue {
 
 extension Graph where NodeType.ValueType: EmbeddedNodeValue {
 
-    /// see RenderController.ray(...)
-    public func findNearestNode(rayOrigin: SIMD3<Float>,
-                                rayDirection: SIMD3<Float>,
-                                zRange: ClosedRange<Float>) -> NodeType?
+    /// see RenderController.touchRay(...)
+    public func findNearestNode(_ ray: TouchRay) -> NodeType?
     {
         var nearestNode: NodeType? = nil
         var bestD2 = Float.greatestFiniteMagnitude
@@ -47,16 +45,16 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
         nodes.forEach {
             if let nodeLocation = $0.value?.location {
 
-                let nodeDisplacement = nodeLocation - rayOrigin
+                let nodeDisplacement = nodeLocation - ray.origin
 
                 // rayZ is the z-distance from rayOrigin to the point on the ray
                 // that is closest to the node
-                let rayZ = simd_dot(nodeDisplacement, rayDirection)
+                let rayZ = simd_dot(nodeDisplacement, ray.direction)
                 // print("\(node) rayZ: \(rayZ)")
 
                 // STET: nodeLocation.z does not work
                 // because zRange is INCORRECT
-                if zRange.contains(rayZ) {
+                if ray.range.contains(rayZ) {
                     // nodeD2 is the square of the distance from the node to the ray
                     // (i.e., to the point on the ray that is closest to the node)
                     let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayZ * rayZ
