@@ -576,24 +576,30 @@ public struct WireframeUpdateGenerator2 {
 }
 
 public struct WireframeUpdate2: Sendable, Codable {
+
+    public static var emptyGraph: WireframeUpdate2 {
+        WireframeUpdate2(bbox: BoundingBox.centeredCube(1),
+                         nodeCount: 0,
+                         nodePositions: nil,
+                         nodeColors: nil,
+                         edgeIndexCount: 0,
+                         edgeIndices: nil)
+    }
+
     public var bbox: BoundingBox?
+
     public var nodeCount: Int?
+
     public var nodePositions: [SIMD3<Float>]?
+
     public var nodeColors: [Int: SIMD4<Float>]?
+
     public var edgeIndexCount: Int?
+
     public var edgeIndices: [UInt32]?
 
     public var isNodesetChange: Bool {
         return nodeCount != nil
-    }
-
-    public static func emptyGraph() -> WireframeUpdate2 {
-        return WireframeUpdate2(bbox: BoundingBox.centeredCube(1),
-                                      nodeCount: 0,
-                                      nodePositions: nil,
-                                      nodeColors: nil,
-                                      edgeIndexCount: 0,
-                                      edgeIndices: nil)
     }
 
     public mutating func merge(_ update: WireframeUpdate2) {
