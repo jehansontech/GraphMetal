@@ -1,15 +1,16 @@
 //
 //  Wireframe.swift
-//  GraphMetal
+//
+//
+//  Created by Jim Hanson on 9/21/22.
 //
 
-
+import Foundation
 import SwiftUI
 import Metal
 import MetalKit
-import GenericGraph
-//import Shaders
 import Wacoma
+import GenericGraph
 
 public struct WireframeSettings {
 
@@ -83,15 +84,12 @@ public struct WireframeSettings {
     }
 }
 
-public class Wireframe<Container: RenderableGraphContainer>: Renderable {
+public class Wireframe: Renderable {
 
     let referenceDate = Date()
 
     /// The 256 byte aligned size of our uniform structure
     let alignedUniformsSize = (MemoryLayout<WireframeUniforms>.size + 0xFF) & -0x100
-
-    // ==============================================================
-    // Rendering properties -- Access these only on main thread
 
     public var settings: WireframeSettings
 
@@ -146,97 +144,23 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
     private var isSetup: Bool = false
 
-    private var bufferUpdate: WireframeBufferUpdate? = nil
+    private var bufferUpdate: WireframeUpdate2? = nil
 
     private var pulsePhase: Float {
         let millisSinceReferenceDate = Int(Date().timeIntervalSince(referenceDate) * 1000)
         return 0.001 * Float(millisSinceReferenceDate % 1000)
     }
 
-    // ==============================================================
-    // Graph properties -- Access only on graph-update thread (which
-    // may or may not be main)
-
-    private weak var graphContainer: Container!
-
-    private var nodeIndices = [NodeID: Int]()
-
-    /// touchLocation and touchBounds are in pick coordinates, i.e., x and y in [-1, 1]
-    public func findNearestNode(_ touchLocation: SIMD2<Float>,
-                                _ touchBounds: CGSize,
-                                _ povController: POVController,
-                                _ fovController: FOVController) -> NodeID? {
-
-        print("findNearestNode. touchLocation: \(touchLocation.prettyString), touchBounds: \(touchBounds.width)x\(touchBounds.height)")
-        let ray0 = SIMD4<Float>(Float(touchLocation.x), touchLocation.y, 0, 1)
-        var ray1 = fovController.projectionMatrix.inverse * ray0
-
-        ray1.z = -1
-        ray1.w = 0
-
-        // modelViewMatrix == viewMatrix b/c our model matrix is the identity
-        let modelViewMatrix = povController.viewMatrix
-        let rayOrigin = (modelViewMatrix.inverse * SIMD4<Float>(0, 0, 0, 1)).xyz
-        let rayDirection = normalize(modelViewMatrix.inverse * ray1).xyz
-
-        var nearestNode: Container.GraphType.NodeType? = nil
-        var nearestD2 = Float.greatestFiniteMagnitude
-        var shortestRayDistance = Float.greatestFiniteMagnitude
-        for node in graphContainer.graph.nodes {
-
-            if let nodeLoc = node.value?.location {
-
-                let nodeDisplacement = nodeLoc - rayOrigin
-
-                /// z-distance along the ray to the point closest to the node
-                let rayDistance = simd_dot(nodeDisplacement, rayDirection)
-                // print("\(node) rayDistance: \(rayDistance)")
-
-                if !fovController.isInVisibleSlice(z: rayDistance) {
-                    continue
-                }
-
-                /// nodeD2 is the square of the distance from ray to the node
-                let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayDistance * rayDistance
-//                print("\(node) distance to ray: \(sqrt(nodeD2))")
-
-                // TODO: apply touchRadius.
-                // In world coordinates, the selection bounds form a squashed cone with the ray as its axis.
-                // I need to calculate the perpendicular distance from the ray to the cone along the line
-                // that passes through node.
-
-                if (nodeD2 < nearestD2 || (nodeD2 == nearestD2 && rayDistance < shortestRayDistance)) {
-                    shortestRayDistance = rayDistance
-                    nearestD2 = nodeD2
-                    nearestNode = node
-                }
-            }
-        }
-
-        print("nearestNode perpendicular distance from ray: \(sqrt(nearestD2))")
-
-        return nearestNode?.id
-    }
-
-    // ==============================================================
-
-    public init(_ graphContainer: Container) {
-        self.graphContainer = graphContainer
+    public init() {
         self.settings = WireframeSettings()
     }
 
-    public init(_ graphContainer: Container, _ initialSettings: WireframeSettings) {
-        self.graphContainer = graphContainer
+    public init(_ initialSettings: WireframeSettings) {
         self.settings = initialSettings
     }
 
-    //    public init(_ graphContainer: Container, _ settings: WireframeSettings){
-    //        self.graphContainer = graphContainer
-    //        self.settings = settings
-    //    }
-
     deinit {
-        // debug("Wireframe", "deinit")
+        // debug("Wireframe.deinit", "started")
     }
 
     func setup(_ view: MTKView) throws {
@@ -252,7 +176,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         if let device = view.device,
            let library = WireframeShaders.makeLibrary(device) {
             self.library = library
-            // debug("Wireframe", "setup. library functions: \(library.functionNames)")
+            // debug("Wireframe.setup", "library functions: \(library.functionNames)")
         }
         else {
             throw RenderError.noDefaultLibrary
@@ -270,13 +194,13 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
             try buildEdgePipeline(view)
         }
 
-        updateFigure(.all)
-        NotificationCenter.default.addObserver(self, selector: #selector(graphHasChanged), name: .graphHasChanged, object: nil)
+        //        updateFigure(.all)
+        //        NotificationCenter.default.addObserver(self, selector: #selector(graphHasChanged), name: .graphHasChanged, object: nil)
         isSetup = true
     }
 
     func teardown() {
-        // debug("Wireframe", "teardown")
+        // debug("Wireframe.teardown", "started")
         // TODO: maybe dynamicUniformBuffer and uniforms ... if so change declarations from ! to ?
         // TODO: maybe nodePipelineState ... ditto
         // TODO: maybe edgePipelineState ... ditto
@@ -285,146 +209,29 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         self.edgeIndexBuffer = nil
     }
 
-    @objc public func graphHasChanged(_ notification: Notification) {
-        if let graphChange = notification.object as? RenderableGraphChange {
-            updateFigure(graphChange)
+    public func addBufferUpdate(_ bufferUpdate: WireframeUpdate2?) {
+        if self.bufferUpdate == nil {
+            // print("Wireframe.updateBuffers: replacing bufferUpdate")
+            self.bufferUpdate = bufferUpdate
+        }
+        else if let bufferUpdate {
+            // print("Wireframe.updateBuffers: merging bufferUpdate")
+            self.bufferUpdate!.merge(bufferUpdate)
         }
     }
-
-    /// Expect this to be called on the thread that made the change to the graph, which  may or may not be the main thread
-    public func updateFigure(_ change: RenderableGraphChange) {
-        // debug("Wireframe", "updateFigure: started. change=\(change)")
-
-        var bufferUpdate: WireframeBufferUpdate? = nil
-        if change.nodes {
-            bufferUpdate = self.prepareTopologyUpdate(graphContainer.graph)
-        }
-        else {
-            var newPositions: [SIMD3<Float>]? = nil
-            var newColors: [NodeID : SIMD4<Float>]? = nil
-            var newBBox: BoundingBox? = nil
-
-            if change.nodePositions {
-                newPositions = self.makeNodePositions(graphContainer.graph)
-                newBBox = graphContainer.graph.makeBoundingBox()
-            }
-
-            if change.nodeColors && settings.nodeStyle != .none {
-                newColors = graphContainer.graph.makeNodeColors()
-            }
-
-            if (newPositions != nil || newColors != nil) {
-                bufferUpdate = WireframeBufferUpdate(bbox: newBBox,
-                                             nodeCount: nil,
-                                             nodePositions: newPositions,
-                                             nodeColors: newColors,
-                                             edgeIndexCount: nil,
-                                             edgeIndices: nil)
-            }
-        }
-
-
-        // Gotta write bufferUpdate to self.bufferUpdate on the main thread
-        // in order to avoid a data race
-        if Thread.current.isMainThread {
+    
+    public func updateBuffers(_ bufferUpdate: WireframeUpdate2) {
+        if self.bufferUpdate == nil {
+            // print("Wireframe.updateBuffers: replacing bufferUpdate")
             self.bufferUpdate = bufferUpdate
         }
         else {
-            DispatchQueue.main.sync {
-                self.bufferUpdate = bufferUpdate
-            }
+            // print("Wireframe.updateBuffers: merging bufferUpdate")
+            self.bufferUpdate!.merge(bufferUpdate)
         }
     }
 
-    /// Runs on the rendering thread (i.e., the main thread) once per frame
-    func applyBufferUpdateIfPresent() {
-
-        guard
-            let update = self.bufferUpdate
-        else {
-            // debug("Wireframe", "No bufferUpdate to apply")
-            return
-        }
-
-        // debug("Wireframe", "applying bufferUpdate")
-        self.bufferUpdate = nil
-
-        if let bbox = update.bbox {
-            self.bbox = bbox
-        }
-
-        if let updatedNodeCount = update.nodeCount,
-           self.nodeCount != updatedNodeCount {
-            // debug("Wireframe", "updating nodeCount: \(nodeCount) -> \(updatedNodeCount)")
-            nodeCount = updatedNodeCount
-        }
-
-        if nodeCount == 0 {
-            if nodePositionBuffer != nil {
-                // debug("Wireframe", "discarding nodePositionBuffer")
-                nodePositionBuffer = nil
-            }
-        }
-        else if let newNodePositions = update.nodePositions {
-            if newNodePositions.count != nodeCount {
-                fatalError("Failed sanity check: nodeCount=\(nodeCount) but newNodePositions.count=\(newNodePositions.count)")
-            }
-
-            // debug("Wireframe", "creating nodePositionBuffer")
-            let nodePositionBufLen = nodeCount * MemoryLayout<SIMD3<Float>>.size
-            nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
-                                                   length: nodePositionBufLen,
-                                                   options: [])
-        }
-
-        if nodeCount == 0 {
-            if nodeColorBuffer != nil {
-                // debug("Wireframe", "discarding nodeColorBuffer")
-                nodeColorBuffer = nil
-            }
-        }
-        else if let newNodeColors = update.nodeColors {
-
-            let defaultColor = settings.nodeColorDefault
-            var colorsArray = [SIMD4<Float>](repeating: defaultColor, count: nodeCount)
-            for (nodeID, color) in newNodeColors {
-                if let nodeIndex = nodeIndices[nodeID] {
-                    colorsArray[nodeIndex] = color
-                }
-            }
-
-            // debug("Wireframe", "creating nodeColorBuffer")
-            let nodeColorBufLen = nodeCount * MemoryLayout<SIMD4<Float>>.size
-            nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
-                                                length: nodeColorBufLen,
-                                                options: [])
-        }
-
-        if let updatedEdgeIndexCount = update.edgeIndexCount,
-           self.edgeIndexCount != update.edgeIndexCount {
-            // debug("Wireframe", "updating edgeIndexCount: \(edgeIndexCount) -> \(updatedEdgeIndexCount)")
-            self.edgeIndexCount = updatedEdgeIndexCount
-        }
-
-        if edgeIndexCount == 0 {
-            if edgeIndexBuffer != nil {
-                // debug("Wireframe", "discarding edgeIndexBuffer")
-                self.edgeIndexBuffer = nil
-            }
-        }
-        else if let newEdgeIndices = update.edgeIndices {
-            if newEdgeIndices.count != edgeIndexCount {
-                fatalError("Failed sanity check: edgeIndexCount=\(edgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
-            }
-
-            // debug("Wireframe", "creating edgeIndexBuffer")
-            let bufLen = newEdgeIndices.count * MemoryLayout<UInt32>.size
-            self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices, length: bufLen)
-        }
-    }
-
-
-    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings) {
+    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: Wacoma.RenderSettings) {
         // print("prepareToDraw -- started. renderSettings=\(renderSettings)")
         if !isSetup {
             do {
@@ -463,12 +270,11 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         // Possibly update contents of the other buffers
 
         applyBufferUpdateIfPresent()
-
     }
 
     public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
         // _drawCount += 1
-        // debug("Wireframe.encodeCommands[\(_drawCount)]")
+        // debug("Wireframe.encodeDrawCommands[\(_drawCount)]")
 
         // Do the uniforms no matter what.
 
@@ -513,59 +319,113 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         }
     }
 
-    private func prepareTopologyUpdate(_ graph: Container.GraphType) -> WireframeBufferUpdate {
+    /// Runs on the rendering thread (i.e., the main thread) once per frame
+    private func applyBufferUpdateIfPresent() {
 
-        var newNodeIndices = [NodeID: Int]()
-        var newNodePositions = [SIMD3<Float>]()
-        var newEdgeIndexData = [UInt32]()
+        guard
+            let update = self.bufferUpdate
+        else {
+            // debug("Wireframe.applyBufferUpdateIfPresent", "No bufferUpdate to apply")
+            return
+        }
 
-        var nodeIndex: Int = 0
-        for node in graph.nodes {
-            if let nodeValue = node.value {
-                newNodeIndices[node.id] = nodeIndex
-                newNodePositions.insert(nodeValue.location, at: nodeIndex)
-                nodeIndex += 1
+        // print("Wireframe.applyBufferUpdateIfPresent: applying bufferUpdate")
+        self.bufferUpdate = nil
+
+        let t0 = Date()
+
+        if let bbox = update.bbox {
+            self.bbox = bbox
+        }
+
+        let oldNodeCount = nodeCount
+        let newNodeCount = update.nodeCount ?? oldNodeCount
+        nodeCount = newNodeCount
+
+        // =================
+        // Node positions
+
+        if newNodeCount == 0 {
+            nodePositionBuffer = nil
+        }
+        else if let newNodePositions = update.nodePositions {
+//            if newNodePositions.count != newNodeCount {
+//                fatalError("Failed sanity check: newNodeCount=\(newNodeCount) but newNodePositions.count=\(newNodePositions.count)")
+//            }
+
+            if nodePositionBuffer == nil || newNodeCount != oldNodeCount {
+                nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
+                                                       length: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size,
+                                                       options: [])
+            }
+            else {
+                nodePositionBuffer!.contents().copyMemory(from: newNodePositions,
+                                                          byteCount: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size)
+            }
+        }
+//        else if newNodeCount != oldNodeCount {
+//            fatalError("Failed sanity check: nodeCount changed but newNodePositions is nil")
+//        }
+
+
+        // ====================
+        // Node colors
+
+        if newNodeCount == 0 {
+            nodeColorBuffer = nil
+        }
+        else if let newNodeColors = update.nodeColors {
+
+            // TODO: MAYBE either keep colorsArray in memory or stop using it altogether.
+            let defaultColor = settings.nodeColorDefault
+            var colorsArray = [SIMD4<Float>](repeating: defaultColor, count: nodeCount)
+            for (nodeIndex, color) in newNodeColors {
+                colorsArray[nodeIndex] = color
+            }
+
+            if nodeColorBuffer == nil || nodeCount != oldNodeCount {
+                 nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
+                                                     length: nodeCount * MemoryLayout<SIMD4<Float>>.size,
+                                                     options: [])
+            }
+            else {
+                nodeColorBuffer!.contents().copyMemory(from: colorsArray,
+                                                       byteCount: nodeCount * MemoryLayout<SIMD4<Float>>.size)
             }
         }
 
-        // OK
-        self.nodeIndices = newNodeIndices
+        // ==================
+        // Edge indices
 
-        var edgeIndex: Int = 0
-        for node in graph.nodes {
-            for edge in node.outEdges {
-                if let edgeValue = edge.value,
-                   !edgeValue.hidden,
-                   let sourceIndex = newNodeIndices[edge.source.id],
-                   let targetIndex = newNodeIndices[edge.target.id] {
-                    newEdgeIndexData.insert(UInt32(sourceIndex), at: edgeIndex)
-                    edgeIndex += 1
-                    newEdgeIndexData.insert(UInt32(targetIndex), at: edgeIndex)
-                    edgeIndex += 1
-                }
+        let oldEdgeIndexCount = edgeIndexCount
+        let newEdgeIndexCount = update.edgeIndexCount ?? oldEdgeIndexCount
+        edgeIndexCount = newEdgeIndexCount
+
+        if newEdgeIndexCount == 0 {
+            self.edgeIndexBuffer = nil
+        }
+        else if let newEdgeIndices = update.edgeIndices {
+//            if newEdgeIndices.count != edgeIndexCount {
+//                fatalError("Failed sanity check: newEdgeIndexCount=\(newEdgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
+//            }
+
+            if edgeIndexBuffer == nil || newEdgeIndexCount != oldEdgeIndexCount {
+                edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
+                                                    length: newEdgeIndices.count * MemoryLayout<UInt32>.size)
+            }
+            else {
+                edgeIndexBuffer!.contents().copyMemory(from: newEdgeIndices,
+                                                       byteCount: newEdgeIndices.count * MemoryLayout<UInt32>.size)
             }
         }
+//        else if newEdgeIndexCount != oldEdgeIndexCount {
+//            fatalError("Failed sanity check: edgeIndexCount changed but newEdgeIndices is nil")
+//        }
 
-        return WireframeBufferUpdate(
-            bbox: graph.makeBoundingBox(),
-            nodeCount: newNodePositions.count,
-            nodePositions: newNodePositions,
-            nodeColors: settings.nodeStyle == .none ? nil : graph.makeNodeColors(),
-            edgeIndexCount: newEdgeIndexData.count,
-            edgeIndices: newEdgeIndexData
-        )
-    }
-
-    private func makeNodePositions(_ graph: Container.GraphType) -> [SIMD3<Float>] {
-        //    private func makeNodePositions<G: Graph>(_ graph: G) -> [SIMD3<Float>] where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
-        var newNodePositions = [SIMD3<Float>]()
-        for node in graph.nodes {
-            if let nodeIndex = nodeIndices[node.id],
-               let nodeValue = node.value {
-                newNodePositions.insert(nodeValue.location, at: nodeIndex)
-            }
+        let dt = Date().timeIntervalSince(t0)
+        if dt > 0.1 {
+            print("Slow applyBufferUpdate dt: \(dt)")
         }
-        return newNodePositions
     }
 
     private func buildUniforms() throws {
@@ -605,7 +465,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
 
         pipelineDescriptor.label = "NodePipeline"
-        pipelineDescriptor.sampleCount = view.sampleCount
+        // pipelineDescriptor.sampleCount = view.sampleCount
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
@@ -643,7 +503,7 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         pipelineDescriptor.label = "EdgePipeline"
-        pipelineDescriptor.sampleCount = view.sampleCount
+        // pipelineDescriptor.sampleCount = view.sampleCount
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
@@ -665,11 +525,179 @@ public class Wireframe<Container: RenderableGraphContainer>: Renderable {
     }
 }
 
-public struct WireframeBufferUpdate {
-    public let bbox: BoundingBox?
-    public let nodeCount: Int?
-    public let nodePositions: [SIMD3<Float>]?
-    public let nodeColors: [NodeID: SIMD4<Float>]?
-    public let edgeIndexCount: Int?
-    public let edgeIndices: [UInt32]?
+public struct WireframeUpdateGenerator2 {
+
+    var generateNodeColors: Bool
+
+    private var nodeIndices = [NodeID: Int]()
+
+    public init(_ generateNodeColors: Bool = true) {
+        self.generateNodeColors = generateNodeColors
+    }
+
+    public mutating func makeUpdate<GraphType: Graph>(_ graph: GraphType, _ change: RenderableGraphChange) -> WireframeUpdate2?
+    where GraphType.NodeType.ValueType: RenderableNodeValue,
+          GraphType.EdgeType.ValueType: RenderableEdgeValue {
+
+        var bufferUpdate: WireframeUpdate2? = nil
+
+        if change.nodes {
+            bufferUpdate = self.prepareTopologyUpdate(graph)
+        }
+        else {
+
+            // TODO: deal with the case where nodeIndicies has not been populated
+
+            var newPositions: [SIMD3<Float>]? = nil
+            var newColors: [Int : SIMD4<Float>]? = nil
+            var newBBox: BoundingBox? = nil
+
+            if change.nodePositions {
+                newPositions = self.makeNodePositions(graph)
+                newBBox = graph.makeBoundingBox()
+            }
+
+            if change.nodeColors && generateNodeColors {
+                newColors = makeNodeColors(graph)
+            }
+
+            if (newPositions != nil || newColors != nil) {
+                bufferUpdate = WireframeUpdate2(bbox: newBBox,
+                                                      nodeCount: nil,
+                                                      nodePositions: newPositions,
+                                                      nodeColors: newColors,
+                                                      edgeIndexCount: nil,
+                                                      edgeIndices: nil)
+            }
+        }
+        return bufferUpdate
+    }
+
+    private mutating func prepareTopologyUpdate<GraphType: Graph>(_ graph: GraphType) -> WireframeUpdate2
+    where GraphType.NodeType.ValueType: RenderableNodeValue,
+          GraphType.EdgeType.ValueType: RenderableEdgeValue {
+
+        var newNodeIndices = [NodeID: Int]()
+        var newNodePositions = [SIMD3<Float>]()
+        var newEdgeIndexData = [UInt32]()
+
+        var nodeIndex: Int = 0
+        for node in graph.nodes {
+            if let nodeValue = node.value {
+                newNodeIndices[node.id] = nodeIndex
+                newNodePositions.insert(nodeValue.location, at: nodeIndex)
+                nodeIndex += 1
+            }
+        }
+
+        // OK
+        self.nodeIndices = newNodeIndices
+
+        var edgeIndex: Int = 0
+        for node in graph.nodes {
+            for edge in node.outEdges {
+                if let edgeValue = edge.value,
+                   !edgeValue.hidden,
+                   let sourceIndex = newNodeIndices[edge.source.id],
+                   let targetIndex = newNodeIndices[edge.target.id] {
+                    newEdgeIndexData.insert(UInt32(sourceIndex), at: edgeIndex)
+                    edgeIndex += 1
+                    newEdgeIndexData.insert(UInt32(targetIndex), at: edgeIndex)
+                    edgeIndex += 1
+                }
+            }
+        }
+
+        return WireframeUpdate2(
+            bbox: graph.makeBoundingBox(),
+            nodeCount: newNodePositions.count,
+            nodePositions: newNodePositions,
+            nodeColors: generateNodeColors ? makeNodeColors(graph) : nil,
+            edgeIndexCount: newEdgeIndexData.count,
+            edgeIndices: newEdgeIndexData
+        )
+    }
+
+    private func makeNodePositions<GraphType: Graph>(_ graph: GraphType) -> [SIMD3<Float>]
+    where GraphType.NodeType.ValueType: RenderableNodeValue,
+          GraphType.EdgeType.ValueType: RenderableEdgeValue {
+        //    private func makeNodePositions<G: Graph>(_ graph: G) -> [SIMD3<Float>] where E == G.EdgeType.ValueType, N == G.NodeType.ValueType {
+        var newNodePositions = [SIMD3<Float>]()
+        for node in graph.nodes {
+            if let nodeIndex = nodeIndices[node.id],
+               let nodeValue = node.value {
+                newNodePositions.insert(nodeValue.location, at: nodeIndex)
+            }
+        }
+        return newNodePositions
+    }
+
+    private func makeNodeColors<GraphType: Graph>(_ graph: GraphType) -> [Int: SIMD4<Float>]
+    where GraphType.NodeType.ValueType: RenderableNodeValue,
+          GraphType.EdgeType.ValueType: RenderableEdgeValue {
+
+        var newNodeColors = [Int: SIMD4<Float>]()
+        for node in graph.nodes {
+            if let nodeIndex = nodeIndices[node.id],
+               let nodeColor = node.value?.color {
+                newNodeColors[nodeIndex] = nodeColor
+            }
+        }
+        return newNodeColors
+    }
 }
+
+public struct WireframeUpdate2: Sendable, Codable {
+
+    public static var emptyGraph: WireframeUpdate2 {
+        WireframeUpdate2(bbox: BoundingBox.centeredCube(1),
+                         nodeCount: 0,
+                         nodePositions: nil,
+                         nodeColors: nil,
+                         edgeIndexCount: 0,
+                         edgeIndices: nil)
+    }
+
+    public var bbox: BoundingBox?
+
+    public var nodeCount: Int?
+
+    public var nodePositions: [SIMD3<Float>]?
+
+    public var nodeColors: [Int: SIMD4<Float>]?
+
+    public var edgeIndexCount: Int?
+
+    public var edgeIndices: [UInt32]?
+
+    public var isNodesetChange: Bool {
+        return nodeCount != nil
+    }
+
+    public mutating func merge(_ update: WireframeUpdate2) {
+
+        if update.isNodesetChange {
+            self.bbox = update.bbox
+            self.nodeCount = update.nodeCount
+            self.nodePositions = update.nodePositions
+            self.nodeColors = update.nodeColors
+            self.edgeIndexCount = update.edgeIndexCount
+            self.edgeIndices = update.edgeIndices
+        }
+        else {
+            if let newBBox = update.bbox {
+                self.bbox = newBBox
+            }
+            if let newNodePositions = update.nodePositions {
+                self.nodePositions = newNodePositions
+            }
+            if self.nodeColors == nil {
+                self.nodeColors = update.nodeColors
+            }
+            else if let updateNodeColors = update.nodeColors {
+                self.nodeColors!.merge(updateNodeColors, uniquingKeysWith: { _, b in b })
+            }
+        }
+    }
+}
+

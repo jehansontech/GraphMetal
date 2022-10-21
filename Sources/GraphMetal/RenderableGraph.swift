@@ -73,36 +73,6 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
     }
 }
 
-///
-///
-///
-extension Notification.Name {
-    public static var graphHasChanged: Notification.Name { return .init("graphHasChanged") }
-}
-
-
-///
-///
-///
-public protocol RenderableGraphContainer: AnyObject {
-    associatedtype GraphType: Graph where GraphType.NodeType.ValueType: RenderableNodeValue,
-                                          GraphType.EdgeType.ValueType: RenderableEdgeValue
-
-    var graph: GraphType { get set }
-
-    func fireGraphChange(_ change: RenderableGraphChange)
-}
-
-///
-///
-///
-extension RenderableGraphContainer {
-
-    public func fireGraphChange(_ change: RenderableGraphChange) {
-        NotificationCenter.default.post(name: .graphHasChanged, object: change)
-    }
-}
-
 
 ///
 ///
