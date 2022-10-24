@@ -25,9 +25,9 @@ extension Graph where NodeType.ValueType: RenderableNodeValue {
 
     func makeNodeColors() -> [NodeID: SIMD4<Float>] {
         var nodeColors = [NodeID: SIMD4<Float>]()
-        for node in nodes {
-            if let color = node.value?.color {
-                nodeColors[node.id] = color
+        nodes.forEach {
+            if let color = $0.value?.color {
+                nodeColors[$0.id] = color
             }
         }
         return nodeColors
@@ -73,10 +73,6 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
     }
 }
 
-
-///
-///
-///
 public struct RenderableGraphChange: Codable, Sendable {
 
     public static let none = RenderableGraphChange()
