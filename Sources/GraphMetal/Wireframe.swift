@@ -103,11 +103,11 @@ public class Wireframe: Renderable {
 
     var nodeCount: Int = 0
 
-    var nodePositionBufferIndex: Int = WireframeBufferIndex.nodePosition.rawValue
+    let nodePositionBufferIndex: Int // = WireframeBufferIndex.nodePosition.rawValue
 
     var nodePositionBuffer: MTLBuffer? = nil
 
-    var nodeColorBufferIndex: Int = WireframeBufferIndex.nodeColor.rawValue
+    let nodeColorBufferIndex: Int // = WireframeBufferIndex.nodeColor.rawValue
 
     var nodeColorBuffer: MTLBuffer? = nil
 
@@ -132,13 +132,13 @@ public class Wireframe: Renderable {
 
     var edgeIndexBuffer: MTLBuffer? = nil
 
-    var dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniforms.rawValue
+    let dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniform.rawValue
 
     var dynamicUniformBuffer: MTLBuffer!
 
     var uniformBufferOffset = 0
 
-    var uniformBufferIndex = 0
+    var uniformBufferRotation = 0
 
     var uniforms: UnsafeMutablePointer<WireframeUniforms>!
 
@@ -151,12 +151,19 @@ public class Wireframe: Renderable {
         return 0.001 * Float(millisSinceReferenceDate % 1000)
     }
 
-    public init() {
+    public init(nodePositionBufferIndex: Int,
+                nodeColorBufferIndex: Int) {
         self.settings = WireframeSettings()
+        self.nodePositionBufferIndex = nodePositionBufferIndex
+        self.nodeColorBufferIndex = nodeColorBufferIndex
     }
 
-    public init(_ initialSettings: WireframeSettings) {
-        self.settings = initialSettings
+    public init(settings: WireframeSettings,
+                nodePositionBufferIndex: Int,
+                nodeColorBufferIndex: Int) {
+        self.settings = settings
+        self.nodePositionBufferIndex = nodePositionBufferIndex
+        self.nodeColorBufferIndex = nodeColorBufferIndex
     }
 
     deinit {
@@ -245,9 +252,9 @@ public class Wireframe: Renderable {
         // ======================================
         // Rotate the uniforms buffers
 
-        uniformBufferIndex = (uniformBufferIndex + 1) % Renderer.maxBuffersInFlight
+        uniformBufferRotation = (uniformBufferRotation + 1) % Renderer.maxBuffersInFlight
 
-        uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
+        uniformBufferOffset = alignedUniformsSize * uniformBufferRotation
 
         uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:WireframeUniforms.self, capacity:1)
 
@@ -448,19 +455,29 @@ public class Wireframe: Renderable {
 
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].offset = 0
-        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = nodePositionBufferIndex
+        // vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
 
         vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].format = MTLVertexFormat.float4
         vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].offset = 0
-        vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].bufferIndex = WireframeBufferIndex.nodeColor.rawValue
+        vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].bufferIndex = nodeColorBufferIndex
+        // vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].bufferIndex = WireframeBufferIndex.nodeColor.rawValue
 
-        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
-        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
-        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
+        vertexDescriptor.layouts[nodePositionBufferIndex].stride = MemoryLayout<SIMD3<Float>>.stride
+        vertexDescriptor.layouts[nodePositionBufferIndex].stepRate = 1
+        vertexDescriptor.layouts[nodePositionBufferIndex].stepFunction = MTLVertexStepFunction.perVertex
 
-        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stride = MemoryLayout<SIMD4<Float>>.stride
-        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepRate = 1
-        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepFunction = MTLVertexStepFunction.perVertex
+        vertexDescriptor.layouts[nodeColorBufferIndex].stride = MemoryLayout<SIMD4<Float>>.stride
+        vertexDescriptor.layouts[nodeColorBufferIndex].stepRate = 1
+        vertexDescriptor.layouts[nodeColorBufferIndex].stepFunction = MTLVertexStepFunction.perVertex
+
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
+//
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stride = MemoryLayout<SIMD4<Float>>.stride
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepRate = 1
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepFunction = MTLVertexStepFunction.perVertex
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
 
@@ -495,11 +512,16 @@ public class Wireframe: Renderable {
 
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].offset = 0
-        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = nodePositionBufferIndex
+        // vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
 
-        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
-        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
-        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
+        vertexDescriptor.layouts[nodePositionBufferIndex].stride = MemoryLayout<SIMD3<Float>>.stride
+        vertexDescriptor.layouts[nodePositionBufferIndex].stepRate = 1
+        vertexDescriptor.layouts[nodePositionBufferIndex].stepFunction = MTLVertexStepFunction.perVertex
+
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
+//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         pipelineDescriptor.label = "EdgePipeline"

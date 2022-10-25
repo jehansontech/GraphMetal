@@ -12,22 +12,20 @@
 
 using namespace metal;
 
-//typedef NS_ENUM(NSInteger, BufferIndex)
-//{
-//    BufferIndexNodePosition = 0,
-//    BufferIndexNodeColor = 1,
-//    BufferIndexUniforms   = 2
-//};
+typedef NS_ENUM(NSInteger, WireframeBufferIndex)
+{
+    WireframeBufferIndexUniform = 0
+};
 
 typedef NS_ENUM(NSInteger, WireframeVertexAttribute)
 {
-    WireframeVertexAttributePosition  = 0,
-    WireframeVertexAttributeColor   = 1,
+    WireframeVertexAttributePosition = 0,
+    WireframeVertexAttributeColor    = 1,
 };
 
 typedef NS_ENUM(NSInteger, WireframeTextureIndex)
 {
-    WireframeTextureIndexColor    = 0,
+    WireframeTextureIndexColor = 0,
 };
 
 typedef struct
@@ -71,11 +69,8 @@ float pulseAmplitude(float v, float phase) {
     return v * phase;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
-                               const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                               const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -88,11 +83,8 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
-                             const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                             const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // Note that distance is -z
@@ -123,11 +115,8 @@ struct NodeVertexOut {
     float4 color;
 };
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
-                                 const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                 const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -141,11 +130,8 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
-                                 const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                 const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -159,11 +145,8 @@ vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
-                                    const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                    const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -177,11 +160,8 @@ vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 vertex NodeVertexOut node_vertex_size4(NodeVertexIn vertexIn [[stage_in]],
-                                       const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                       const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -195,13 +175,9 @@ vertex NodeVertexOut node_vertex_size4(NodeVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 fragment float4 node_fragment_square(NodeVertexOut interpolated                [[ stage_in ]],
                                      float2 pointCoord                         [[point_coord]],
-                                     const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                     const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
@@ -215,12 +191,9 @@ fragment float4 node_fragment_square(NodeVertexOut interpolated                [
     return interpolated.color;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ stage_in ]],
                                   float2 pointCoord                         [[point_coord]],
-                                  const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                  const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
@@ -239,12 +212,9 @@ fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ s
     return interpolated.color;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ stage_in ]],
                                    float2 pointCoord                         [[point_coord]],
-                                   const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                   const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
@@ -264,12 +234,9 @@ fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ 
     return interpolated.color;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 fragment float4 node_fragment_diamond(NodeVertexOut interpolated                [[ stage_in ]],
                                      float2 pointCoord                         [[point_coord]],
-                                     const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                     const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
@@ -317,12 +284,9 @@ fragment float4 node_fragment_diamond(NodeVertexOut interpolated                
     return interpolated.color;
 }
 
-/*
- That '0' in buffer(0) is buffer index assigned to uniforms buffer.
- */
 fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       [[ stage_in ]],
                                       float2 pointCoord                         [[point_coord]],
-                                      const device WireframeUniforms&  uniforms [[ buffer(0) ]]) {
+                                      const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that distance = -interpolated.fragmentPosition.z
@@ -371,5 +335,3 @@ fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       
 
     return interpolated.color;
 }
-
-

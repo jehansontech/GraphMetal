@@ -2,9 +2,7 @@ import MetalKit
 import simd
 
 public enum WireframeBufferIndex: NSInteger {
-    case nodePosition = 2
-    case nodeColor = 1
-    case uniforms = 0
+    case uniform = 0
 }
 
 public enum WireframeVertexAttribute: NSInteger {
