@@ -8,60 +8,20 @@
 import Wacoma
 import GenericGraph
 
-public struct WireframeUpdate: Sendable, Codable {
-
-    public static var emptyGraph: WireframeUpdate {
-        WireframeUpdate(nodeCount: 0, edgeIndexCount: 0)
-    }
-
-    public var bbox: BoundingBox?
-
-    public var nodeCount: Int?
-
-    public var nodePositions: [SIMD3<Float>]?
-
-    public var nodeColors: [Int: SIMD4<Float>]?
-
-    public var edgeIndexCount: Int?
-
-    public var edgeIndices: [UInt32]?
-
-    public var isNodesetChange: Bool {
-        return nodeCount != nil
-    }
-
-    public mutating func merge(_ update: WireframeUpdate) {
-
-        if update.isNodesetChange {
-            self.bbox = update.bbox
-            self.nodeCount = update.nodeCount
-            self.nodePositions = update.nodePositions
-            self.nodeColors = update.nodeColors
-            self.edgeIndexCount = update.edgeIndexCount
-            self.edgeIndices = update.edgeIndices
-        }
-        else {
-            if let newBBox = update.bbox {
-                self.bbox = newBBox
-            }
-            if let newNodePositions = update.nodePositions {
-                self.nodePositions = newNodePositions
-            }
-            if self.nodeColors == nil {
-                self.nodeColors = update.nodeColors
-            }
-            else if let updateNodeColors = update.nodeColors {
-                self.nodeColors!.merge(updateNodeColors, uniquingKeysWith: { _, b in b })
-            }
-        }
-    }
-}
 
 public struct WireframeUpdateGenerator {
 
+    // TODO: impl
+    // private var generateNodeColors: Bool
+
     private var nodeIndices: [NodeID: Int]? = nil
 
-    public init() {}
+    public init() {
+    }
+
+//    public init(generateNodeColors: Bool = true) {
+//        self.generateNodeColors = generateNodeColors
+//    }
 
     public mutating func makeUpdate<GraphType: Graph>(_ graph: GraphType,
                                                       _ change: RenderableGraphChange) -> WireframeUpdate?
