@@ -211,6 +211,31 @@ fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[
     return interpolated.color;
 }
 
+fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated         [[ stage_in ]],
+                                           float2 pointCoord                         [[point_coord]],
+                                           const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+
+    // blink
+    if (uniforms.pulsePhase > 0.5) {
+        discard_fragment();
+    }
+    
+    // fadeout
+    // NOTE that distance = -interpolated.fragmentPosition.z
+    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+
+    // transparent nodes
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
+
+    if (pointCoord.x > 0.1 && pointCoord.x < 0.9 && pointCoord.y > 0.1 && pointCoord.y < 0.9) {
+        discard_fragment();
+    }
+
+    return interpolated.color;
+}
+
 fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ stage_in ]],
                                   float2 pointCoord                         [[point_coord]],
                                   const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
