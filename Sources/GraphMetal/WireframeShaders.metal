@@ -51,9 +51,9 @@ struct NetVertexOut {
 };
 
 /*
- Returns a value that decreases linearly with increasing distance z from the
- plane of POV (in either direction), such that alpha = 1 at z = midpoint and
- alpha = 0 at z = midpoint +/- distance. Expects z >= 0.
+ Returns a value that decreases linearly with increasing distance z in either direction
+ from the plane of POV (in modelview coordinates), such that alpha = 1 at z = midpoint 
+ and alpha = 0 at z = midpoint +/- distance. Expects z >= 0.
  Clamps the return value to [0, 1].
  */
 float fadeout(float z, float midpoint, float distance) {
@@ -180,7 +180,7 @@ fragment float4 node_fragment_square(NodeVertexOut interpolated                [
                                      const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
+    // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
@@ -196,7 +196,7 @@ fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[
                                      const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
+    // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
@@ -221,7 +221,7 @@ fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated   
     }
     
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
+    // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
@@ -241,7 +241,7 @@ fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ s
                                   const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
+    // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
@@ -262,7 +262,7 @@ fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ 
                                    const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
+    // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
@@ -284,7 +284,7 @@ fragment float4 node_fragment_diamond(NodeVertexOut interpolated                
                                      const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
+    // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
@@ -334,7 +334,7 @@ fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       
                                       const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
-    // NOTE that distance = -interpolated.fragmentPosition.z
+    // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
