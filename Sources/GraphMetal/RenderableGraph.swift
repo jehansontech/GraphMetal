@@ -45,6 +45,7 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
         nodes.forEach {
             if let nodeLocation = $0.value?.location {
 
+                // ray.origin is the POV's location in world coords
                 let nodeDisplacement = nodeLocation - ray.origin
 
                 // rayZ is the z-distance from rayOrigin to the point on the ray
@@ -52,8 +53,8 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
                 let rayZ = simd_dot(nodeDisplacement, ray.direction)
                 // print("\(node) rayZ: \(rayZ)")
 
-                // STET: nodeLocation.z does not work
-                // because zRange is INCORRECT
+                // TEMPORARY: nodeLocation.z does not work because zRange is INCORRECT
+                // See RenderController.touchRay(...)
                 if ray.range.contains(rayZ) {
                     // nodeD2 is the square of the distance from the node to the ray
                     // (i.e., to the point on the ray that is closest to the node)
