@@ -36,7 +36,6 @@ extension Graph where NodeType.ValueType: RenderableNodeValue {
 
 extension Graph where NodeType.ValueType: EmbeddedNodeValue {
 
-    /// see RenderController.touchRay(...)
     public func findNearestNode(_ ray: TouchRay) -> NodeType?
     {
         var nearestNode: NodeType? = nil
@@ -48,14 +47,15 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
                 // ray.origin is the POV's location in world coords
                 let nodeDisplacement = nodeLocation - ray.origin
 
-                // rayZ is the z-distance from rayOrigin to the point on the ray
+                // rayZ is the z-distance from ray.origin to the point on the ray
                 // that is closest to the node
                 let rayZ = simd_dot(nodeDisplacement, ray.direction)
                 // print("\(node) rayZ: \(rayZ)")
 
-                // TEMPORARY: nodeLocation.z does not work because zRange is INCORRECT
-                // See RenderController.touchRay(...)
+                // TEMPORARY: ray.range.contains(nodeLocation.z) does not work because
+                // zRange is INCORRECT. See RenderController.touchRay(...)
                 if ray.range.contains(rayZ) {
+
                     // nodeD2 is the square of the distance from the node to the ray
                     // (i.e., to the point on the ray that is closest to the node)
                     let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayZ * rayZ
