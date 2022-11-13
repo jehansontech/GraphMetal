@@ -40,16 +40,6 @@ typedef struct
 } WireframeUniforms;
 
 
-struct NetVertexIn {
-    float3 position [[attribute(WireframeVertexAttributePosition)]];
-};
-
-struct NetVertexOut {
-    float4 position [[position]];
-    float3 fragmentPosition;
-    float4 color;
-};
-
 /*
  Returns a value that decreases linearly with increasing distance z in either direction
  from the plane of POV (in modelview coordinates), such that alpha = 1 at z = midpoint 
@@ -68,6 +58,65 @@ float fadeout(float z, float midpoint, float distance) {
 float pulseAmplitude(float v, float phase) {
     return v * phase;
 }
+
+// =============================================================================
+// beams
+// =============================================================================
+
+struct BeamVertexIn {
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
+    float4 color    [[attribute(WireframeVertexAttributeColor)]];
+};
+
+struct BeamVertexOut {
+    float4 position [[position]];
+    float3 fragmentPosition;
+    float4 color;
+};
+
+vertex BeamVertexOut beam_vertex(BeamVertexIn vertexIn [[stage_in]],
+                               const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+
+    float4x4 mv_Matrix = uniforms.modelViewMatrix;
+    float4x4 proj_Matrix = uniforms.projectionMatrix;
+
+    BeamVertexOut vertexOut;
+    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
+    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = vertexIn.color;
+
+    return vertexOut;
+}
+
+fragment float4 beam_fragment(BeamVertexOut interpolated           [[ stage_in ]],
+                             const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+
+//    // fadeout
+//    // Note that distance is -z
+//    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+
+
+    // transparent edges
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
+
+    return interpolated.color;
+}
+
+// =============================================================================
+// edges
+// =============================================================================
+
+struct NetVertexIn {
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
+};
+
+struct NetVertexOut {
+    float4 position [[position]];
+    float3 fragmentPosition;
+    float4 color;
+};
 
 vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
                                const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
