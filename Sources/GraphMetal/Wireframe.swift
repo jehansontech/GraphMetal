@@ -415,8 +415,13 @@ public class Wireframe: Renderable {
                                                        options: [])
             }
             else {
-                nodePositionBuffer!.contents().copyMemory(from: newNodePositions,
-                                                          byteCount: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size)
+                // 2022-11-21 I was getting segv when I did this w/ the node colors buffer, so I'm
+                // commenting it out here as well.
+                //                nodePositionBuffer!.contents().copyMemory(from: newNodePositions,
+                //                                                          byteCount: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size)
+                nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
+                                                       length: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size,
+                                                       options: [])
             }
         }
 //        else if newNodeCount != oldNodeCount {
@@ -445,8 +450,14 @@ public class Wireframe: Renderable {
                                                      options: [])
             }
             else {
-                nodeColorBuffer!.contents().copyMemory(from: colorsArray,
-                                                       byteCount: nodeCount * MemoryLayout<SIMD4<Float>>.size)
+                // 2022-11-20 SOMETIMES CRASHES HERE w/ segv. I only started seeing crashes after I
+                // changed xcode 'scheme' to run the 'Release' version. This is CONSISTENT with the
+                // crashes I'm seeing in the TestFlight version of the app.
+                //                nodeColorBuffer!.contents().copyMemory(from: colorsArray,
+                //                                                       byteCount: nodeCount * MemoryLayout<SIMD4<Float>>.size)
+                nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
+                                                    length: nodeCount * MemoryLayout<SIMD4<Float>>.size,
+                                                    options: [])
             }
         }
 
@@ -470,8 +481,12 @@ public class Wireframe: Renderable {
                                                     length: newEdgeIndices.count * MemoryLayout<UInt32>.size)
             }
             else {
-                edgeIndexBuffer!.contents().copyMemory(from: newEdgeIndices,
-                                                       byteCount: newEdgeIndices.count * MemoryLayout<UInt32>.size)
+                // 2022-11-21 I was getting segv when I did this w/ the node colors buffer, so I'm
+                // commenting it out here as well.
+                //                edgeIndexBuffer!.contents().copyMemory(from: newEdgeIndices,
+                //                                                       byteCount: newEdgeIndices.count * MemoryLayout<UInt32>.size)
+                edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
+                                                    length: newEdgeIndices.count * MemoryLayout<UInt32>.size)
             }
         }
 //        else if newEdgeIndexCount != oldEdgeIndexCount {
