@@ -98,7 +98,8 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
                     // nodeD2 is the square of the distance from the node to the ray
                     // (i.e., to the point on the ray that is closest to the node)
                     let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayZ * rayZ
-                    // print("\(node) distance to ray: \(sqrt(nodeD2))")
+
+                    print("    node \($0.id) distance to ray: \(sqrt(nodeD2))")
 
                     if nodeD2 < rayR2 && rayZ < bestRayZ {
                         bestRayZ = rayZ
