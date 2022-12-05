@@ -72,6 +72,44 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
         }
         return nearestNode
     }
+
+    // FIXME: WRONG!
+    public func pickNode(_ ray: TouchRay) -> NodeType?
+    {
+        print("pickNode: ray.radius = \(ray.radius)")
+        let rayR2 = ray.radius * ray.radius
+        var bestRayZ = Float.greatestFiniteMagnitude
+        var nearestNode: NodeType? = nil
+        nodes.forEach {
+            if let nodeLocation = $0.value?.location {
+
+                // ray.origin is the POV's location in world coords
+                let nodeDisplacement = nodeLocation - ray.origin
+
+                // rayZ is the z-distance from ray.origin to the point on the ray
+                // that is closest to the node
+                let rayZ = simd_dot(nodeDisplacement, ray.direction)
+                // print("\(node) rayZ: \(rayZ)")
+
+                // TEMPORARY: ray.range.contains(nodeLocation.z) does not work because
+                // zRange is INCORRECT. See RenderController.touchRay(...)
+                if ray.range.contains(rayZ) {
+
+                    // nodeD2 is the square of the distance from the node to the ray
+                    // (i.e., to the point on the ray that is closest to the node)
+                    let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayZ * rayZ
+                    // print("\(node) distance to ray: \(sqrt(nodeD2))")
+
+                    if nodeD2 < rayR2 && rayZ < bestRayZ {
+                        bestRayZ = rayZ
+                        nearestNode = $0
+                    }
+                }
+            }
+        }
+        return nearestNode
+    }
+
 }
 
 public struct RenderableGraphChange: Codable, Sendable {
