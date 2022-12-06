@@ -15,7 +15,7 @@ import GenericGraph
 public struct WireframeSettings {
 
     /// EMPIRICAL
-    static let nodeSizeScaleFactor: Double = 40
+    public static let nodeSizeScaleFactor: Double = 40
 
     public static let defaults = WireframeSettings()
 

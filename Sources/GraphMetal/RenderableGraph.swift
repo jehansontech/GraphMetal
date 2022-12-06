@@ -76,9 +76,9 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
     // FIXME: WRONG!
     public func pickNode(_ ray: TouchRay) -> NodeType?
     {
-        print("pickNode: ray.radius = \(ray.radius)")
         let rayR2 = ray.radius * ray.radius
         var bestRayZ = Float.greatestFiniteMagnitude
+        var bestNodeD2 = Float.greatestFiniteMagnitude
         var nearestNode: NodeType? = nil
         nodes.forEach {
             if let nodeLocation = $0.value?.location {
@@ -99,14 +99,24 @@ extension Graph where NodeType.ValueType: EmbeddedNodeValue {
                     // (i.e., to the point on the ray that is closest to the node)
                     let nodeD2 = simd_dot(nodeDisplacement, nodeDisplacement) - rayZ * rayZ
 
-                    print("    node \($0.id) distance to ray: \(sqrt(nodeD2))")
 
+                    if nodeD2 < bestNodeD2 {
+                        bestNodeD2 = nodeD2
+                    }
                     if nodeD2 < rayR2 && rayZ < bestRayZ {
+                        // print("RenderableGraph.pickNode:    node \($0.id) distance to ray: \(sqrt(nodeD2))")
                         bestRayZ = rayZ
                         nearestNode = $0
                     }
                 }
             }
+        }
+        if nearestNode == nil {
+            print("RenderableGraph.pickNode: No nearby node. ray.radius: \(ray.radius), distance to closest node: \(sqrt(bestNodeD2))")
+        }
+        else {
+            print("RenderableGraph.pickNode: Found nearby node. ray.radius: \(ray.radius), distance to closest node: \(sqrt(bestNodeD2))")
+
         }
         return nearestNode
     }
