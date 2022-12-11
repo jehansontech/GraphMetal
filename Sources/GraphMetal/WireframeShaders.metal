@@ -41,6 +41,23 @@ typedef struct
 
 
 /*
+ Returns a value that decreases linearly with increasing distance z from a size=scale
+ at midpoint-distance to size=0 at midpoint+distance. Expects z >= 0.
+ Clamps the return value to be non-negative.
+ */
+float nodeSize(float scale, float z, float midpoint, float distance) {
+    // let p1 = midpoint-distance
+    //     p2 = midpoint+distance
+    // at z = p1 we have f = 1
+    //    z = p2 we have f = 0
+    // so f = (z - p2) / (p1 - p2)
+    //      = (p2 - z) / (p2 - p1)
+    //      = (p2 - z) / (2 * distance)
+    float d = scale * (midpoint + distance - z) / (2 * distance);
+    return (d < 0) ? 0 : d;
+}
+
+/*
  Returns a value that decreases linearly with increasing distance z in either direction
  from the plane of POV (in modelview coordinates), such that alpha = 1 at z = midpoint 
  and alpha = 0 at z = midpoint +/- distance. Expects z >= 0.
@@ -172,9 +189,11 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
 
     NodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
-    vertexOut.pointSize = uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
+
+    // WAS vertexOut.pointSize = uniforms.pointSize;
+    vertexOut.pointSize = nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
@@ -187,9 +206,11 @@ vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
 
     NodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
-    vertexOut.pointSize = 2 * uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
+
+    // WAS: vertexOut.pointSize = 2 * uniforms.pointSize;
+    vertexOut.pointSize = nodeSize(2 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
@@ -202,9 +223,11 @@ vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
 
     NodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
-    vertexOut.pointSize = 3 * uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
+
+    // WAS: vertexOut.pointSize = 3 * uniforms.pointSize;
+    vertexOut.pointSize = nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
@@ -217,9 +240,11 @@ vertex NodeVertexOut node_vertex_size4(NodeVertexIn vertexIn [[stage_in]],
 
     NodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
-    vertexOut.pointSize = 4 * uniforms.pointSize;
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
+
+    // WAS: vertexOut.pointSize = 4 * uniforms.pointSize;
+    vertexOut.pointSize = nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
@@ -297,6 +322,7 @@ fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ s
     if (interpolated.color.a <= 0) {
         discard_fragment();
     }
+
 
     // solid circle inscribed in the unit square
     if (length(pointCoord - float2(0.5)) > 0.5) {
