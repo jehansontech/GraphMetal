@@ -85,7 +85,7 @@ public struct WireframeSettings {
     }
 }
 
-public struct WireframeUpdate: Sendable, Codable {
+public struct WireframeUpdate: Codable, Sendable {
 
     public static var emptyGraph: WireframeUpdate {
         WireframeUpdate(nodeCount: 0, edgeIndexCount: 0)
