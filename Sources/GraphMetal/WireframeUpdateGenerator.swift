@@ -14,7 +14,8 @@ public struct WireframeUpdateGenerator {
     // TODO: impl
     // private var generateNodeColors: Bool
 
-    private var nodeIndices: [NodeID: Int]? = nil
+    /// key = nodeNumber; value = buffer index
+    private var nodeIndices: [Int: Int]? = nil
 
     public init() {
     }
@@ -54,13 +55,13 @@ public struct WireframeUpdateGenerator {
           GraphType.EdgeType.ValueType: RenderableEdgeValue
     {
         var newBBox: BoundingBox? = nil
-        var newNodeIndices = [NodeID: Int]()
+        var newNodeIndices = [Int: Int]()
         var newNodePositions = [SIMD3<Float>]()
         var newNodeColors = [Int: SIMD4<Float>]()
 
         var nodeIndex: Int = 0
         for node in graph.nodes {
-            newNodeIndices[node.id] = nodeIndex
+            newNodeIndices[node.nodeNumber] = nodeIndex
             if let nodePosition = node.value?.location {
                 newNodePositions.insert(nodePosition, at: nodeIndex)
                 if newBBox == nil {
@@ -96,13 +97,13 @@ public struct WireframeUpdateGenerator {
           GraphType.EdgeType.ValueType: RenderableEdgeValue
     {
         var newBBox: BoundingBox? = nil
-        var newNodeIndices = [NodeID: Int]()
+        var newNodeIndices = [Int: Int]()
         var newNodePositions = [SIMD3<Float>]()
         var newNodeColors = [Int: SIMD4<Float>]()
 
         var nodeIndex: Int = 0
         for node in graph.nodes {
-            newNodeIndices[node.id] = nodeIndex
+            newNodeIndices[node.nodeNumber] = nodeIndex
             if let nodePosition = node.value?.location {
                 newNodePositions.insert(nodePosition, at: nodeIndex)
                 if newBBox == nil {
@@ -138,12 +139,12 @@ public struct WireframeUpdateGenerator {
           GraphType.EdgeType.ValueType: RenderableEdgeValue
     {
         var newBBox: BoundingBox? = nil
-        var newNodeIndices = [NodeID: Int]()
+        var newNodeIndices = [Int: Int]()
         var newNodePositions = [SIMD3<Float>]()
 
         var nodeIndex: Int = 0
         for node in graph.nodes {
-            newNodeIndices[node.id] = nodeIndex
+            newNodeIndices[node.nodeNumber] = nodeIndex
             if let nodePosition = node.value?.location {
                 newNodePositions.insert(nodePosition, at: nodeIndex)
                 if newBBox == nil {
@@ -174,12 +175,12 @@ public struct WireframeUpdateGenerator {
     where GraphType.NodeType.ValueType: RenderableNodeValue,
           GraphType.EdgeType.ValueType: RenderableEdgeValue
     {
-        var newNodeIndices = [NodeID: Int]()
+        var newNodeIndices = [Int: Int]()
         var newNodeColors = [Int: SIMD4<Float>]()
 
         var nodeIndex: Int = 0
         for node in graph.nodes {
-            newNodeIndices[node.id] = nodeIndex
+            newNodeIndices[node.nodeNumber] = nodeIndex
             if let nodeColor = node.value?.color {
                 newNodeColors[nodeIndex] = nodeColor
             }
@@ -210,20 +211,20 @@ public struct WireframeUpdateGenerator {
                                edgeIndices: newEdgeIndices)
     }
 
-    private static func makeNodeIndices<GraphType: Graph>(_ graph: GraphType) -> [NodeID: Int]
+    private static func makeNodeIndices<GraphType: Graph>(_ graph: GraphType) -> [Int: Int]
     where GraphType.NodeType.ValueType: RenderableNodeValue,
           GraphType.EdgeType.ValueType: RenderableEdgeValue
     {
-        var newNodeIndices = [NodeID: Int]()
+        var newNodeIndices = [Int: Int]()
         var nodeIndex: Int = 0
         for node in graph.nodes {
-            newNodeIndices[node.id] = nodeIndex
+            newNodeIndices[node.nodeNumber] = nodeIndex
             nodeIndex += 1
         }
         return newNodeIndices
     }
 
-    private static func makeEdgeIndices<GraphType: Graph>(_ graph: GraphType, _ nodeIndices: [NodeID: Int]) -> [UInt32]
+    private static func makeEdgeIndices<GraphType: Graph>(_ graph: GraphType, _ nodeIndices: [Int: Int]) -> [UInt32]
     where GraphType.NodeType.ValueType: RenderableNodeValue,
           GraphType.EdgeType.ValueType: RenderableEdgeValue
     {
@@ -233,8 +234,8 @@ public struct WireframeUpdateGenerator {
             for edge in node.outEdges {
                 if let edgeValue = edge.value,
                    !edgeValue.hidden,
-                   let sourceIndex = nodeIndices[edge.source.id],
-                   let targetIndex = nodeIndices[edge.target.id] {
+                   let sourceIndex = nodeIndices[edge.source.nodeNumber],
+                   let targetIndex = nodeIndices[edge.target.nodeNumber] {
                     edgeIndices.insert(UInt32(sourceIndex), at: edgeIndex)
                     edgeIndex += 1
                     edgeIndices.insert(UInt32(targetIndex), at: edgeIndex)
@@ -298,7 +299,7 @@ public struct WireframeUpdateGenerator {
 //          GraphType.EdgeType.ValueType: RenderableEdgeValue
 //    {
 //
-//        var newNodeIndices = [NodeID: Int]()
+//        var newNodeIndices = [Int: Int]()
 //        var newNodePositions = [SIMD3<Float>]()
 //        var newEdgeIndexData = [UInt32]()
 //

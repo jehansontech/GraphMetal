@@ -23,11 +23,11 @@ public protocol RenderableEdgeValue {
 
 extension Graph where NodeType.ValueType: RenderableNodeValue {
 
-    func makeNodeColors() -> [NodeID: SIMD4<Float>] {
-        var nodeColors = [NodeID: SIMD4<Float>]()
+    func makeNodeColors() -> [Int: SIMD4<Float>] {
+        var nodeColors = [Int: SIMD4<Float>]()
         nodes.forEach {
             if let color = $0.value?.color {
-                nodeColors[$0.id] = color
+                nodeColors[$0.nodeNumber] = color
             }
         }
         return nodeColors
