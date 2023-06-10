@@ -323,7 +323,6 @@ fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ s
         discard_fragment();
     }
 
-
     // solid circle inscribed in the unit square
     if (length(pointCoord - float2(0.5)) > 0.5) {
         discard_fragment();
