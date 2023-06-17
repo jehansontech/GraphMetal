@@ -45,7 +45,7 @@ public struct WireframeSettings {
                 nodeSizeIsAdjusted: Bool = true,
                 nodeSize: Double = 16,
                 nodeSizeMinimum: Double = 2,
-                nodeSizeMaximum: Double = 32,
+                nodeSizeMaximum: Double = 64,
                 nodeColorDefault: SIMD4<Float> = SIMD4<Float>(0, 0, 0, 0),
                 edgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)) {
         self.nodeStyle = nodeStyle
