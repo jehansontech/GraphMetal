@@ -302,7 +302,7 @@ public class Wireframe: Renderable {
         // ======================================
         // Rotate the uniforms buffers
 
-        uniformBufferRotation = (uniformBufferRotation + 1) % Renderer.maxBuffersInFlight
+        uniformBufferRotation = (uniformBufferRotation + 1) % RenderConstants.maxBuffersInFlight
 
         uniformBufferOffset = alignedUniformsSize * uniformBufferRotation
 
@@ -501,7 +501,7 @@ public class Wireframe: Renderable {
     }
 
     private func buildUniforms() throws {
-        let uniformBufferSize = alignedUniformsSize * Renderer.maxBuffersInFlight
+        let uniformBufferSize = alignedUniformsSize * RenderConstants.maxBuffersInFlight
         if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
             self.dynamicUniformBuffer = buffer
             self.dynamicUniformBuffer.label = "UniformBuffer"
