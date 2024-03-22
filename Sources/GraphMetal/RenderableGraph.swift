@@ -220,7 +220,7 @@ public struct RenderableGraphChange: Codable, Sendable {
                                                        nodePositions: true,
                                                        edges: false)
 
-    public static let color = RenderableGraphChange(nodes: false,
+    public static let nodeColors = RenderableGraphChange(nodes: false,
                                                     nodeColors: true,
                                                     nodePositions: false,
                                                     edges: false)
