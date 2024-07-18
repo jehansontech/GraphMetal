@@ -8,20 +8,34 @@ import GenericGraph
 import simd
 import Wacoma
 
-public protocol RenderableNodeValue: EmbeddedNodeValue {
+public protocol ColoredValue {
 
-    /// Color and opacity of the rendered node
+    /// Color and opacity of the rendered element
     var color: SIMD4<Float>? { get }
 }
 
+extension ColoredValue {
 
-public protocol RenderableEdgeValue {
+    /// Default implementation, returns nil
+    var color: SIMD4<Float>? { nil }
+}
+
+public protocol HideableValue {
 
     /// if true, the edge will not be rendered
     var hidden: Bool { get }
 }
 
-extension Graph where NodeType.ValueType: RenderableNodeValue {
+extension HideableValue {
+
+    /// Default implementation, returns false.
+    var hidden: Bool { false}
+}
+
+//public protocol ColoredNodeValue: EmbeddedValue, ColoredValue {
+//}
+
+extension Graph where NodeType.ValueType: ColoredValue {
 
     func makeNodeColors() -> [Int: SIMD4<Float>] {
         var nodeColors = [Int: SIMD4<Float>]()
@@ -34,7 +48,7 @@ extension Graph where NodeType.ValueType: RenderableNodeValue {
     }
 }
 
-extension Graph where NodeType.ValueType: EmbeddedNodeValue {
+extension Graph where NodeType.ValueType: EmbeddedValue {
 
     public func findNearestNode(_ ray: TouchRay) -> NodeType?
     {

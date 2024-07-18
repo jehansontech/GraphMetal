@@ -26,8 +26,8 @@ public struct WireframeUpdateGenerator {
 
     public mutating func makeUpdate<GraphType: Graph>(_ graph: GraphType,
                                                       _ change: RenderableGraphChange) -> WireframeUpdate?
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         if change.nodes {
             return makeNodeSetUpdate(graph, change.edges)
@@ -51,8 +51,8 @@ public struct WireframeUpdateGenerator {
 
     private mutating func makeNodeSetUpdate<GraphType: Graph>(_ graph: GraphType,
                                                               _ makeEdgeIndices: Bool) -> WireframeUpdate
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         var newBBox: BoundingBox? = nil
         var newNodeIndices = [Int: Int]()
@@ -93,8 +93,8 @@ public struct WireframeUpdateGenerator {
 
     private mutating func makeNodePropertiesUpdate<GraphType: Graph>(_ graph: GraphType,
                                                                      _ makeEdgeIndices: Bool) -> WireframeUpdate
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         var newBBox: BoundingBox? = nil
         var newNodeIndices = [Int: Int]()
@@ -135,8 +135,8 @@ public struct WireframeUpdateGenerator {
 
     private mutating func makeNodePositionUpdate<GraphType: Graph>(_ graph: GraphType,
                                                                    _ makeEdgeIndices: Bool) -> WireframeUpdate
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         var newBBox: BoundingBox? = nil
         var newNodeIndices = [Int: Int]()
@@ -172,8 +172,8 @@ public struct WireframeUpdateGenerator {
 
     private mutating func makeNodeColorUpdate<GraphType: Graph>(_ graph: GraphType,
                                                                 _ makeEdgeIndices: Bool) -> WireframeUpdate
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         var newNodeIndices = [Int: Int]()
         var newNodeColors = [Int: SIMD4<Float>]()
@@ -200,8 +200,8 @@ public struct WireframeUpdateGenerator {
     }
 
     private mutating func makeEdgeSetUpdate<GraphType: Graph>(_ graph: GraphType) -> WireframeUpdate
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         if self.nodeIndices == nil {
             self.nodeIndices = Self.makeNodeIndices(graph)
@@ -212,8 +212,8 @@ public struct WireframeUpdateGenerator {
     }
 
     private static func makeNodeIndices<GraphType: Graph>(_ graph: GraphType) -> [Int: Int]
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         var newNodeIndices = [Int: Int]()
         var nodeIndex: Int = 0
@@ -225,8 +225,8 @@ public struct WireframeUpdateGenerator {
     }
 
     private static func makeEdgeIndices<GraphType: Graph>(_ graph: GraphType, _ nodeIndices: [Int: Int]) -> [UInt32]
-    where GraphType.NodeType.ValueType: RenderableNodeValue,
-          GraphType.EdgeType.ValueType: RenderableEdgeValue
+    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
+          GraphType.EdgeType.ValueType: HideableValue
     {
         var edgeIndices = [UInt32]()
         var edgeIndex: Int = 0
@@ -295,8 +295,8 @@ public struct WireframeUpdateGenerator {
 //
 //
 //    private mutating func prepareTopologyUpdate<GraphType: Graph>(_ graph: GraphType) -> WireframeUpdate
-//    where GraphType.NodeType.ValueType: RenderableNodeValue,
-//          GraphType.EdgeType.ValueType: RenderableEdgeValue
+//    where GraphType.NodeType.ValueType: ColoredNodeValue,
+//          GraphType.EdgeType.ValueType: HideableValue
 //    {
 //
 //        var newNodeIndices = [Int: Int]()
@@ -340,8 +340,8 @@ public struct WireframeUpdateGenerator {
 //    }
 //
 //    private func makeNodePositions<GraphType: Graph>(_ graph: GraphType) -> [SIMD3<Float>]
-//    where GraphType.NodeType.ValueType: RenderableNodeValue,
-//          GraphType.EdgeType.ValueType: RenderableEdgeValue
+//    where GraphType.NodeType.ValueType: ColoredNodeValue,
+//          GraphType.EdgeType.ValueType: HideableValue
 //    {
 //        var newNodePositions = [SIMD3<Float>](repeating: .zero, count: graph.nodes.count)
 //        for node in graph.nodes {
@@ -354,8 +354,8 @@ public struct WireframeUpdateGenerator {
 //    }
 //
 //    private func makeNodeColors<GraphType: Graph>(_ graph: GraphType) -> [Int: SIMD4<Float>]
-//    where GraphType.NodeType.ValueType: RenderableNodeValue,
-//          GraphType.EdgeType.ValueType: RenderableEdgeValue
+//    where GraphType.NodeType.ValueType: ColoredNodeValue,
+//          GraphType.EdgeType.ValueType: HideableValue
 //    {
 //
 //        var newNodeColors = [Int: SIMD4<Float>]()
