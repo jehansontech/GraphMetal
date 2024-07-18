@@ -14,27 +14,6 @@ public protocol ColoredValue {
     var color: SIMD4<Float>? { get }
 }
 
-extension ColoredValue {
-
-    /// Default implementation, returns nil
-    var color: SIMD4<Float>? { nil }
-}
-
-public protocol HideableValue {
-
-    /// if true, the edge will not be rendered
-    var hidden: Bool { get }
-}
-
-extension HideableValue {
-
-    /// Default implementation, returns false.
-    var hidden: Bool { false}
-}
-
-//public protocol ColoredNodeValue: EmbeddedValue, ColoredValue {
-//}
-
 extension Graph where NodeType.ValueType: ColoredValue {
 
     func makeNodeColors() -> [Int: SIMD4<Float>] {
@@ -45,6 +24,19 @@ extension Graph where NodeType.ValueType: ColoredValue {
             }
         }
         return nodeColors
+    }
+}
+
+extension Graph where EdgeType.ValueType: ColoredValue {
+
+    func makeEdgeColors() -> [Int: SIMD4<Float>] {
+        var edgeColors = [Int: SIMD4<Float>]()
+        edges.forEach {
+            if let color = $0.value?.color {
+                edgeColors[$0.edgeNumber] = color
+            }
+        }
+        return edgeColors
     }
 }
 
