@@ -37,7 +37,7 @@ typedef NS_ENUM(NSInteger, WireframeTextureIndex)
 //    float fadeoutMidpoint;
 //    float fadeoutDistance;
 //    float pulsePhase;
-//} WireframeUniforms;
+//} Uniforms;
 
 
 /*
@@ -92,7 +92,7 @@ struct BeamVertexOut {
 };
 
 vertex BeamVertexOut beam_vertex(BeamVertexIn vertexIn [[stage_in]],
-                               const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                               const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -106,7 +106,7 @@ vertex BeamVertexOut beam_vertex(BeamVertexIn vertexIn [[stage_in]],
 }
 
 fragment float4 beam_fragment(BeamVertexOut interpolated           [[ stage_in ]],
-                             const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                             const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
 //    // fadeout
 //    // Note that distance is -z
@@ -136,7 +136,7 @@ struct NetVertexOut {
 };
 
 vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
-                               const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                               const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -150,7 +150,7 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
 }
 
 fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
-                             const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                             const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // Note that distance is -z
@@ -182,7 +182,7 @@ struct NodeVertexOut {
 };
 
 vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
-                                 const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                 const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -199,7 +199,7 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
 }
 
 vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
-                                 const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                 const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -216,7 +216,7 @@ vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
 }
 
 vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
-                                    const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                    const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -233,7 +233,7 @@ vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
 }
 
 vertex NodeVertexOut node_vertex_size4(NodeVertexIn vertexIn [[stage_in]],
-                                       const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                       const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -251,7 +251,7 @@ vertex NodeVertexOut node_vertex_size4(NodeVertexIn vertexIn [[stage_in]],
 
 fragment float4 node_fragment_square(NodeVertexOut interpolated                [[ stage_in ]],
                                      float2 pointCoord                         [[point_coord]],
-                                     const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                     const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
@@ -267,7 +267,7 @@ fragment float4 node_fragment_square(NodeVertexOut interpolated                [
 
 fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[ stage_in ]],
                                      float2 pointCoord                         [[point_coord]],
-                                     const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                     const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
@@ -287,7 +287,7 @@ fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[
 
 fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated         [[ stage_in ]],
                                            float2 pointCoord                         [[point_coord]],
-                                           const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                           const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // blink
     if (uniforms.pulsePhase > 0.5) {
@@ -312,7 +312,7 @@ fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated   
 
 fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ stage_in ]],
                                   float2 pointCoord                         [[point_coord]],
-                                  const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                  const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
@@ -333,7 +333,7 @@ fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ s
 
 fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ stage_in ]],
                                    float2 pointCoord                         [[point_coord]],
-                                   const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                   const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
@@ -355,7 +355,7 @@ fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ 
 
 fragment float4 node_fragment_diamond(NodeVertexOut interpolated                [[ stage_in ]],
                                      float2 pointCoord                         [[point_coord]],
-                                     const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                     const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
@@ -405,7 +405,7 @@ fragment float4 node_fragment_diamond(NodeVertexOut interpolated                
 
 fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       [[ stage_in ]],
                                       float2 pointCoord                         [[point_coord]],
-                                      const device WireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                      const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z

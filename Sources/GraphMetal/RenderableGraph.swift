@@ -214,37 +214,50 @@ public struct RenderableGraphChange: Codable, Sendable {
     public static let all = RenderableGraphChange(nodes: true,
                                                   nodeColors: true,
                                                   nodePositions: true,
-                                                  edges: true)
+                                                  edges: true,
+                                                  edgeColors: true)
 
     public static let topology = RenderableGraphChange(nodes: true,
                                                        nodeColors: false,
                                                        nodePositions: false,
-                                                       edges: true)
+                                                       edges: true,
+                                                       edgeColors: false)
 
     public static let geometry = RenderableGraphChange(nodes: false,
                                                        nodeColors: false,
                                                        nodePositions: true,
-                                                       edges: false)
+                                                       edges: false,
+                                                       edgeColors: false)
+
+    public static let colors = RenderableGraphChange(nodes: false,
+                                                     nodeColors: true,
+                                                     nodePositions: false,
+                                                     edges: false,
+                                                     edgeColors: true)
 
     public static let nodeColors = RenderableGraphChange(nodes: false,
-                                                    nodeColors: true,
-                                                    nodePositions: false,
-                                                    edges: false)
+                                                         nodeColors: true,
+                                                         nodePositions: false,
+                                                         edges: false,
+                                                         edgeColors: false)
 
-    public static let geometryAndColor = RenderableGraphChange(nodes: false,
-                                                               nodeColors: true,
-                                                               nodePositions: true,
-                                                               edges: false)
+    public static let edgeColors = RenderableGraphChange(nodes: false,
+                                                         nodeColors: false,
+                                                         nodePositions: false,
+                                                         edges: false,
+                                                         edgeColors: true)
 
     public static let nodes = RenderableGraphChange(nodes: true,
                                                     nodeColors: false,
                                                     nodePositions: false,
-                                                    edges: false)
+                                                    edges: false,
+                                                    edgeColors: false)
 
     public static let edges = RenderableGraphChange(nodes: false,
                                                     nodeColors: false,
                                                     nodePositions: false,
-                                                    edges: true)
+                                                    edges: true,
+                                                    edgeColors: false)
 
     /// indicates whether any nodes have been added and/or removed
     public var nodes: Bool
@@ -258,14 +271,19 @@ public struct RenderableGraphChange: Codable, Sendable {
     /// indicates whether any edges have been added and/or removed
     public var edges: Bool
 
+    /// indicates whether any edges have changed color
+    public var edgeColors: Bool
+
     public init(nodes: Bool = false,
                 nodeColors: Bool = false,
                 nodePositions: Bool = false,
-                edges: Bool = false) {
+                edges: Bool = false,
+                edgeColors: Bool = false) {
         self.nodes = nodes
         self.nodeColors = nodeColors
         self.nodePositions = nodePositions
         self.edges = edges
+        self.edgeColors = edgeColors
     }
 
     public mutating func merge(_ change: RenderableGraphChange) {
@@ -273,6 +291,7 @@ public struct RenderableGraphChange: Codable, Sendable {
         self.nodeColors = self.nodeColors || change.nodeColors
         self.nodePositions = self.nodePositions || change.nodePositions
         self.edges = self.edges || change.edges
+        self.edgeColors = self.edgeColors || change.edgeColors
     }
 }
 

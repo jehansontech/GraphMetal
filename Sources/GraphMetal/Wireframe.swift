@@ -139,7 +139,7 @@ public class Wireframe: Renderable {
     let referenceDate = Date()
 
     /// The 256 byte aligned size of our uniform structure
-    let alignedUniformsSize = (MemoryLayout<WireframeUniforms>.size + 0xFF) & -0x100
+    let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
 
     public var settings: WireframeSettings
 
@@ -190,7 +190,7 @@ public class Wireframe: Renderable {
 
     var uniformBufferRotation = 0
 
-    var uniforms: UnsafeMutablePointer<WireframeUniforms>!
+    var uniforms: UnsafeMutablePointer<Uniforms>!
 
     private var isSetup: Bool = false
 
@@ -306,7 +306,7 @@ public class Wireframe: Renderable {
 
         uniformBufferOffset = alignedUniformsSize * uniformBufferRotation
 
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:WireframeUniforms.self, capacity:1)
+        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
         // =====================================
         // Update content of current uniforms buffer
@@ -505,7 +505,7 @@ public class Wireframe: Renderable {
         if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
             self.dynamicUniformBuffer = buffer
             self.dynamicUniformBuffer.label = "UniformBuffer"
-            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:WireframeUniforms.self, capacity:1)
+            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
         }
         else {
             throw RenderError.bufferCreationFailed

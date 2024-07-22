@@ -14,7 +14,7 @@ public enum WireframeTextureIndex: Int {
     case color = 0
 }
 
-//public struct WireframeUniforms {
+//public struct Uniforms {
 //    public var projectionMatrix: simd_float4x4
 //    public var modelViewMatrix: simd_float4x4
 //    public var pointSize: Float

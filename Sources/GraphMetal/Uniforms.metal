@@ -18,5 +18,5 @@ typedef struct
     float fadeoutMidpoint;
     float fadeoutDistance;
     float pulsePhase;
-} WireframeUniforms;
+} Uniforms;
 
