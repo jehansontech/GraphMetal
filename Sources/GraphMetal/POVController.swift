@@ -1,5 +1,5 @@
 //
-//  POV.swift
+//  POVController.swift
 //  GraphMetal
 //
 //  Created by Jim Hanson on 1/8/22.
@@ -12,19 +12,6 @@ import Wacoma
 enum POVError: Error {
     case notUnitVector(_ name: String, length: Float)
     case notOrthogonal(_ name1: String, _ name2: String, dotProduct: Float)
-}
-
-/// Point of View
-public protocol POV {
-
-    /// the POV's location in world coordinates
-    var location: SIMD3<Float> { get }
-
-    /// Unit vector giving the direction the POV is pointed
-    var forward: SIMD3<Float> { get }
-
-    /// Unit vector giving the POV's "up" direction. Orthogonal to forward.
-    var up: SIMD3<Float> { get }
 }
 
 /// POV whose forward vector always points toward a fixed point in world coordinates.
