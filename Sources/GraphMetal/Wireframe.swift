@@ -288,7 +288,7 @@ public class Wireframe: Renderable {
         }
     }
 
-    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: Wacoma.RenderSettings) {
+    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings) {
         // print("prepareToDraw -- started. renderSettings=\(renderSettings)")
         if !isSetup {
             do {
