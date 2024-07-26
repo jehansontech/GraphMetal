@@ -41,9 +41,9 @@ public class Wireframe2: Renderable {
 
     private var uniformsBufferRotation: Int = 0
     
-    private var isSetup: Bool {
-        uniformsBuffer != nil
-    }
+//    private var isSetup: Bool {
+//        uniformsBuffer != nil
+//    }
 
     private var pulsePhase: Float {
         let millisSinceReferenceDate = Int(Date().timeIntervalSince(referenceDate) * 1000)
@@ -92,56 +92,56 @@ public class Wireframe2: Renderable {
         self.settings = settings
     }
 
-    func setup(_ view: MTKView) throws {
-        if isSetup {
-            return
-        }
-
-        if let device = view.device {
-            self.device = device
-        }
-        else {
-            throw RenderError.noDevice
-        }
-
-        if let device = view.device,
-           let library = WireframeShaders.makeLibrary(device) {
-            self.library = library
-            // debug("Wireframe.setup", "library functions: \(library.functionNames)")
-        }
-        else {
-            throw RenderError.noDefaultLibrary
-        }
-
-        try buildUniforms()
+    public func setup(_ view: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws {
+        self.device = device
+        self.library = library
         try buildNodePipeline(view)
         try buildEdgePipeline(view)
     }
+
+//   func setup(_ view: MTKView) throws {
+//        if isSetup {
+//            return
+//        }
+//
+//        if let device = view.device {
+//            self.device = device
+//        }
+//        else {
+//            throw RenderError.noDevice
+//        }
+//
+//        if let device = view.device,
+//           let library = WireframeShaders.makeLibrary(device) {
+//            self.library = library
+//            // debug("Wireframe.setup", "library functions: \(library.functionNames)")
+//        }
+//        else {
+//            throw RenderError.noDefaultLibrary
+//        }
+//
+//        try buildNodePipeline(view)
+//        try buildEdgePipeline(view)
+//    }
 
     func teardown() {
         // TODO: impl
     }
 
-    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings) {
-        if !isSetup {
-            do {
-                try setup(mtkView)
-            }
-            catch {
-                fatalError("Problem in setup: \(error)")
-            }
-        }
+    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings1) {
+//        if !isSetup {
+//            do {
+//                try setup(mtkView)
+//            }
+//            catch {
+//                fatalError("Problem in setup: \(error)")
+//            }
+//        }
 
-        // TODO: rotate uniforms buffer
-        // TODO: update uniforms content
         // TODO: apply buffer update if present
     }
 
     public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
-    }
-
-    private func buildUniforms() throws {
-
     }
 
     private func buildNodePipeline(_ view: MTKView) throws {

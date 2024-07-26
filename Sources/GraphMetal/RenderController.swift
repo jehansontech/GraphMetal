@@ -12,6 +12,28 @@ import Wacoma
 
 public struct RenderSettings {
 
+    public var pointSize: Float
+
+    public var defaultNodeColor: SIMD4<Float>
+
+    public var defaultEdgeColor: SIMD4<Float>
+
+    public var backgroundColor: SIMD4<Float>
+
+    public init(pointSize: Float = 16,
+                defaultNodeColor: SIMD4<Float> = SIMD4<Float>(0,0,0,1),
+                defaultEdgeColor: SIMD4<Float> = SIMD4<Float>(0,0,0,1),
+                backgroundColor: SIMD4<Float> = SIMD4<Float>(0,0,0,1)) {
+        self.pointSize = pointSize
+        self.defaultNodeColor = defaultNodeColor
+        self.defaultEdgeColor = defaultEdgeColor
+        self.backgroundColor = backgroundColor
+    }
+
+}
+
+public struct RenderSettings1 {
+
     public var pov: POV
 
     public var viewMatrix: float4x4
@@ -27,8 +49,16 @@ public struct RenderSettings {
 
 public protocol Renderable {
 
+    /// Called before the first rendering cycle.
+    mutating func setup(_ mtkView: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws
+
     /// Called at the beginning of every rendering cycle.
-    mutating func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings)
+    // mutating func prepareToDraw()
+
+    // mutating teardown()
+
+    /// Called at the beginning of every rendering cycle.
+    mutating func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings1)
 
     /// Called on every rendering cycle. Should execute as quickly as possible.
     func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
@@ -38,11 +68,13 @@ public protocol Renderable {
 // MARK: - RenderController
 // ============================================================================
 
-public class RenderController: ObservableObject, RendererDelegate, DragHandler, PinchHandler, RotationHandler {
+public class RenderController: ObservableObject, RendererDelegate {
 
     public static let defaultDarkBackground = SIMD4<Double>(0.025, 0.025, 0.025, 1)
 
     public static let defaultLightBackground = SIMD4<Double>(0.975, 0.975, 0.975, 1)
+
+    public var settings = RenderSettings()
 
     public var renderables = [Renderable]()
 
@@ -72,6 +104,28 @@ public class RenderController: ObservableObject, RendererDelegate, DragHandler, 
     
     private var snapshotCallback: ((String) -> Any?)? = nil
 
+    private let referenceDate = Date()
+
+    /// The 256 byte aligned size of our uniform structure
+    private let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
+
+    // TODO: pass in to init
+    private let dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniform.rawValue
+
+    private var isSetup: Bool = false
+
+    private weak var device: MTLDevice!
+
+    private var library: MTLLibrary!
+
+    private var dynamicUniformBuffer: MTLBuffer!
+
+    private var uniformBufferOffset = 0
+
+    private var uniformBufferRotation = 0
+
+    var uniforms: UnsafeMutablePointer<Uniforms>!
+
     public init(_ povController: POVController,
                 _ fovController: FOVController,
                 _ backgroundColor: SIMD4<Double> = RenderController.defaultDarkBackground) {
@@ -86,22 +140,45 @@ public class RenderController: ObservableObject, RendererDelegate, DragHandler, 
     }
 
     public func prepareToDraw(_ view: MTKView) {
+
+        if !isSetup {
+            do {
+                try doSetup(view)
+            }
+            catch {
+                fatalError("Problem in RenderController setup: \(error)")
+            }
+        }
+
         let date = Date()
-        povController.update(date)
-        fovController.update(date)
-        let renderSettings = RenderSettings(pov: povController.pov,
+        
+
+        let renderSettings = RenderSettings1(pov: povController.pov,
                                             viewMatrix: povController.viewMatrix,
                                             fadeoutMidpoint: fovController.fadeoutMidpoint,
                                             fadeoutDistance: fovController.fadeoutDistance,
                                             projectionMatrix: fovController.projectionMatrix,
                                             preferredFramesPerSecond: view.preferredFramesPerSecond)
 
+        povController.update(date)
+        fovController.update(date)
+        prepareUniforms(date, renderSettings)
         for var renderable in renderables {
             renderable.prepareToDraw(view, renderSettings)
         }
     }
 
     public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
+
+        // Do the uniforms no matter what.
+
+        encoder.setVertexBuffer(dynamicUniformBuffer,
+                                offset:uniformBufferOffset,
+                                index: dynamicUniformBufferIndex)
+        encoder.setFragmentBuffer(dynamicUniformBuffer,
+                                  offset:uniformBufferOffset,
+                                  index: dynamicUniformBufferIndex)
+
         for renderable in renderables {
             renderable.encodeDrawCommands(encoder)
         }
@@ -125,6 +202,79 @@ public class RenderController: ObservableObject, RendererDelegate, DragHandler, 
             }
         }
     }
+
+    private func doSetup(_ view: MTKView) throws {
+
+        // =============
+        // Create device and library
+
+        guard let newDevice = view.device
+        else {
+            throw RenderError.noDevice
+        }
+
+        guard let newLibrary = try? newDevice.makeDefaultLibrary(bundle: Bundle.module)
+        else {
+            throw RenderError.noDefaultLibrary
+        }
+
+        self.device = newDevice
+        self.library = newLibrary
+
+        // ======================
+        // Create uniforms buffer
+
+        let uniformBufferSize = alignedUniformsSize * RenderConstants.maxBuffersInFlight
+        if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
+            self.dynamicUniformBuffer = buffer
+            self.dynamicUniformBuffer.label = "UniformBuffer"
+            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+        }
+        else {
+            throw RenderError.bufferCreationFailed
+        }
+
+        // ======================
+        // set up renderables
+
+        for i in renderables.indices {
+            try renderables[i].setup(view, device, library)
+        }
+    }
+
+    private func prepareUniforms(_ date: Date, _ renderSettings: RenderSettings1) {
+
+        // ======================================
+        // Rotate the uniforms buffer
+
+        uniformBufferRotation = (uniformBufferRotation + 1) % RenderConstants.maxBuffersInFlight
+        uniformBufferOffset = alignedUniformsSize * uniformBufferRotation
+        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
+
+        // =====================================
+        // Update content of current uniforms buffer
+        //
+        // NOTE uniforms.modelViewMatrix is equal to renderSettings.viewMatrix
+        // because we are drawing the graph in world coordinates, i.e., our model
+        // matrix is the identity.
+
+        uniforms[0].projectionMatrix = renderSettings.projectionMatrix
+        uniforms[0].modelViewMatrix = renderSettings.viewMatrix
+        uniforms[0].pointSize = 16 // TODO: Float(self.settings.getNodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
+        uniforms[0].edgeColor = SIMD4<Float>(0.2, 0.2, 0.2, 1) // TODO: self.settings.edgeColor
+        uniforms[0].fadeoutMidpoint = renderSettings.fadeoutMidpoint
+        uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
+        uniforms[0].pulsePhase = pulsePhase(date)
+    }
+
+    private func pulsePhase(_ date: Date) -> Float {
+        let millisSinceReferenceDate = Int(date.timeIntervalSince(referenceDate) * 1000)
+        return 0.001 * Float(millisSinceReferenceDate % 1000)
+    }
+
+}
+
+extension RenderController: DragHandler, PinchHandler, RotationHandler {
 
     public func dragBegan(at location: SIMD2<Float>) {
         // print("RenderController.dragBegan")

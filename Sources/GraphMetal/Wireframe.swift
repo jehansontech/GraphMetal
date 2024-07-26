@@ -136,10 +136,10 @@ public struct WireframeUpdate: Codable, Sendable {
 
 public class Wireframe: Renderable {
 
-    let referenceDate = Date()
-
-    /// The 256 byte aligned size of our uniform structure
-    let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
+//    let referenceDate = Date()
+//
+//    /// The 256 byte aligned size of our uniform structure
+//    let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
 
     public var settings: WireframeSettings
 
@@ -182,24 +182,24 @@ public class Wireframe: Renderable {
 
     var edgeIndexBuffer: MTLBuffer? = nil
 
-    let dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniform.rawValue
-
-    var dynamicUniformBuffer: MTLBuffer!
-
-    var uniformBufferOffset = 0
-
-    var uniformBufferRotation = 0
-
-    var uniforms: UnsafeMutablePointer<Uniforms>!
-
-    private var isSetup: Bool = false
+//    let dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniform.rawValue
+//
+//    var dynamicUniformBuffer: MTLBuffer!
+//
+//    var uniformBufferOffset = 0
+//
+//    var uniformBufferRotation = 0
+//
+//    var uniforms: UnsafeMutablePointer<Uniforms>!
+//
+//    private var isSetup: Bool = false
 
     private var bufferUpdate: WireframeUpdate? = nil
 
-    private var pulsePhase: Float {
-        let millisSinceReferenceDate = Int(Date().timeIntervalSince(referenceDate) * 1000)
-        return 0.001 * Float(millisSinceReferenceDate % 1000)
-    }
+//    private var pulsePhase: Float {
+//        let millisSinceReferenceDate = Int(Date().timeIntervalSince(referenceDate) * 1000)
+//        return 0.001 * Float(millisSinceReferenceDate % 1000)
+//    }
 
     public init(nodePositionBufferIndex: Int,
                 nodeColorBufferIndex: Int) {
@@ -220,41 +220,49 @@ public class Wireframe: Renderable {
         // debug("Wireframe.deinit", "started")
     }
 
-    func setup(_ view: MTKView) throws {
-        // debug("Wireframe.setup", "started")
-
-        if let device = view.device {
-            self.device = device
-        }
-        else {
-            throw RenderError.noDevice
-        }
-
-        if let device = view.device,
-           let library = WireframeShaders.makeLibrary(device) {
-            self.library = library
-            // debug("Wireframe.setup", "library functions: \(library.functionNames)")
-        }
-        else {
-            throw RenderError.noDefaultLibrary
-        }
-
-        if dynamicUniformBuffer == nil {
-            try buildUniforms()
-        }
-
-        if nodePipelineState == nil {
-            try buildNodePipeline(view)
-        }
-
-        if edgePipelineState == nil {
-            try buildEdgePipeline(view)
-        }
-
-        //        updateFigure(.all)
-        //        NotificationCenter.default.addObserver(self, selector: #selector(graphHasChanged), name: .graphHasChanged, object: nil)
-        isSetup = true
+    public func setup(_ view: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws {
+        self.device = device
+        self.library = library
+        try buildNodePipeline(view)
+        try buildEdgePipeline(view)
+        // isSetup = true
     }
+
+//    func setup(_ view: MTKView) throws {
+//        // debug("Wireframe.setup", "started")
+//
+//        if let device = view.device {
+//            self.device = device
+//        }
+//        else {
+//            throw RenderError.noDevice
+//        }
+//
+//        if let device = view.device,
+//           let library = WireframeShaders.makeLibrary(device) {
+//            self.library = library
+//            // debug("Wireframe.setup", "library functions: \(library.functionNames)")
+//        }
+//        else {
+//            throw RenderError.noDefaultLibrary
+//        }
+//
+////        if dynamicUniformBuffer == nil {
+////            try buildUniforms()
+////        }
+//
+//        if nodePipelineState == nil {
+//            try buildNodePipeline(view)
+//        }
+//
+//        if edgePipelineState == nil {
+//            try buildEdgePipeline(view)
+//        }
+//
+//        //        updateFigure(.all)
+//        //        NotificationCenter.default.addObserver(self, selector: #selector(graphHasChanged), name: .graphHasChanged, object: nil)
+//        isSetup = true
+//    }
 
     func teardown() {
         // debug("Wireframe.teardown", "started")
@@ -288,40 +296,40 @@ public class Wireframe: Renderable {
         }
     }
 
-    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings) {
+    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings1) {
         // print("prepareToDraw -- started. renderSettings=\(renderSettings)")
-        if !isSetup {
-            do {
-                try setup(mtkView)
-            }
-            catch {
-                fatalError("Problem in setup: \(error)")
-            }
-        }
-
-        // ======================================
-        // Rotate the uniforms buffers
-
-        uniformBufferRotation = (uniformBufferRotation + 1) % RenderConstants.maxBuffersInFlight
-
-        uniformBufferOffset = alignedUniformsSize * uniformBufferRotation
-
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
-
-        // =====================================
-        // Update content of current uniforms buffer
-        //
-        // NOTE uniforms.modelViewMatrix is equal to renderSettings.viewMatrix
-        // because we are drawing the graph in world coordinates, i.e., our model
-        // matrix is the identity.
-
-        uniforms[0].projectionMatrix = renderSettings.projectionMatrix
-        uniforms[0].modelViewMatrix = renderSettings.viewMatrix
-        uniforms[0].pointSize = Float(self.settings.getNodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
-        uniforms[0].edgeColor = self.settings.edgeColor
-        uniforms[0].fadeoutMidpoint = renderSettings.fadeoutMidpoint
-        uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
-        uniforms[0].pulsePhase = pulsePhase
+//        if !isSetup {
+//            do {
+//                try setup(mtkView)
+//            }
+//            catch {
+//                fatalError("Problem in setup: \(error)")
+//            }
+//        }
+//
+//        // ======================================
+//        // Rotate the uniforms buffers
+//
+//        uniformBufferRotation = (uniformBufferRotation + 1) % RenderConstants.maxBuffersInFlight
+//
+//        uniformBufferOffset = alignedUniformsSize * uniformBufferRotation
+//
+//        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
+//
+//        // =====================================
+//        // Update content of current uniforms buffer
+//        //
+//        // NOTE uniforms.modelViewMatrix is equal to renderSettings.viewMatrix
+//        // because we are drawing the graph in world coordinates, i.e., our model
+//        // matrix is the identity.
+//
+//        uniforms[0].projectionMatrix = renderSettings.projectionMatrix
+//        uniforms[0].modelViewMatrix = renderSettings.viewMatrix
+//        uniforms[0].pointSize = Float(self.settings.getNodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
+//        uniforms[0].edgeColor = self.settings.edgeColor
+//        uniforms[0].fadeoutMidpoint = renderSettings.fadeoutMidpoint
+//        uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
+//        uniforms[0].pulsePhase = pulsePhase
 
         // =====================================
         // Possibly update contents of the other buffers
@@ -333,14 +341,14 @@ public class Wireframe: Renderable {
         // _drawCount += 1
         // debug("Wireframe.encodeDrawCommands[\(_drawCount)]")
 
-        // Do the uniforms no matter what.
-
-        encoder.setVertexBuffer(dynamicUniformBuffer,
-                                offset:uniformBufferOffset,
-                                index: dynamicUniformBufferIndex)
-        encoder.setFragmentBuffer(dynamicUniformBuffer,
-                                  offset:uniformBufferOffset,
-                                  index: dynamicUniformBufferIndex)
+//        // Do the uniforms no matter what.
+//
+//        encoder.setVertexBuffer(dynamicUniformBuffer,
+//                                offset:uniformBufferOffset,
+//                                index: dynamicUniformBufferIndex)
+//        encoder.setFragmentBuffer(dynamicUniformBuffer,
+//                                  offset:uniformBufferOffset,
+//                                  index: dynamicUniformBufferIndex)
 
         // If we don't have node positions we can't draw either nodes or edges
         // so we should return early.
@@ -451,6 +459,12 @@ public class Wireframe: Renderable {
                                                      options: [])
             }
             else {
+                // 2024-07-26
+                // --explicitly set options to "shared"
+                // --then "manually synchronize", i.e., ensure these changes are completed
+                //   before GPU gets it; and also ensure GPU operations are completed before
+                //   this method gets it.
+                // 
                 // 2022-11-20 SOMETIMES CRASHES HERE w/ segv. I only started seeing crashes after I
                 // changed xcode 'scheme' to run the 'Release' version. This is CONSISTENT with the
                 // crashes I'm seeing in the TestFlight version of the app.
@@ -500,17 +514,17 @@ public class Wireframe: Renderable {
         }
     }
 
-    private func buildUniforms() throws {
-        let uniformBufferSize = alignedUniformsSize * RenderConstants.maxBuffersInFlight
-        if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
-            self.dynamicUniformBuffer = buffer
-            self.dynamicUniformBuffer.label = "UniformBuffer"
-            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
-        }
-        else {
-            throw RenderError.bufferCreationFailed
-        }
-    }
+//    private func buildUniforms() throws {
+//        let uniformBufferSize = alignedUniformsSize * RenderConstants.maxBuffersInFlight
+//        if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
+//            self.dynamicUniformBuffer = buffer
+//            self.dynamicUniformBuffer.label = "UniformBuffer"
+//            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+//        }
+//        else {
+//            throw RenderError.bufferCreationFailed
+//        }
+//    }
 
     private func buildNodePipeline(_ view: MTKView) throws {
 

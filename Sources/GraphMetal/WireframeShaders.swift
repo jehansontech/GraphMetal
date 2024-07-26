@@ -23,10 +23,12 @@ public enum WireframeTextureIndex: Int {
 //    public var fadeoutDistance: Float
 //    public var pulsePhase: Float
 //}
-
-public struct WireframeShaders {
-
-    public static func makeLibrary(_ device: MTLDevice) -> MTLLibrary? {
-        return try? device.makeDefaultLibrary(bundle: Bundle.module)
-    }
-}
+//
+//public struct WireframeShaders {
+//
+//    // TODO: move this functionality into RenderController
+//    // and pass the library down to the Renderables in setup
+//    public static func makeLibrary(_ device: MTLDevice) -> MTLLibrary? {
+//        return try? device.makeDefaultLibrary(bundle: Bundle.module)
+//    }
+//}
