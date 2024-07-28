@@ -128,7 +128,7 @@ public class Wireframe2: Renderable {
         // TODO: impl
     }
 
-    public func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings1) {
+    public func prepareToDraw() { //_ mtkView: MTKView, _ renderSettings: RenderSettings1) {
 //        if !isSetup {
 //            do {
 //                try setup(mtkView)

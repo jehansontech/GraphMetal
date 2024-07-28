@@ -10,7 +10,23 @@ import SwiftUI
 import MetalKit
 import Wacoma
 
-public struct RenderSettings {
+extension RenderConstants {
+
+    public static let defaultDarkBackground = SIMD4<Double>(0.025, 0.025, 0.025, 1)
+
+    public static let defaultLightBackground = SIMD4<Double>(0.975, 0.975, 0.975, 1)
+
+    public static let pointSizeMinimum: Float = 2
+
+    /// EMPIRICAL
+    public static let pointSizeMaximum: Float = 64
+
+    /// EMPIRICAL
+    public static let pointSizeScaleFactor: Float = 400
+
+}
+
+public struct RenderSettings: Equatable {
 
     public var pointSize: Float
 
@@ -21,8 +37,8 @@ public struct RenderSettings {
     public var backgroundColor: SIMD4<Float>
 
     public init(pointSize: Float = 16,
-                defaultNodeColor: SIMD4<Float> = SIMD4<Float>(0,0,0,1),
-                defaultEdgeColor: SIMD4<Float> = SIMD4<Float>(0,0,0,1),
+                defaultNodeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1),
+                defaultEdgeColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1),
                 backgroundColor: SIMD4<Float> = SIMD4<Float>(0,0,0,1)) {
         self.pointSize = pointSize
         self.defaultNodeColor = defaultNodeColor
@@ -30,21 +46,15 @@ public struct RenderSettings {
         self.backgroundColor = backgroundColor
     }
 
-}
-
-public struct RenderSettings1 {
-
-    public var pov: POV
-
-    public var viewMatrix: float4x4
-
-    public var fadeoutMidpoint: Float
-
-    public var fadeoutDistance: Float
-
-    public var projectionMatrix: float4x4
-
-    public var preferredFramesPerSecond: Int
+    public func getNodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Float {
+        if let bbox = bbox {
+            let newSize = RenderConstants.pointSizeScaleFactor  * self.pointSize / distance(pov.location, bbox.center)
+            return newSize.clamp(RenderConstants.pointSizeMinimum, RenderConstants.pointSizeMaximum)
+        }
+        else {
+            return pointSize
+        }
+    }
 }
 
 public protocol Renderable {
@@ -53,15 +63,13 @@ public protocol Renderable {
     mutating func setup(_ mtkView: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws
 
     /// Called at the beginning of every rendering cycle.
-    // mutating func prepareToDraw()
+    mutating func prepareToDraw()
+
+    /// Called on every rendering cycle. Should execute as quickly as possible.
+    mutating func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
 
     // mutating teardown()
 
-    /// Called at the beginning of every rendering cycle.
-    mutating func prepareToDraw(_ mtkView: MTKView, _ renderSettings: RenderSettings1)
-
-    /// Called on every rendering cycle. Should execute as quickly as possible.
-    func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
 }
 
 // ============================================================================
@@ -70,11 +78,7 @@ public protocol Renderable {
 
 public class RenderController: ObservableObject, RendererDelegate {
 
-    public static let defaultDarkBackground = SIMD4<Double>(0.025, 0.025, 0.025, 1)
-
-    public static let defaultLightBackground = SIMD4<Double>(0.975, 0.975, 0.975, 1)
-
-    public var settings = RenderSettings()
+    @Published public var settings = RenderSettings()
 
     public var renderables = [Renderable]()
 
@@ -109,7 +113,7 @@ public class RenderController: ObservableObject, RendererDelegate {
     /// The 256 byte aligned size of our uniform structure
     private let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
 
-    // TODO: pass in to init
+    // MAYBE: pass in to init
     private let dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniform.rawValue
 
     private var isSetup: Bool = false
@@ -128,7 +132,7 @@ public class RenderController: ObservableObject, RendererDelegate {
 
     public init(_ povController: POVController,
                 _ fovController: FOVController,
-                _ backgroundColor: SIMD4<Double> = RenderController.defaultDarkBackground) {
+                _ backgroundColor: SIMD4<Double> = RenderConstants.defaultDarkBackground) {
         self.povController = povController
         self.fovController = fovController
         self.backgroundColor = backgroundColor
@@ -144,6 +148,7 @@ public class RenderController: ObservableObject, RendererDelegate {
         if !isSetup {
             do {
                 try doSetup(view)
+                isSetup = true
             }
             catch {
                 fatalError("Problem in RenderController setup: \(error)")
@@ -151,20 +156,11 @@ public class RenderController: ObservableObject, RendererDelegate {
         }
 
         let date = Date()
-        
-
-        let renderSettings = RenderSettings1(pov: povController.pov,
-                                            viewMatrix: povController.viewMatrix,
-                                            fadeoutMidpoint: fovController.fadeoutMidpoint,
-                                            fadeoutDistance: fovController.fadeoutDistance,
-                                            projectionMatrix: fovController.projectionMatrix,
-                                            preferredFramesPerSecond: view.preferredFramesPerSecond)
-
         povController.update(date)
         fovController.update(date)
-        prepareUniforms(date, renderSettings)
-        for var renderable in renderables {
-            renderable.prepareToDraw(view, renderSettings)
+        prepareUniforms(date)
+        for i in renderables.indices {
+            renderables[i].prepareToDraw() //view, renderSettings)
         }
     }
 
@@ -179,8 +175,8 @@ public class RenderController: ObservableObject, RendererDelegate {
                                   offset:uniformBufferOffset,
                                   index: dynamicUniformBufferIndex)
 
-        for renderable in renderables {
-            renderable.encodeDrawCommands(encoder)
+        for i in renderables.indices {
+            renderables[i].encodeDrawCommands(encoder)
         }
     }
 
@@ -242,7 +238,7 @@ public class RenderController: ObservableObject, RendererDelegate {
         }
     }
 
-    private func prepareUniforms(_ date: Date, _ renderSettings: RenderSettings1) {
+    private func prepareUniforms(_ date: Date) {
 
         // ======================================
         // Rotate the uniforms buffer
@@ -258,12 +254,12 @@ public class RenderController: ObservableObject, RendererDelegate {
         // because we are drawing the graph in world coordinates, i.e., our model
         // matrix is the identity.
 
-        uniforms[0].projectionMatrix = renderSettings.projectionMatrix
-        uniforms[0].modelViewMatrix = renderSettings.viewMatrix
-        uniforms[0].pointSize = 16 // TODO: Float(self.settings.getNodeSize(forPOV: renderSettings.pov, bbox: self.bbox))
-        uniforms[0].edgeColor = SIMD4<Float>(0.2, 0.2, 0.2, 1) // TODO: self.settings.edgeColor
-        uniforms[0].fadeoutMidpoint = renderSettings.fadeoutMidpoint
-        uniforms[0].fadeoutDistance = renderSettings.fadeoutDistance
+        uniforms[0].projectionMatrix = fovController.projectionMatrix
+        uniforms[0].modelViewMatrix = povController.viewMatrix
+        uniforms[0].pointSize = settings.pointSize // TODO: settings.getNodeSize(forPOV: povController.pov, bbox: self.bbox)
+        uniforms[0].edgeColor = settings.defaultEdgeColor // SIMD4<Float>(0.2, 0.2, 0.2, 1)
+        uniforms[0].fadeoutMidpoint = fovController.fadeoutMidpoint
+        uniforms[0].fadeoutDistance = fovController.fadeoutDistance
         uniforms[0].pulsePhase = pulsePhase(date)
     }
 
