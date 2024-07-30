@@ -47,14 +47,15 @@ public struct RendererView {
         mtkView.enableSetNeedsDisplay = true
         mtkView.isPaused = true
 
+        // Configure mtkView
         mtkView.delegate = coordinator
         mtkView.device = coordinator.device
         mtkView.drawableSize = mtkView.frame.size
         mtkView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
         mtkView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-
         mtkView.framebufferOnly = false // necessary for screenshots
 
+        // Fiddly stuff w/r/t the coordinator
         coordinator.setup(mtkView)
         coordinator.connectGestures(mtkView)
 
@@ -87,7 +88,7 @@ public struct RendererView {
         // and drawableSize =  (2360.0, 1640.0)
 
         // RenderController's settings MIGHT have changed. The only one we care about
-        // here is backgroundColor
+        // here is backgroundColor.
 
         let clearColor: SIMD4<Float> = coordinator.delegate.backgroundColor
         mtkView.clearColor = MTLClearColorMake(Double(clearColor.x),
