@@ -67,8 +67,8 @@ public protocol Renderable {
     /// Called on every rendering cycle. Should execute as quickly as possible.
     mutating func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
 
-    // mutating teardown()
-
+    /// Called when the renderer is destroyed
+    mutating func teardown()
 }
 
 // ============================================================================

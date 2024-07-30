@@ -205,10 +205,9 @@ public class Wireframe: Renderable {
         try buildEdgePipeline(view)
     }
 
-    func teardown() {
+    public func teardown() {
         // debug("Wireframe.teardown", "started")
-        // TODO: maybe dynamicUniformBuffer and uniforms ... if so change declarations from ! to ?
-        // TODO: maybe nodePipelineState ... ditto
+        // TODO: maybe nodePipelineState ...  if so change declarations from ! to ?
         // TODO: maybe edgePipelineState ... ditto
         self.nodePositionBuffer = nil
         self.nodeColorBuffer = nil
