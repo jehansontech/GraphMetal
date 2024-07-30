@@ -15,7 +15,7 @@ public enum RenderError: Error {
     case noDefaultLibrary
     case noDepthStencilState
     case badVertexDescriptor
-    case bufferCreationFailed
+    case bufferCreationFailed(bufferLabel: String)
     case snapshotInProgress
 }
 
@@ -26,6 +26,8 @@ public protocol RenderDelegate: AnyObject {
     var snapshotRequested: Bool { get }
 
     func snapshotTaken(_ response: String)
+
+    func setup(_ mtkView: MTKView) throws
 
     func updateViewBounds(_ viewBounds: CGRect)
 
@@ -71,6 +73,15 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
         }
 
         super.init()
+    }
+
+    public func setup(_ mtkView: MTKView) {
+        do {
+            try delegate.setup(mtkView)
+        }
+        catch {
+            fatalError("Problem in RenderDelegate setup: \(error)")
+        }
     }
 
     public func connectGestures(_ mtkView: MTKView) {

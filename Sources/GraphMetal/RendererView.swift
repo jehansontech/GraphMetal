@@ -55,6 +55,7 @@ public struct RendererView {
 
         mtkView.framebufferOnly = false // necessary for screenshots
 
+        coordinator.setup(mtkView)
         coordinator.connectGestures(mtkView)
 
         // Update and unpause

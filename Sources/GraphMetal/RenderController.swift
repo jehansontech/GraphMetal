@@ -101,8 +101,6 @@ public class RenderController: ObservableObject, RenderDelegate {
 
     private let referenceDate = Date()
 
-    private var isSetup: Bool = false
-
     private weak var device: MTLDevice!
 
     private var library: MTLLibrary!
@@ -139,18 +137,47 @@ public class RenderController: ObservableObject, RenderDelegate {
         self.fovController.update(viewBounds)
     }
 
-    public func prepareToDraw(_ view: MTKView) {
+    public func setup(_ view: MTKView) throws {
 
-        if !isSetup {
-            do {
-                try doSetup(view)
-                isSetup = true
-            }
-            catch {
-                fatalError("Problem in RenderController setup: \(error)")
-            }
+        // =============
+        // Get device and make library
+
+        guard let tmpDevice = view.device
+        else {
+            throw RenderError.noDevice
         }
 
+        guard let tmpLibrary = try? tmpDevice.makeDefaultLibrary(bundle: Bundle.module)
+        else {
+            throw RenderError.noDefaultLibrary
+        }
+
+        self.device = tmpDevice
+        self.library = tmpLibrary
+
+        // ======================
+        // Create uniforms buffer
+
+        let bufferLabel = "Uniforms"
+        let uniformBufferSize = RenderConstants.alignedUniformsSize * RenderConstants.maxBuffersInFlight
+        if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
+            self.uniformsBuffer = buffer
+            self.uniformsBuffer.label = bufferLabel
+            self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+        }
+        else {
+            throw RenderError.bufferCreationFailed(bufferLabel: bufferLabel)
+        }
+
+        // ======================
+        // set up renderables
+
+        for i in renderables.indices {
+            try renderables[i].setup(view, device, library)
+        }
+    }
+
+    public func prepareToDraw(_ view: MTKView) {
         let date = Date()
         povController.update(date)
         fovController.update(date)
@@ -195,42 +222,6 @@ public class RenderController: ObservableObject, RenderDelegate {
     }
 
     private func doSetup(_ view: MTKView) throws {
-
-        // =============
-        // Create device and library
-
-        guard let newDevice = view.device
-        else {
-            throw RenderError.noDevice
-        }
-
-        guard let newLibrary = try? newDevice.makeDefaultLibrary(bundle: Bundle.module)
-        else {
-            throw RenderError.noDefaultLibrary
-        }
-
-        self.device = newDevice
-        self.library = newLibrary
-
-        // ======================
-        // Create uniforms buffer
-
-        let uniformBufferSize = RenderConstants.alignedUniformsSize * RenderConstants.maxBuffersInFlight
-        if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
-            self.uniformsBuffer = buffer
-            self.uniformsBuffer.label = "UniformBuffer"
-            self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
-        }
-        else {
-            throw RenderError.bufferCreationFailed
-        }
-
-        // ======================
-        // set up renderables
-
-        for i in renderables.indices {
-            try renderables[i].setup(view, device, library)
-        }
     }
 
     private func prepareUniforms(_ date: Date) {
