@@ -14,13 +14,18 @@ public struct RenderConstants {
 
     public static let maxBuffersInFlight = 3
 
+    /// The 256 byte aligned size of our uniform structure
+    public static let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
+
+    public static let uniformsBufferIndex = 0
+
     public static let defaultElementColor = SIMD4<Float>(0.2, 0.2, 0.2, 1)
 
     public static let defaultDarkBackground = SIMD4<Float>(0.025, 0.025, 0.025, 1)
 
     public static let defaultLightBackground = SIMD4<Float>(0.975, 0.975, 0.975, 1)
 
-    public static let pointSizeMinimum: Float = 2
+    public static let pointSizeMinimum: Float = 1
 
     /// EMPIRICAL
     public static let pointSizeMaximum: Float = 64
@@ -49,29 +54,6 @@ public struct RenderSettings: Equatable {
         self.defaultEdgeColor = defaultEdgeColor
         self.backgroundColor = backgroundColor
     }
-
-    public mutating func setColorScheme(_ colorScheme: ColorScheme) {
-        switch colorScheme {
-        case .dark:
-            backgroundColor = RenderConstants.defaultDarkBackground
-            break
-        case .light:
-            backgroundColor = RenderConstants.defaultLightBackground
-            break
-        @unknown default:
-            break
-        }
-    }
-
-    public func getNodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Float {
-        if let bbox = bbox {
-            let newSize = RenderConstants.pointSizeScaleFactor  * self.pointSize / distance(pov.location, bbox.center)
-            return newSize.clamp(RenderConstants.pointSizeMinimum, RenderConstants.pointSizeMaximum)
-        }
-        else {
-            return pointSize
-        }
-    }
 }
 
 public protocol Renderable {
@@ -93,8 +75,10 @@ public protocol Renderable {
 // MARK: - RenderController
 // ============================================================================
 
-public class RenderController: ObservableObject { //}, RendererDelegate {
-
+public class RenderController: ObservableObject, RenderDelegate {
+    
+    public var backgroundColor: SIMD4<Float> { settings.backgroundColor }
+    
     @Published public var settings = RenderSettings()
 
     public var renderables = [Renderable]()
@@ -117,23 +101,17 @@ public class RenderController: ObservableObject { //}, RendererDelegate {
 
     private let referenceDate = Date()
 
-    /// The 256 byte aligned size of our uniform structure
-    private let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
-
-    // MAYBE: pass in to init
-    private let dynamicUniformBufferIndex: Int = WireframeBufferIndex.uniform.rawValue
-
     private var isSetup: Bool = false
 
     private weak var device: MTLDevice!
 
     private var library: MTLLibrary!
 
-    private var dynamicUniformBuffer: MTLBuffer!
+    private var uniformsBuffer: MTLBuffer!
 
-    private var uniformBufferOffset = 0
+    private var uniformsBufferOffset = 0
 
-    private var uniformBufferRotation = 0
+    private var uniformsBufferRotation = 0
 
     var uniforms: UnsafeMutablePointer<Uniforms>!
 
@@ -141,6 +119,19 @@ public class RenderController: ObservableObject { //}, RendererDelegate {
                 _ fovController: FOVController) {
         self.povController = povController
         self.fovController = fovController
+    }
+
+    public func setColorScheme(_ colorScheme: ColorScheme) {
+        switch colorScheme {
+        case .dark:
+            settings.backgroundColor = RenderConstants.defaultDarkBackground
+            break
+        case .light:
+            settings.backgroundColor = RenderConstants.defaultLightBackground
+            break
+        @unknown default:
+            break
+        }
     }
 
     public func updateViewBounds(_ viewBounds: CGRect) {
@@ -172,12 +163,12 @@ public class RenderController: ObservableObject { //}, RendererDelegate {
     public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
 
         // Do the uniforms first.
-        encoder.setVertexBuffer(dynamicUniformBuffer,
-                                offset:uniformBufferOffset,
-                                index: dynamicUniformBufferIndex)
-        encoder.setFragmentBuffer(dynamicUniformBuffer,
-                                  offset:uniformBufferOffset,
-                                  index: dynamicUniformBufferIndex)
+        encoder.setVertexBuffer(uniformsBuffer,
+                                offset:uniformsBufferOffset,
+                                index: RenderConstants.uniformsBufferIndex)
+        encoder.setFragmentBuffer(uniformsBuffer,
+                                  offset:uniformsBufferOffset,
+                                  index:  RenderConstants.uniformsBufferIndex)
 
         for i in renderables.indices {
             renderables[i].encodeDrawCommands(encoder)
@@ -224,11 +215,11 @@ public class RenderController: ObservableObject { //}, RendererDelegate {
         // ======================
         // Create uniforms buffer
 
-        let uniformBufferSize = alignedUniformsSize * RenderConstants.maxBuffersInFlight
+        let uniformBufferSize = RenderConstants.alignedUniformsSize * RenderConstants.maxBuffersInFlight
         if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
-            self.dynamicUniformBuffer = buffer
-            self.dynamicUniformBuffer.label = "UniformBuffer"
-            self.uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+            self.uniformsBuffer = buffer
+            self.uniformsBuffer.label = "UniformBuffer"
+            self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
         }
         else {
             throw RenderError.bufferCreationFailed
@@ -247,9 +238,9 @@ public class RenderController: ObservableObject { //}, RendererDelegate {
         // ======================================
         // Rotate the uniforms buffer
 
-        uniformBufferRotation = (uniformBufferRotation + 1) % RenderConstants.maxBuffersInFlight
-        uniformBufferOffset = alignedUniformsSize * uniformBufferRotation
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
+        uniformsBufferRotation = (uniformsBufferRotation + 1) % RenderConstants.maxBuffersInFlight
+        uniformsBufferOffset = RenderConstants.alignedUniformsSize * uniformsBufferRotation
+        uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents() + uniformsBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
 
         // =====================================
         // Update content of current uniforms buffer
@@ -274,6 +265,17 @@ public class RenderController: ObservableObject { //}, RendererDelegate {
 
     private func makePointSize() -> Float {
         // TODO: settings.getNodeSize(forPOV: povController.pov, bbox: self.bbox)
+        //
+        //        public func getNodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Float {
+        //            if let bbox = bbox {
+        //                let newSize = RenderConstants.pointSizeScaleFactor  * self.pointSize / distance(pov.location, bbox.center)
+        //                return newSize.clamp(RenderConstants.pointSizeMinimum, RenderConstants.pointSizeMaximum)
+        //            }
+        //            else {
+        //                return pointSize
+        //            }
+        //        }
+
         return settings.pointSize
     }
 }

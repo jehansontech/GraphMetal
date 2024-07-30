@@ -19,17 +19,28 @@ public enum RenderError: Error {
     case snapshotInProgress
 }
 
-//public struct RenderDelegate: AnyObject {
-//
-//}
+public protocol RenderDelegate: AnyObject {
+
+    var backgroundColor: SIMD4<Float> { get }
+    
+    var snapshotRequested: Bool { get }
+
+    func snapshotTaken(_ response: String)
+
+    func updateViewBounds(_ viewBounds: CGRect)
+
+    func prepareToDraw(_ view: MTKView)
+
+    func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
+}
 
 public class RenderCoordinator: NSObject, MTKViewDelegate {
 
-    private(set) weak var controller: RenderController!
+    let device: MTLDevice!
+
+    private(set) weak var delegate: RenderDelegate!
 
     private var gestureCoordinator: GestureCoordinator
-
-    public let device: MTLDevice!
 
     private let inFlightSemaphore = DispatchSemaphore(value: RenderConstants.maxBuffersInFlight)
 
@@ -38,8 +49,6 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
     private let depthState: MTLDepthStencilState
 
     public init(_ delegate: RenderController, _ gestureHandlers: GestureHandlers) throws {
-        self.controller = delegate
-        self.gestureCoordinator = GestureCoordinator(gestureHandlers)
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
         }
@@ -47,6 +56,8 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
             throw RenderError.noDevice
         }
 
+        self.delegate = delegate
+        self.gestureCoordinator = GestureCoordinator(gestureHandlers)
         self.commandQueue = device.makeCommandQueue()!
 
         let depthStateDesciptor = MTLDepthStencilDescriptor()
@@ -60,7 +71,6 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
         }
 
         super.init()
-
     }
 
     public func connectGestures(_ mtkView: MTKView) {
@@ -85,31 +95,22 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
         // The newSize arg is in pixels, whereas view.bounds is in "points". The latter is
         // what we care about.
         
-        controller.updateViewBounds(view.bounds)
+        delegate.updateViewBounds(view.bounds)
     }
 
     public func draw(in view: MTKView) {
 
-        //        if delegate == nil {
-        //            return
-        //        }
-
-        // print("Renderer.draw")
-
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
-
-        // _drawCount += 1
-        // let t0 = Date()
 
         // Swift compiler sez that the snapshot needs to be taken before the current drawable
         // is presented. This means it will capture the figure that was drawn the in PREVIOUS
         // call to this method.
 
-        if controller.snapshotRequested {
-            controller.snapshotTaken(saveSnapshot(view))
+        if delegate.snapshotRequested {
+            delegate.snapshotTaken(saveSnapshot(view))
         }
 
-        controller.prepareToDraw(view)
+        delegate.prepareToDraw(view)
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
 
@@ -129,9 +130,7 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
 
                 if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
                     renderEncoder.setDepthStencilState(depthState)
-
-                    controller.encodeDrawCommands(renderEncoder)
-
+                    delegate.encodeDrawCommands(renderEncoder)
                     renderEncoder.endEncoding()
                 }
 
@@ -143,12 +142,14 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
 
     func saveSnapshot(_ view: MTKView) -> String {
         if let cgImage = view.takeSnapshot() {
-            return cgImage.save()
+            let response = cgImage.save()
 
-            // Docco sez: "You are responsible for releasing this object by calling CGImageRelease"
-            // but I get a compiler error: "'CGImageRelease' is unavailable: Core Foundation objects
-            // are automatically memory managed"
+            // Docco sez, "You are responsible for releasing this object by calling
+            // CGImageRelease" but when I do so I get a compiler error w/ message
+            // "'CGImageRelease' is unavailable: Core Foundation objects are automatically memory managed"
             // CGImageRelease(cgImage)
+
+            return response
         }
         else {
             return "Image capture failed"
