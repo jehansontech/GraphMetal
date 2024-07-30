@@ -1,8 +1,8 @@
 //
-//  File.swift
-//  
+//  RendererView.swift
+//  GraphMetal
 //
-//  Created by Jim Hanson on 7/25/24.
+//  Created by Jim Hanson on 1/8/22.
 //
 
 import SwiftUI
@@ -21,22 +21,23 @@ public struct RendererView {
         self.gestureHandlers = gestureHandlers
     }
 
-    public func makeCoordinator() -> Renderer {
+    public func makeCoordinator() -> RenderCoordinator {
         // Docco sez, "Implement this method if changes to your view might affect other
         // parts of your app. In your implementation, create a custom Swift instance that
         // can communicate with other parts of your interface. For example, you might
         // provide an instance that binds its variables to SwiftUI properties, causing
         // the two to remain synchronized."
+
         do {
-            return try Renderer(controller, gestureHandlers ?? GestureHandlers())
+            return try RenderCoordinator(controller, gestureHandlers ?? GestureHandlers())
         }
         catch {
             fatalError("Problem creating render coordinator: \(error)")
         }
     }
 
-    public func makeMTKView(_ coordinator: Renderer) -> MTKView {
-        // "Creates the view object and configures its initial state."
+    public func makeMTKView(_ coordinator: RenderCoordinator) -> MTKView {
+        // Docco sez, "Creates the view object and configures its initial state."
 
         // print("RendererView.makeMTKView")
 
@@ -64,40 +65,38 @@ public struct RendererView {
         return mtkView
     }
 
-    public func updateMTKView(_ mtkView: MTKView, _ coordinator: Renderer) {
-
-        // Docco for this method sez, "Updates the state of the specified view with
+    public func updateMTKView(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
+        // Docco sez, "Updates the state of the specified view with
         // new information from SwiftUI." This struct gets recreated many many times,
         // and I think the system calls makeMTKView the first time this is created
         // but it calls this method all the subsequent times.
-
+        // 
         // EMPIRICAL: I'm seeing this method called once per handful of calls to draw()
 
         // print("RendererView.updateMTKView")
         doUpdate(mtkView, coordinator)
     }
 
-    private func doUpdate(_ mtkView: MTKView, _ coordinator: Renderer) {
+    private func doUpdate(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
 
-        let clearColor: SIMD4<Double>
-        if let delegate = coordinator.delegate {
-            clearColor = delegate.backgroundColor
-        }
-        else {
-            clearColor = .zero
-        }
-        // RenderController's backgroundColor MIGHT have changed
-        mtkView.clearColor = MTLClearColorMake(clearColor.x,
-                                               clearColor.y,
-                                               clearColor.z,
-                                               clearColor.w)
+        // print("RendererView.doUpdate: Entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
+        
+        // NOTE mtkView's bounds are measured in points while its drawableSize is measured
+        // in pixels. They need not match, e.g., on my ipad, bounds = (0.0, 0.0, 1180.0, 820.0)
+        // and drawableSize =  (2360.0, 1640.0)
 
-        // mtkView's bounds are measured in points while its drawableSize is measured in pixels.
-        // They need not match, e.g., on my ipad, bounds: (0.0, 0.0, 1180.0, 820.0), drawableSize: (2360.0, 1640.0)
-        // print("RendererView.doUpdate. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
+        // RenderController's settings MIGHT have changed. The only one we care about
+        // here is backgroundColor
+
+        let clearColor: SIMD4<Float> = coordinator.controller.settings.backgroundColor
+        mtkView.clearColor = MTLClearColorMake(Double(clearColor.x),
+                                               Double(clearColor.y),
+                                               Double(clearColor.z),
+                                               Double(clearColor.w))
+
     }
 
-    static public func dismantleMTKView(_ mtkView: MTKView, _ coordinator: Renderer) {
+    static public func dismantleMTKView(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
         coordinator.disconnectGestures(mtkView)
     }
 }
@@ -107,7 +106,7 @@ public struct RendererView {
 extension RendererView: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
-    public typealias Coordinator = Renderer
+    public typealias Coordinator = RenderCoordinator
 
     public func makeUIView(context: Context) -> MTKView {
         let mtkView = makeMTKView(context.coordinator)
@@ -119,7 +118,7 @@ extension RendererView: UIViewRepresentable {
         return updateMTKView(mtkView, context.coordinator)
     }
 
-    static public func dismantleUIView(_ mtkView: MTKView, coordinator: Renderer) {
+    static public func dismantleUIView(_ mtkView: MTKView, coordinator: RenderCoordinator) {
         dismantleMTKView(mtkView, coordinator)
     }
 }
@@ -129,7 +128,7 @@ extension RendererView: UIViewRepresentable {
 extension RendererView: NSViewRepresentable {
 
     public typealias NSViewType = MTKView
-    public typealias Coordinator = Renderer
+    public typealias Coordinator = RenderCoordinator
 
     public func makeNSView(context: Context) -> MTKView {
         return makeMTKView(context.coordinator)
@@ -139,7 +138,7 @@ extension RendererView: NSViewRepresentable {
         return updateMTKView(mtkView, context.coordinator)
     }
 
-    static public func dismantleNSView(_ mtkView: MTKView, coordinator: Renderer) {
+    static public func dismantleNSView(_ mtkView: MTKView, coordinator: RenderCoordinator) {
         dismantleMTKView(mtkView, coordinator)
     }
 }
