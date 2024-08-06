@@ -34,6 +34,8 @@ public protocol RenderDelegate: AnyObject {
     func prepareToDraw(_ view: MTKView)
 
     func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
+
+    func renderingIsComplete()
 }
 
 public class RenderCoordinator: NSObject, MTKViewDelegate {
@@ -44,13 +46,11 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
 
     private var gestureCoordinator: GestureCoordinator
 
-    private let inFlightSemaphore = DispatchSemaphore(value: RenderConstants.maxBuffersInFlight)
-
     private let commandQueue: MTLCommandQueue
 
     private let depthState: MTLDepthStencilState
 
-    public init(_ delegate: RenderController, _ gestureHandlers: GestureHandlers) throws {
+    public init(_ delegate: RenderDelegate, _ gestureHandlers: GestureHandlers) throws {
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
         }
@@ -109,10 +109,15 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
         delegate.updateViewBounds(view.bounds)
     }
 
+//    private var drawCount: Int = 0
+
     public func draw(in view: MTKView) {
+//        drawCount += 1
 
-        _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
-
+//        if drawCount % 60 == 1 {
+//            print("RenderCoordinator.draw #\(drawCount) entered")
+//        }
+        
         // Swift compiler sez that the snapshot needs to be taken before the current drawable
         // is presented. This means it will capture the figure that was drawn the in PREVIOUS
         // call to this method.
@@ -123,32 +128,48 @@ public class RenderCoordinator: NSObject, MTKViewDelegate {
 
         delegate.prepareToDraw(view)
 
+//        if drawCount % 60 == 1 {
+//            print("RenderCoordinator.draw #\(drawCount) prepareToDraw done")
+//        }
+
         if let commandBuffer = commandQueue.makeCommandBuffer() {
 
-            let semaphore = inFlightSemaphore
+            // let delegate2 = delegate!
             commandBuffer.addCompletedHandler { (_ commandBuffer) -> Swift.Void in
-                semaphore.signal()
+                // delegate2.renderingIsComplete()
+                self.delegate.renderingIsComplete()
             }
 
-            // Delay getting the current Drawable and RenderPassDescriptor until we absolutely
-            // them, in order to avoid holding onto the drawable and therby blocking the display
-            // pipeline any longer than necessary
-            if let drawable = view.currentDrawable,
-               let renderPassDescriptor = view.currentRenderPassDescriptor {
+            // MAYBE: put this whole thing down into the delegate, a la:
+            // delegate.draw(commandBuffer, view)
+
+
+            // Delay getting the RenderPassDescriptor until we absolutely it in order
+            // to avoid blocking the display pipeline any longer than necessary.
+            if let renderPassDescriptor = view.currentRenderPassDescriptor {
+
 
                 renderPassDescriptor.colorAttachments[0].loadAction = .clear
                 renderPassDescriptor.colorAttachments[0].storeAction = .dontCare
 
+                // TODO: pass the BUFFER to the delegate
+                // and have the delegate manage depth stencil state.
                 if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
                     renderEncoder.setDepthStencilState(depthState)
                     delegate.encodeDrawCommands(renderEncoder)
                     renderEncoder.endEncoding()
                 }
 
-                commandBuffer.present(drawable)
+                if let drawable = view.currentDrawable {
+                    commandBuffer.present(drawable)
+                }
             }
             commandBuffer.commit()
         }
+
+//        if drawCount % 60 == 1 {
+//            print("RenderCoordinator.draw #\(drawCount) exiting")
+//        }
     }
 
     func saveSnapshot(_ view: MTKView) -> String {

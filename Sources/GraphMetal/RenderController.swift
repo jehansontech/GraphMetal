@@ -12,12 +12,9 @@ import Wacoma
 
 public struct RenderConstants {
 
-    public static let maxBuffersInFlight = 3
-
-    /// The 256 byte aligned size of our uniform structure
-    public static let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
-
     public static let uniformsBufferIndex = 0
+
+    public static let nodePositionBufferIndex = 1
 
     public static let defaultElementColor = SIMD4<Float>(0.2, 0.2, 0.2, 1)
 
@@ -67,6 +64,9 @@ public protocol Renderable {
     /// Called on every rendering cycle. Should execute as quickly as possible.
     mutating func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
 
+    /// Called when the GPU finishes its work at end of every rendering cycle.
+    mutating func renderingIsComplete()
+
     /// Called when the renderer is destroyed
     mutating func teardown()
 }
@@ -76,9 +76,9 @@ public protocol Renderable {
 // ============================================================================
 
 public class RenderController: ObservableObject, RenderDelegate {
-    
+
     public var backgroundColor: SIMD4<Float> { settings.backgroundColor }
-    
+
     @Published public var settings = RenderSettings()
 
     public var renderables = [Renderable]()
@@ -105,18 +105,13 @@ public class RenderController: ObservableObject, RenderDelegate {
 
     private var library: MTLLibrary!
 
-    private var uniformsBuffer: MTLBuffer!
-
-    private var uniformsBufferOffset = 0
-
-    private var uniformsBufferRotation = 0
-
-    var uniforms: UnsafeMutablePointer<Uniforms>!
+    private var uniformsController: UniformsController
 
     public init(_ povController: POVController,
                 _ fovController: FOVController) {
         self.povController = povController
         self.fovController = fovController
+        self.uniformsController = UniformsController()
     }
 
     public func setColorScheme(_ colorScheme: ColorScheme) {
@@ -138,10 +133,6 @@ public class RenderController: ObservableObject, RenderDelegate {
     }
 
     public func setup(_ view: MTKView) throws {
-
-        // =============
-        // Get device and make library
-
         guard let tmpDevice = view.device
         else {
             throw RenderError.noDevice
@@ -154,24 +145,7 @@ public class RenderController: ObservableObject, RenderDelegate {
 
         self.device = tmpDevice
         self.library = tmpLibrary
-
-        // ======================
-        // Create uniforms buffer
-
-        let bufferLabel = "Uniforms"
-        let uniformBufferSize = RenderConstants.alignedUniformsSize * RenderConstants.maxBuffersInFlight
-        if let buffer = device.makeBuffer(length: uniformBufferSize, options: [MTLResourceOptions.storageModeShared]) {
-            self.uniformsBuffer = buffer
-            self.uniformsBuffer.label = bufferLabel
-            self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
-        }
-        else {
-            throw RenderError.bufferCreationFailed(bufferLabel: bufferLabel)
-        }
-
-        // ======================
-        // set up renderables
-
+        try uniformsController.setup(device)
         for i in renderables.indices {
             try renderables[i].setup(view, device, library)
         }
@@ -181,24 +155,23 @@ public class RenderController: ObservableObject, RenderDelegate {
         let date = Date()
         povController.update(date)
         fovController.update(date)
-        prepareUniforms(date)
+        uniformsController.update(makeUniforms(date))
         for i in renderables.indices {
             renderables[i].prepareToDraw() //view, renderSettings)
         }
     }
 
     public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
-
-        // Do the uniforms first.
-        encoder.setVertexBuffer(uniformsBuffer,
-                                offset:uniformsBufferOffset,
-                                index: RenderConstants.uniformsBufferIndex)
-        encoder.setFragmentBuffer(uniformsBuffer,
-                                  offset:uniformsBufferOffset,
-                                  index:  RenderConstants.uniformsBufferIndex)
-
+        uniformsController.encodeDrawCommands(encoder)
         for i in renderables.indices {
             renderables[i].encodeDrawCommands(encoder)
+        }
+    }
+
+    public func renderingIsComplete() {
+        uniformsController.renderingIsComplete()
+        for i in renderables.indices {
+            renderables[i].renderingIsComplete()
         }
     }
 
@@ -221,40 +194,27 @@ public class RenderController: ObservableObject, RenderDelegate {
         }
     }
 
-    private func doSetup(_ view: MTKView) throws {
-    }
+    private func makeUniforms(_ date: Date) -> Uniforms {
 
-    private func prepareUniforms(_ date: Date) {
-
-        // ======================================
-        // Rotate the uniforms buffer
-
-        uniformsBufferRotation = (uniformsBufferRotation + 1) % RenderConstants.maxBuffersInFlight
-        uniformsBufferOffset = RenderConstants.alignedUniformsSize * uniformsBufferRotation
-        uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents() + uniformsBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
-
-        // =====================================
-        // Update content of current uniforms buffer
-        //
         // NOTE uniforms.modelViewMatrix is equal to povController.viewMatrix
         // because we are drawing the graph in world coordinates, i.e., our model
         // matrix is the identity.
 
-        uniforms[0].projectionMatrix = fovController.projectionMatrix
-        uniforms[0].modelViewMatrix = povController.viewMatrix
-        uniforms[0].pointSize = makePointSize()
-        uniforms[0].edgeColor = settings.defaultEdgeColor
-        uniforms[0].fadeoutMidpoint = fovController.fadeoutMidpoint
-        uniforms[0].fadeoutDistance = fovController.fadeoutDistance
-        uniforms[0].pulsePhase = makePulsePhase(date)
+        return Uniforms(projectionMatrix: fovController.projectionMatrix,
+                        modelViewMatrix: povController.viewMatrix,
+                        pointSize: makePointSize(),
+                        edgeColor: settings.defaultEdgeColor,
+                        fadeoutMidpoint: fovController.fadeoutMidpoint,
+                        fadeoutDistance: fovController.fadeoutDistance,
+                        pulsePhase: makePulsePhase(date))
     }
 
     private func makePulsePhase(_ date: Date) -> Float {
-        let millisSinceReferenceDate = Int(date.timeIntervalSince(referenceDate) * 1000)
+        let millisSinceReferenceDate = Int(date.timeIntervalSinceReferenceDate * 1000)
         return 0.001 * Float(millisSinceReferenceDate % 1000)
     }
 
-    private func makePointSize() -> Float {
+    public func makePointSize() -> Float {
         // TODO: settings.getNodeSize(forPOV: povController.pov, bbox: self.bbox)
         //
         //        public func getNodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Float {

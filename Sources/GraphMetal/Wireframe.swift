@@ -198,6 +198,9 @@ public class Wireframe: Renderable {
         // debug("Wireframe.deinit", "started")
     }
 
+    public func renderingIsComplete() {
+    }
+
     public func setup(_ view: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws {
         self.device = device
         self.library = library
@@ -259,6 +262,11 @@ public class Wireframe: Renderable {
         if let edgeIndexBuffer = self.edgeIndexBuffer {
             encoder.pushDebugGroup("Edges")
             encoder.setRenderPipelineState(edgePipelineState)
+
+            // For colored edges, do encoder.setVertexBuffer(edgeColorBuffer, . . .)
+            // We'll need to to sth to the edge pipeline state as well
+            // And to the metal shaders.
+            
             encoder.drawIndexedPrimitives(type: .line,
                                           indexCount: edgeIndexCount,
                                           indexType: MTLIndexType.uint32,
@@ -308,28 +316,23 @@ public class Wireframe: Renderable {
             nodePositionBuffer = nil
         }
         else if let newNodePositions = update.nodePositions {
-//            if newNodePositions.count != newNodeCount {
-//                fatalError("Failed sanity check: newNodeCount=\(newNodeCount) but newNodePositions.count=\(newNodePositions.count)")
-//            }
+            //            // SANITY CHECK
+            //            if newNodePositions.count != newNodeCount {
+            //                fatalError("Failed sanity check: newNodeCount=\(newNodeCount) but newNodePositions.count=\(newNodePositions.count)")
+            //            }
 
-            if nodePositionBuffer == nil || newNodeCount != oldNodeCount {
-                nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
-                                                       length: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size,
-                                                       options: [])
-            }
-            else {
-                // 2022-11-21 I was getting segv when I did this w/ the node colors buffer, so I'm
-                // commenting it out here as well.
-                //                nodePositionBuffer!.contents().copyMemory(from: newNodePositions,
-                //                                                          byteCount: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size)
-                nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
-                                                       length: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size,
-                                                       options: [])
-            }
+            // We're going to create a new buffer rather than modifying the extant one
+            // so that we don't have to worry about sequencing the CPU vs GPU access to it.
+            // Not setting options = storageModePrivate b/c it's not compatible with this version
+            // of makeBuffer
+            self.nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
+                                                        length: newNodePositions.count * MemoryLayout<SIMD3<Float>>.size,
+                                                        options: [])
         }
-//        else if newNodeCount != oldNodeCount {
-//            fatalError("Failed sanity check: nodeCount changed but newNodePositions is nil")
-//        }
+        //        // SANITY CHECK
+        //        else if newNodeCount != oldNodeCount {
+        //            fatalError("Failed sanity check: nodeCount changed but newNodePositions is nil")
+        //        }
 
 
         // ====================
@@ -353,15 +356,8 @@ public class Wireframe: Renderable {
                                                      options: [])
             }
             else {
-                // 2024-07-26 TRY THIS:
-                // - explicitly set options to "shared"
-                // - then "manually synchronize", i.e., ensure these changes are completed
-                //   before GPU gets it; and also ensure GPU operations are completed before
-                //   this method gets it.
-                // 
-                // 2022-11-20 SOMETIMES CRASHES HERE w/ segv. I only started seeing crashes after I
-                // changed xcode 'scheme' to run the 'Release' version. This is CONSISTENT with the
-                // crashes I'm seeing in the TestFlight version of the app.
+                // CAN'T just write the new data to the buffer  w/o explicit sequencing protections
+                // b/c the CPU and GPU are sharing it.
                 //                nodeColorBuffer!.contents().copyMemory(from: colorsArray,
                 //                                                       byteCount: nodeCount * MemoryLayout<SIMD4<Float>>.size)
                 nodeColorBuffer = device.makeBuffer(bytes: colorsArray,
@@ -381,26 +377,27 @@ public class Wireframe: Renderable {
             self.edgeIndexBuffer = nil
         }
         else if let newEdgeIndices = update.edgeIndices {
-//            if newEdgeIndices.count != edgeIndexCount {
-//                fatalError("Failed sanity check: newEdgeIndexCount=\(newEdgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
-//            }
+            // SANITY CHECK
+            //            if newEdgeIndices.count != edgeIndexCount {
+            //                fatalError("Failed sanity check: newEdgeIndexCount=\(newEdgeIndexCount) but newEdgeIndices.count=\(newEdgeIndices.count)")
+            //            }
 
             if edgeIndexBuffer == nil || newEdgeIndexCount != oldEdgeIndexCount {
                 edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
                                                     length: newEdgeIndices.count * MemoryLayout<UInt32>.size)
             }
             else {
-                // 2022-11-21 I was getting segv when I did this w/ the node colors buffer, so I'm
-                // commenting it out here as well.
+                // Can't copy new data to extant buffer b/c CPU and GPU are sharing it.
                 //                edgeIndexBuffer!.contents().copyMemory(from: newEdgeIndices,
                 //                                                       byteCount: newEdgeIndices.count * MemoryLayout<UInt32>.size)
                 edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
                                                     length: newEdgeIndices.count * MemoryLayout<UInt32>.size)
             }
         }
-//        else if newEdgeIndexCount != oldEdgeIndexCount {
-//            fatalError("Failed sanity check: edgeIndexCount changed but newEdgeIndices is nil")
-//        }
+        // SANITY CHECK
+        //        else if newEdgeIndexCount != oldEdgeIndexCount {
+        //            fatalError("Failed sanity check: edgeIndexCount changed but newEdgeIndices is nil")
+        //        }
 
         let dt = Date().timeIntervalSince(t0)
         if dt > 0.1 {
@@ -417,12 +414,10 @@ public class Wireframe: Renderable {
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].offset = 0
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = nodePositionBufferIndex
-        // vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
 
         vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].format = MTLVertexFormat.float4
         vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].offset = 0
         vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].bufferIndex = nodeColorBufferIndex
-        // vertexDescriptor.attributes[WireframeVertexAttribute.color.rawValue].bufferIndex = WireframeBufferIndex.nodeColor.rawValue
 
         vertexDescriptor.layouts[nodePositionBufferIndex].stride = MemoryLayout<SIMD3<Float>>.stride
         vertexDescriptor.layouts[nodePositionBufferIndex].stepRate = 1
@@ -431,14 +426,6 @@ public class Wireframe: Renderable {
         vertexDescriptor.layouts[nodeColorBufferIndex].stride = MemoryLayout<SIMD4<Float>>.stride
         vertexDescriptor.layouts[nodeColorBufferIndex].stepRate = 1
         vertexDescriptor.layouts[nodeColorBufferIndex].stepFunction = MTLVertexStepFunction.perVertex
-
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
-//
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stride = MemoryLayout<SIMD4<Float>>.stride
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepRate = 1
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodeColor.rawValue].stepFunction = MTLVertexStepFunction.perVertex
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
 
@@ -471,15 +458,10 @@ public class Wireframe: Renderable {
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].offset = 0
         vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = nodePositionBufferIndex
-        // vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = WireframeBufferIndex.nodePosition.rawValue
 
         vertexDescriptor.layouts[nodePositionBufferIndex].stride = MemoryLayout<SIMD3<Float>>.stride
         vertexDescriptor.layouts[nodePositionBufferIndex].stepRate = 1
         vertexDescriptor.layouts[nodePositionBufferIndex].stepFunction = MTLVertexStepFunction.perVertex
-
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stride = MemoryLayout<SIMD3<Float>>.stride
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepRate = 1
-//        vertexDescriptor.layouts[WireframeBufferIndex.nodePosition.rawValue].stepFunction = MTLVertexStepFunction.perVertex
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         pipelineDescriptor.label = "EdgePipeline"

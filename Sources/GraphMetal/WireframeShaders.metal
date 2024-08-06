@@ -59,7 +59,7 @@ float nodeSize(float scale, float z, float midpoint, float distance) {
 
 /*
  Returns a value that decreases linearly with increasing distance z in either direction
- from the plane of POV (in modelview coordinates), such that alpha = 1 at z = midpoint 
+ from the plane of POV (in modelview coordinates), such that alpha = 1 at z = midpoint
  and alpha = 0 at z = midpoint +/- distance. Expects z >= 0.
  Clamps the return value to [0, 1].
  */
@@ -67,6 +67,7 @@ float fadeout(float z, float midpoint, float distance) {
     float w = 1 - abs(z - midpoint) / distance;
     return (w < 0) ? 0 : (w > 1) ? 1 : w;
 }
+
 
 /*
  Returns the given value multiplied by the given phase.
