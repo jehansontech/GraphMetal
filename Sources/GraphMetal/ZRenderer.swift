@@ -11,20 +11,6 @@ import MetalKit
 import Wacoma
 import GenericGraph
 
-public protocol ZRenderable {
-
-    func setup(_ view: MTKView, _ device: MTLDevice, _ defaultLibrary: MTLLibrary) throws
-
-    func prepareToDraw(_ date: Date)
-
-    // STET: This is so that renderables can access the uniforms buffer.
-    func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder)
-
-    func renderingIsComplete()
-
-    func teardown()
-}
-
 public struct ZRenderConstants {
 
     public static let uniformsBufferIndex = 0
@@ -59,6 +45,31 @@ public struct ZRenderSettings: Sendable {
     }
 }
 
+public protocol ZRenderable {
+
+    func setup(_ view: MTKView, _ device: MTLDevice, _ defaultLibrary: MTLLibrary) throws
+
+    func prepareToDraw(_ date: Date)
+
+    // STET: We pass a command encoder rather than having a renderable create its own
+    // so that the renderer can register the uniforms buffer with the encoder first.
+    func encodeCommands(_ encoder: MTLRenderCommandEncoder)
+
+    func renderingIsComplete()
+
+    func teardown()
+}
+
+public enum ZRenderError: Error {
+    case noDevice
+    case noDefaultLibrary
+    case noCommandQueue
+    case noDepthStencilState
+    case badVertexDescriptor
+    case bufferCreationFailed(bufferLabel: String)
+    case snapshotInProgress
+}
+
 public class ZRenderer: ObservableObject {
 
     private var povController: POVController
@@ -86,6 +97,8 @@ public class ZRenderer: ObservableObject {
 
     private var snapshotCallback: ((String) -> Any?)? = nil
 
+    private var depthState: MTLDepthStencilState!
+
     public init(_ povController: POVController,
                 _ fovController: FOVController,
                 _ wireframe: ZWireframe,
@@ -95,7 +108,7 @@ public class ZRenderer: ObservableObject {
         self.wireframe = wireframe
         self.settings = settings
         self.uniforms = ZUniformsBufferManager()
-        self.viewBounds = CGRect.zero // DUMMY VALUE
+        self.viewBounds = CGRect.zero // Dummy value
 
     }
 
@@ -114,7 +127,7 @@ public class ZRenderer: ObservableObject {
 
     public func requestSnapshot(_ callback: @escaping ((String) -> Any?)) throws {
         if snapshotRequested {
-            throw RenderError.snapshotInProgress
+            throw ZRenderError.snapshotInProgress
         }
         snapshotRequested = true
         snapshotCallback = callback
@@ -135,13 +148,19 @@ public class ZRenderer: ObservableObject {
 
         guard let device = mtkView.device
         else {
-            throw RenderError.noDevice
+            throw ZRenderError.noDevice
         }
 
         guard let defaultLibrary = try? device.makeDefaultLibrary(bundle: Bundle.module)
         else {
-            throw RenderError.noDefaultLibrary
+            throw ZRenderError.noDefaultLibrary
         }
+
+        guard let depthState = makeDepthState(device)
+        else {
+            throw ZRenderError.noDepthStencilState
+        }
+        self.depthState = depthState
 
         try uniforms.setup(device)
         try wireframe.setup(mtkView, device, defaultLibrary)
@@ -166,11 +185,19 @@ public class ZRenderer: ObservableObject {
         }
     }
 
-    public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
+    public func makeRenderPassDescriptor(_ view: MTKView) -> MTLRenderPassDescriptor? {
+        let newDescriptor = view.currentRenderPassDescriptor
+        newDescriptor?.colorAttachments[0].loadAction = .clear
+        newDescriptor?.colorAttachments[0].storeAction = .dontCare
+        return newDescriptor
+    }
+
+    public func encodeCommands(_ encoder: MTLRenderCommandEncoder) {
+        encoder.setDepthStencilState(depthState)
         uniforms.encodeDrawCommands(encoder)
-        wireframe.encodeDrawCommands(encoder)
+        wireframe.encodeCommands(encoder)
         for i in decorations.indices {
-            decorations[i].encodeDrawCommands(encoder)
+            decorations[i].encodeCommands(encoder)
         }
     }
 
@@ -180,6 +207,13 @@ public class ZRenderer: ObservableObject {
         for i in decorations.indices {
             decorations[i].renderingIsComplete()
         }
+    }
+
+    private func makeDepthState(_ device: MTLDevice)  -> MTLDepthStencilState? {
+        let depthStateDesciptor = MTLDepthStencilDescriptor()
+        depthStateDesciptor.depthCompareFunction = MTLCompareFunction.lessEqual
+        depthStateDesciptor.isDepthWriteEnabled = true
+        return device.makeDepthStencilState(descriptor:depthStateDesciptor)
     }
 
     private func makeUniforms(_ date: Date) -> Uniforms {
@@ -202,7 +236,7 @@ public class ZRenderer: ObservableObject {
         return 0.001 * Float(millisSinceReferenceDate % 1000)
     }
 
-    public func makePointSize() -> Float {
+    private func makePointSize() -> Float {
         if let bbox = wireframe.bbox {
             let d = distance(povController.pov.location, bbox.center)
             if d > 0 {
@@ -224,7 +258,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
     public var backgroundColor: SIMD4<Float> { renderer.settings.backgroundColor }
     
-    let device: MTLDevice!
+    public let device: MTLDevice!
 
     private weak var renderer: ZRenderer!
 
@@ -232,30 +266,23 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
     private let commandQueue: MTLCommandQueue
 
-    private let depthState: MTLDepthStencilState
-
     public init(_ renderer: ZRenderer, _ gestureHandlers: GestureHandlers) throws {
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
         }
         else {
-            throw RenderError.noDevice
+            throw ZRenderError.noDevice
+        }
+
+        if let queue = device.makeCommandQueue() {
+            self.commandQueue = queue
+        }
+        else {
+            throw ZRenderError.noCommandQueue
         }
 
         self.renderer = renderer
         self.gestureCoordinator = GestureCoordinator(gestureHandlers)
-        self.commandQueue = device.makeCommandQueue()!
-
-        let depthStateDesciptor = MTLDepthStencilDescriptor()
-        depthStateDesciptor.depthCompareFunction = MTLCompareFunction.less
-        depthStateDesciptor.isDepthWriteEnabled = true
-        if let state = device.makeDepthStencilState(descriptor:depthStateDesciptor) {
-            depthState = state
-        }
-        else {
-            throw RenderError.noDepthStencilState
-        }
-
         super.init()
     }
 
@@ -308,6 +335,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
         if renderer.snapshotRequested {
             renderer.snapshotTaken(saveSnapshot(view))
+            // MAYBE: return
         }
 
         renderer.prepareToDraw(view)
@@ -318,29 +346,15 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
 
-            // let renderer2 = renderer!
             commandBuffer.addCompletedHandler { (_ commandBuffer) -> Swift.Void in
-                // renderer2.renderingIsComplete()
                 self.renderer.renderingIsComplete()
             }
 
-            // MAYBE: put this whole thing down into the renderer, a la:
-            // renderer.draw(commandBuffer, view)
-
-
             // Delay getting the RenderPassDescriptor until we absolutely it in order
             // to avoid blocking the display pipeline any longer than necessary.
-            if let renderPassDescriptor = view.currentRenderPassDescriptor {
-
-
-                renderPassDescriptor.colorAttachments[0].loadAction = .clear
-                renderPassDescriptor.colorAttachments[0].storeAction = .dontCare
-
-                // TODO: pass the BUFFER to the renderer
-                // and have the renderer manage depth stencil state.
+            if let renderPassDescriptor = renderer.makeRenderPassDescriptor(view) {
                 if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
-                    renderEncoder.setDepthStencilState(depthState)
-                    renderer.encodeDrawCommands(renderEncoder)
+                    renderer.encodeCommands(renderEncoder)
                     renderEncoder.endEncoding()
                 }
 
@@ -372,6 +386,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
         }
     }
 }
+
 // ============================================================================
 // MARK: - ZRenderer gesture handling
 // ============================================================================
@@ -545,24 +560,6 @@ struct ZUniformsBufferManager {
         self.inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     }
 
-//    init(_ device: MTLDevice) throws {
-//        self.inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
-//
-//        let bufferLabel = "Uniforms"
-//        let bufferSize = Uniforms.alignedSize * maxBuffersInFlight
-//        let bufferOptions = MTLResourceOptions.storageModeShared
-//        if let buffer = device.makeBuffer(length: bufferSize, options: bufferOptions) {
-//            self.uniformsBuffer = buffer
-//            self.uniformsBuffer.label = bufferLabel
-//            self.uniformsBufferRotation = 0
-//            self.uniformsBufferOffset = 0
-//            self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
-//        }
-//        else {
-//            throw RenderError.bufferCreationFailed(bufferLabel: bufferLabel)
-//        }
-//    }
-
     mutating func setup(_ device: MTLDevice) throws {
         let bufferLabel = "Uniforms"
         let bufferSize = Uniforms.alignedSize * maxBuffersInFlight
@@ -575,7 +572,7 @@ struct ZUniformsBufferManager {
             self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
         }
         else {
-            throw RenderError.bufferCreationFailed(bufferLabel: bufferLabel)
+            throw ZRenderError.bufferCreationFailed(bufferLabel: bufferLabel)
         }
     }
 

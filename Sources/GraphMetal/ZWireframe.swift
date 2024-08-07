@@ -14,19 +14,22 @@ import GenericGraph
 public protocol ZWireframe: ZRenderable {
 
     var bbox: BoundingBox? { get }
+
 }
 
 // ============================================================================
 // MARK: - MonochromeWireframe
 // ============================================================================
 
-public class MonochromeWireframe: ZWireframe { // ¿ ObservableObject
+public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
 
     public private(set) var bbox: BoundingBox? = nil
 
     private var pendingUpdate: MonochromeWireframeUpdate
 
     private var device: MTLDevice!
+
+    private var nodePositionBufferIndex: Int { RenderConstants.nodePositionBufferIndex }
 
     private var nodePositionBuffer: MTLBuffer? = nil
 
@@ -35,8 +38,6 @@ public class MonochromeWireframe: ZWireframe { // ¿ ObservableObject
     private var edgeIndexBuffer: MTLBuffer? = nil
 
     private var edgePipelineState: MTLRenderPipelineState!
-
-    private var nodePositionBufferIndex: Int { RenderConstants.nodePositionBufferIndex }
 
     public init() {
         self.pendingUpdate = MonochromeWireframeUpdate()
@@ -47,11 +48,8 @@ public class MonochromeWireframe: ZWireframe { // ¿ ObservableObject
     }
 
     public func setup(_ view: MTKView, _ device: MTLDevice, _ defaultLibrary: MTLLibrary) throws {
-
         self.device = device
         self.edgePipelineState = try buildEdgePipeline(view, device, defaultLibrary)
-
-        // TODO: impl the rest
     }
 
     public func prepareToDraw(_ date: Date) {
@@ -86,7 +84,7 @@ public class MonochromeWireframe: ZWireframe { // ¿ ObservableObject
         }
     }
 
-    public func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
+    public func encodeCommands(_ encoder: MTLRenderCommandEncoder) {
 
         guard
             let nodePositionBuffer = self.nodePositionBuffer
@@ -265,4 +263,3 @@ extension MonochromeWireframeUpdate {
         return edgeIndices
     }
 }
-
