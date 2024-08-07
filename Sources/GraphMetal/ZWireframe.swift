@@ -99,7 +99,7 @@ public class MonochromeWireframe: ZWireframe { // ¿ ObservableObject
             return
         }
 
-        encoder.pushDebugGroup("Edges")
+        encoder.pushDebugGroup("Wireframe")
         encoder.setRenderPipelineState(edgePipelineState)
         encoder.setVertexBuffer(nodePositionBuffer,
                                 offset: 0,

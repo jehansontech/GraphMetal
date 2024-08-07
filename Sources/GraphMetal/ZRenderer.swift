@@ -69,7 +69,16 @@ public class ZRenderer: ObservableObject {
 
     @Published public var settings: ZRenderSettings
 
-    private var uniforms: ZUniformsBufferManager!
+    /// In "points"
+    // NOTE: Can't mark it Published b/c it gets changed within a view update.
+    public private(set) var viewBounds: CGRect
+
+    /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
+    /// Non-negative. If zero, then pinching and dragging do not work.
+    // TODO: make this no longer necessary.
+    public var touchPlaneDistance: Float = 1
+
+    private var uniforms: ZUniformsBufferManager
 
     private var decorations = [ZRenderable]()
 
@@ -85,10 +94,22 @@ public class ZRenderer: ObservableObject {
         self.fovController = fovController
         self.wireframe = wireframe
         self.settings = settings
+        self.uniforms = ZUniformsBufferManager()
+        self.viewBounds = CGRect.zero // DUMMY VALUE
 
     }
 
     public func setColorScheme(_ colorScheme: ColorScheme) {
+        switch colorScheme {
+        case .dark:
+            settings.backgroundColor = RenderConstants.defaultDarkBackground
+            break
+        case .light:
+            settings.backgroundColor = RenderConstants.defaultLightBackground
+            break
+        @unknown default:
+            break
+        }
     }
 
     public func requestSnapshot(_ callback: @escaping ((String) -> Any?)) throws {
@@ -100,7 +121,14 @@ public class ZRenderer: ObservableObject {
     }
 
     public func snapshotTaken(_ response: String) {
-        // TODO: impl
+        let callback = snapshotCallback
+        snapshotRequested = false
+        snapshotCallback = nil
+        Task {
+            if let callback {
+                _ = callback(response)
+            }
+        }
     }
 
     public func setup(_ mtkView: MTKView) throws {
@@ -115,18 +143,16 @@ public class ZRenderer: ObservableObject {
             throw RenderError.noDefaultLibrary
         }
 
-        uniforms = try ZUniformsBufferManager(device)
-
+        try uniforms.setup(device)
         try wireframe.setup(mtkView, device, defaultLibrary)
-
         for i in decorations.indices {
             try decorations[i].setup(mtkView, device, defaultLibrary)
         }
-
     }
 
     public func updateViewBounds(_ viewBounds: CGRect) {
-        // TODO: impl
+        self.viewBounds = viewBounds
+        self.fovController.update(viewBounds)
     }
 
     public func prepareToDraw(_ view: MTKView) {
@@ -154,7 +180,6 @@ public class ZRenderer: ObservableObject {
         for i in decorations.indices {
             decorations[i].renderingIsComplete()
         }
-
     }
 
     private func makeUniforms(_ date: Date) -> Uniforms {
@@ -178,18 +203,15 @@ public class ZRenderer: ObservableObject {
     }
 
     public func makePointSize() -> Float {
-        // TODO: reimplement getNodeSize(forPOV: povController.pov, bbox: wireframe.bbox)
-        //
-        //        public func getNodeSize(forPOV pov: POV, bbox: BoundingBox?) -> Float {
-        //            if let bbox = bbox {
-        //                let newSize = RenderConstants.pointSizeScaleFactor  * self.pointSize / distance(pov.location, bbox.center)
-        //                return newSize.clamp(RenderConstants.pointSizeMinimum, RenderConstants.pointSizeMaximum)
-        //            }
-        //            else {
-        //                return pointSize
-        //            }
-        //        }
+        if let bbox = wireframe.bbox {
+            let d = distance(povController.pov.location, bbox.center)
+            if d > 0 {
+                let newSize = RenderConstants.pointSizeScaleFactor  * settings.pointSize / d
+                return newSize.clamp(RenderConstants.pointSizeMinimum, RenderConstants.pointSizeMaximum)
+            }
+        }
 
+        // Fallback
         return settings.pointSize
     }
 }
@@ -201,6 +223,7 @@ public class ZRenderer: ObservableObject {
 public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
     public var backgroundColor: SIMD4<Float> { renderer.settings.backgroundColor }
+    
     let device: MTLDevice!
 
     private weak var renderer: ZRenderer!
@@ -354,9 +377,6 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 // ============================================================================
 
 extension ZRenderer: DragHandler, PinchHandler, RotationHandler {
-
-    // FIXME: make this no longer necessary.
-    public var touchPlaneDistance: Float { return 1 }
 
     /// Point in world coordinates corresponding to the given point on the glass
     /// location is in clip-space coords
@@ -513,17 +533,37 @@ struct ZUniformsBufferManager {
 
     private let inFlightSemaphore: DispatchSemaphore
 
-    private var uniformsBuffer: MTLBuffer!
+    private var uniformsBufferRotation = 0
 
     private var uniformsBufferOffset = 0
 
-    private var uniformsBufferRotation = 0
+    private var uniformsBuffer: MTLBuffer!
 
     private var uniforms: UnsafeMutablePointer<Uniforms>!
 
-    init(_ device: MTLDevice) throws {
+    init() {
         self.inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
+    }
 
+//    init(_ device: MTLDevice) throws {
+//        self.inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
+//
+//        let bufferLabel = "Uniforms"
+//        let bufferSize = Uniforms.alignedSize * maxBuffersInFlight
+//        let bufferOptions = MTLResourceOptions.storageModeShared
+//        if let buffer = device.makeBuffer(length: bufferSize, options: bufferOptions) {
+//            self.uniformsBuffer = buffer
+//            self.uniformsBuffer.label = bufferLabel
+//            self.uniformsBufferRotation = 0
+//            self.uniformsBufferOffset = 0
+//            self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
+//        }
+//        else {
+//            throw RenderError.bufferCreationFailed(bufferLabel: bufferLabel)
+//        }
+//    }
+
+    mutating func setup(_ device: MTLDevice) throws {
         let bufferLabel = "Uniforms"
         let bufferSize = Uniforms.alignedSize * maxBuffersInFlight
         let bufferOptions = MTLResourceOptions.storageModeShared
