@@ -28,18 +28,14 @@ public struct ZRenderSettings: Sendable {
 
     public var pointSize: Float
 
-    public var defaultNodeColor: SIMD4<Float>
-
     public var defaultEdgeColor: SIMD4<Float>
 
     public var backgroundColor: SIMD4<Float>
 
     public init(pointSize: Float = 16,
-                defaultNodeColor: SIMD4<Float> = ZRenderConstants.defaultElementColor,
                 defaultEdgeColor: SIMD4<Float> = ZRenderConstants.defaultElementColor,
                 backgroundColor: SIMD4<Float> =  ZRenderConstants.defaultDarkBackground) {
         self.pointSize = pointSize
-        self.defaultNodeColor = defaultNodeColor
         self.defaultEdgeColor = defaultEdgeColor
         self.backgroundColor = backgroundColor
     }
