@@ -180,7 +180,7 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
     private func buildNodePipeline(_ view: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws -> MTLRenderPipelineState {
 
         let vertexFunctionName = "monochrome_node_vertex"
-        let fragmentFunctionName = "node_fragment_dot"
+        let fragmentFunctionName = "node_fragment_disc"
 
         guard let vertexFunction = library.makeFunction(name: vertexFunctionName)
         else {

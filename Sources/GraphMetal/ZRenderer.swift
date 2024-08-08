@@ -223,6 +223,7 @@ public class ZRenderer: ObservableObject {
                         modelViewMatrix: povController.viewMatrix,
                         pointSize: makePointSize(),
                         edgeColor: settings.defaultEdgeColor,
+                        backgroundColor: settings.backgroundColor,
                         fadeoutMidpoint: fovController.fadeoutMidpoint,
                         fadeoutDistance: fovController.fadeoutDistance,
                         pulsePhase: makePulsePhase(date))

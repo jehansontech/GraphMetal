@@ -204,6 +204,7 @@ public class RenderController: ObservableObject, RenderDelegate {
                         modelViewMatrix: povController.viewMatrix,
                         pointSize: makePointSize(),
                         edgeColor: settings.defaultEdgeColor,
+                        backgroundColor: self.backgroundColor,
                         fadeoutMidpoint: fovController.fadeoutMidpoint,
                         fadeoutDistance: fovController.fadeoutDistance,
                         pulsePhase: makePulsePhase(date))

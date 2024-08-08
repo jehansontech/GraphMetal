@@ -41,7 +41,7 @@ public struct WireframeSettings {
 
     public var edgeColor: SIMD4<Float>
 
-    public init(nodeStyle: NodeStyle = .dot,
+    public init(nodeStyle: NodeStyle = .disc,
                 nodeSizeIsAdjusted: Bool = true,
                 nodeSize: Double = 16,
                 nodeSizeMinimum: Double = 2,
@@ -77,7 +77,7 @@ public struct WireframeSettings {
     }
 
     public enum NodeStyle {
-        case dot
+        case disc
         case ring
         case square
         case diamond
@@ -158,8 +158,8 @@ public class Wireframe: Renderable {
 
     var nodeFragmentFunctionName: String {
         switch (settings.nodeStyle) {
-        case .dot:
-            return "node_fragment_dot"
+        case .disc:
+            return "node_fragment_disc"
         case .ring:
             return "node_fragment_ring"
         case .square:
@@ -407,7 +407,7 @@ public class Wireframe: Renderable {
 
     private func buildNodePipeline(_ view: MTKView) throws {
 
-        let vertexFunction = library.makeFunction(name: "node_vertex")
+        let vertexFunction = library.makeFunction(name: "colored_node_vertex")
         let fragmentFunction = library.makeFunction(name: nodeFragmentFunctionName)
         let vertexDescriptor = MTLVertexDescriptor()
 

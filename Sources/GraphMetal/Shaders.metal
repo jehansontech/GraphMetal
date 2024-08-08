@@ -190,7 +190,7 @@ vertex NodeVertexOut monochrome_node_vertex(MonochromeVertexIn vertexIn [[stage_
     return vertexOut;
 }
 
-vertex NodeVertexOut node_vertex(ColoredVertexIn vertexIn [[stage_in]],
+vertex NodeVertexOut colored_node_vertex(ColoredVertexIn vertexIn [[stage_in]],
                                  const device Uniforms&  uniforms [[buffer(WireframeBufferIndexUniform)]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
@@ -205,7 +205,7 @@ vertex NodeVertexOut node_vertex(ColoredVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-vertex NodeVertexOut node_vertex_size2(ColoredVertexIn vertexIn [[stage_in]],
+vertex NodeVertexOut colored_node_vertex_size2(ColoredVertexIn vertexIn [[stage_in]],
                                        const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
@@ -222,7 +222,7 @@ vertex NodeVertexOut node_vertex_size2(ColoredVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-vertex NodeVertexOut node_vertex_size3(ColoredVertexIn vertexIn [[stage_in]],
+vertex NodeVertexOut colored_node_vertex_size3(ColoredVertexIn vertexIn [[stage_in]],
                                        const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
@@ -239,7 +239,7 @@ vertex NodeVertexOut node_vertex_size3(ColoredVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-vertex NodeVertexOut node_vertex_size4(ColoredVertexIn vertexIn [[stage_in]],
+vertex NodeVertexOut colored_node_vertex_size4(ColoredVertexIn vertexIn [[stage_in]],
                                        const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
@@ -317,7 +317,7 @@ fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated   
     return interpolated.color;
 }
 
-fragment float4 node_fragment_dot(NodeVertexOut interpolated                [[ stage_in ]],
+fragment float4 node_fragment_disc(NodeVertexOut interpolated                [[ stage_in ]],
                                   float2 pointCoord                         [[point_coord]],
                                   const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
