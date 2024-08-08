@@ -71,7 +71,7 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
             // We're replacing the buffer rather than modifying its contents
             // so that we don't have to deal with sync between CPU and GPU.
 
-            let bufferLength = newNodePositions.count * MemoryLayout<SIMD3<Float>>.size
+            let bufferLength = nodeCount * MemoryLayout<SIMD3<Float>>.size
             let bufferOptions: MTLResourceOptions = []
             self.nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
                                                         length: bufferLength,
@@ -106,10 +106,10 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
         }
 
         encoder.pushDebugGroup("MonochromeWireframe")
-        encoder.setRenderPipelineState(edgePipelineState)
         encoder.setVertexBuffer(nodePositionBuffer,
                                 offset: 0,
                                 index: nodePositionBufferIndex)
+        encoder.setRenderPipelineState(edgePipelineState)
         encoder.drawIndexedPrimitives(type: .line,
                                       indexCount: edgeIndexCount,
                                       indexType: MTLIndexType.uint32,

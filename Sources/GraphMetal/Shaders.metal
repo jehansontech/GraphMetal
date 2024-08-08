@@ -185,6 +185,7 @@ vertex NodeVertexOut monochrome_node_vertex(MonochromeVertexIn vertexIn [[stage_
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = uniforms.edgeColor;
+
     vertexOut.pointSize = nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
@@ -200,6 +201,7 @@ vertex NodeVertexOut colored_node_vertex(ColoredVertexIn vertexIn [[stage_in]],
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
+
     vertexOut.pointSize = nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
@@ -216,7 +218,6 @@ vertex NodeVertexOut colored_node_vertex_size2(ColoredVertexIn vertexIn [[stage_
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    // WAS: vertexOut.pointSize = 2 * uniforms.pointSize;
     vertexOut.pointSize = nodeSize(2 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
@@ -233,7 +234,6 @@ vertex NodeVertexOut colored_node_vertex_size3(ColoredVertexIn vertexIn [[stage_
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    // WAS: vertexOut.pointSize = 3 * uniforms.pointSize;
     vertexOut.pointSize = nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
@@ -250,7 +250,6 @@ vertex NodeVertexOut colored_node_vertex_size4(ColoredVertexIn vertexIn [[stage_
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    // WAS: vertexOut.pointSize = 4 * uniforms.pointSize;
     vertexOut.pointSize = nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
