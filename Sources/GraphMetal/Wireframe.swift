@@ -450,8 +450,8 @@ public class Wireframe: Renderable {
 
     private func buildEdgePipeline(_ view: MTKView) throws {
 
-        let vertexFunction = library.makeFunction(name: "net_vertex")
-        let fragmentFunction = library.makeFunction(name: "net_fragment")
+        let vertexFunction = library.makeFunction(name: "monochrome_edge_vertex")
+        let fragmentFunction = library.makeFunction(name: "edge_fragment")
 
         let vertexDescriptor = MTLVertexDescriptor()
 

@@ -28,18 +28,6 @@ typedef NS_ENUM(NSInteger, WireframeTextureIndex)
     WireframeTextureIndexColor = 0,
 };
 
-//typedef struct
-//{
-//    simd_float4x4 projectionMatrix;
-//    simd_float4x4 modelViewMatrix;
-//    float pointSize;
-//    simd_float4 edgeColor;
-//    float fadeoutMidpoint;
-//    float fadeoutDistance;
-//    float pulsePhase;
-//} Uniforms;
-
-
 /*
  Returns a value that decreases linearly with increasing distance z from a size=scale
  at midpoint-distance to size=0 at midpoint+distance. Expects z >= 0.
@@ -77,14 +65,18 @@ float pulseAmplitude(float v, float phase) {
     return v * phase;
 }
 
-// =============================================================================
-// beams
-// =============================================================================
+struct MonochromeVertexIn {
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
+};
 
-struct BeamVertexIn {
+struct ColoredVertexIn {
     float3 position [[attribute(WireframeVertexAttributePosition)]];
     float4 color    [[attribute(WireframeVertexAttributeColor)]];
 };
+
+// =============================================================================
+// beams
+// =============================================================================
 
 struct BeamVertexOut {
     float4 position [[position]];
@@ -92,8 +84,8 @@ struct BeamVertexOut {
     float4 color;
 };
 
-vertex BeamVertexOut beam_vertex(BeamVertexIn vertexIn [[stage_in]],
-                               const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex BeamVertexOut beam_vertex(ColoredVertexIn vertexIn [[stage_in]],
+                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -106,13 +98,10 @@ vertex BeamVertexOut beam_vertex(BeamVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-fragment float4 beam_fragment(BeamVertexOut interpolated           [[ stage_in ]],
-                             const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+fragment float4 beam_fragment(BeamVertexOut interpolated [[stage_in]],
+                              const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
 
-//    // fadeout
-//    // Note that distance is -z
-//    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
-
+    // (Beams don't fade out)
 
     // transparent edges
     if (interpolated.color.a <= 0) {
@@ -126,23 +115,19 @@ fragment float4 beam_fragment(BeamVertexOut interpolated           [[ stage_in ]
 // edges
 // =============================================================================
 
-struct NetVertexIn {
-    float3 position [[attribute(WireframeVertexAttributePosition)]];
-};
-
-struct NetVertexOut {
+struct EdgeVertexOut {
     float4 position [[position]];
     float3 fragmentPosition;
     float4 color;
 };
 
-vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
-                               const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex EdgeVertexOut monochrome_edge_vertex(MonochromeVertexIn vertexIn [[stage_in]],
+                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
 
-    NetVertexOut vertexOut;
+    EdgeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = uniforms.edgeColor;
@@ -150,11 +135,24 @@ vertex NetVertexOut net_vertex(NetVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
-                             const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex EdgeVertexOut colored_edge_vertex(ColoredVertexIn vertexIn [[stage_in]],
+                                            const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
 
-    // fadeout
-    // Note that distance is -z
+    float4x4 mv_Matrix = uniforms.modelViewMatrix;
+    float4x4 proj_Matrix = uniforms.projectionMatrix;
+
+    EdgeVertexOut vertexOut;
+    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
+    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = vertexIn.color;
+
+    return vertexOut;
+}
+
+fragment float4 edge_fragment(EdgeVertexOut interpolated [[stage_in]],
+                              const device Uniforms&  uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+
+    // Fadeout. Note that distance is -z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
 
@@ -170,11 +168,6 @@ fragment float4 net_fragment(NetVertexOut interpolated           [[ stage_in ]],
 // nodes
 // =============================================================================
 
-struct NodeVertexIn {
-    float3 position [[attribute(WireframeVertexAttributePosition)]];
-    float4 color    [[attribute(WireframeVertexAttributeColor)]];
-};
-
 struct NodeVertexOut {
     float4 position [[position]];
     float  pointSize [[point_size]];
@@ -182,8 +175,23 @@ struct NodeVertexOut {
     float4 color;
 };
 
-vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
-                                 const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex NodeVertexOut monochrome_node_vertex(MonochromeVertexIn vertexIn [[stage_in]],
+                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+
+    float4x4 mv_Matrix = uniforms.modelViewMatrix;
+    float4x4 proj_Matrix = uniforms.projectionMatrix;
+
+    NodeVertexOut vertexOut;
+    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
+    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = uniforms.edgeColor;
+    vertexOut.pointSize = nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+
+    return vertexOut;
+}
+
+vertex NodeVertexOut node_vertex(ColoredVertexIn vertexIn [[stage_in]],
+                                 const device Uniforms&  uniforms [[buffer(WireframeBufferIndexUniform)]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -192,15 +200,13 @@ vertex NodeVertexOut node_vertex(NodeVertexIn vertexIn [[stage_in]],
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
-
-    // WAS vertexOut.pointSize = uniforms.pointSize;
     vertexOut.pointSize = nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
 
-vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
-                                 const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex NodeVertexOut node_vertex_size2(ColoredVertexIn vertexIn [[stage_in]],
+                                       const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -216,8 +222,8 @@ vertex NodeVertexOut node_vertex_size2(NodeVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
-                                    const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex NodeVertexOut node_vertex_size3(ColoredVertexIn vertexIn [[stage_in]],
+                                       const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
@@ -233,7 +239,7 @@ vertex NodeVertexOut node_vertex_size3(NodeVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-vertex NodeVertexOut node_vertex_size4(NodeVertexIn vertexIn [[stage_in]],
+vertex NodeVertexOut node_vertex_size4(ColoredVertexIn vertexIn [[stage_in]],
                                        const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
@@ -267,8 +273,8 @@ fragment float4 node_fragment_square(NodeVertexOut interpolated                [
 }
 
 fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[ stage_in ]],
-                                     float2 pointCoord                         [[point_coord]],
-                                     const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                           float2 pointCoord                         [[point_coord]],
+                                           const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
@@ -287,14 +293,14 @@ fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[
 }
 
 fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated         [[ stage_in ]],
-                                           float2 pointCoord                         [[point_coord]],
-                                           const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                                   float2 pointCoord                         [[point_coord]],
+                                                   const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // blink
     if (uniforms.pulsePhase > 0.5) {
         discard_fragment();
     }
-    
+
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
@@ -355,8 +361,8 @@ fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ 
 }
 
 fragment float4 node_fragment_diamond(NodeVertexOut interpolated                [[ stage_in ]],
-                                     float2 pointCoord                         [[point_coord]],
-                                     const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                      float2 pointCoord                         [[point_coord]],
+                                      const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
@@ -405,8 +411,8 @@ fragment float4 node_fragment_diamond(NodeVertexOut interpolated                
 }
 
 fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       [[ stage_in ]],
-                                      float2 pointCoord                         [[point_coord]],
-                                      const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                               float2 pointCoord                         [[point_coord]],
+                                               const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z

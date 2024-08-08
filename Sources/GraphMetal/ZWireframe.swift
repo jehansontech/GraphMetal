@@ -31,13 +31,19 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
 
     private var nodePositionBufferIndex: Int { RenderConstants.nodePositionBufferIndex }
 
+    private var nodeCount: Int = 0
+    
     private var nodePositionBuffer: MTLBuffer? = nil
+
+    private var nodeFragmentFunctionName: String = "node_fragment_ring"
 
     private var edgeIndexCount: Int = 0
 
     private var edgeIndexBuffer: MTLBuffer? = nil
 
     private var edgePipelineState: MTLRenderPipelineState!
+
+    private var nodePipelineState: MTLRenderPipelineState!
 
     public init() {
         self.pendingUpdate = MonochromeWireframeUpdate()
@@ -50,6 +56,7 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
     public func setup(_ view: MTKView, _ device: MTLDevice, _ defaultLibrary: MTLLibrary) throws {
         self.device = device
         self.edgePipelineState = try buildEdgePipeline(view, device, defaultLibrary)
+        self.nodePipelineState = try buildNodePipeline(view, device, defaultLibrary)
     }
 
     public func prepareToDraw(_ date: Date) {
@@ -59,6 +66,7 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
         }
         if let newNodePositions = pendingUpdate.nodePositions {
             pendingUpdate.nodePositions = nil
+            self.nodeCount = newNodePositions.count
 
             // We're replacing the buffer rather than modifying its contents
             // so that we don't have to deal with sync between CPU and GPU.
@@ -97,7 +105,7 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
             return
         }
 
-        encoder.pushDebugGroup("Wireframe")
+        encoder.pushDebugGroup("MonochromeWireframe")
         encoder.setRenderPipelineState(edgePipelineState)
         encoder.setVertexBuffer(nodePositionBuffer,
                                 offset: 0,
@@ -107,7 +115,10 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
                                       indexType: MTLIndexType.uint32,
                                       indexBuffer: edgeIndexBuffer,
                                       indexBufferOffset: 0)
+        encoder.setRenderPipelineState(nodePipelineState)
+        encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
         encoder.popDebugGroup()
+
     }
 
     public func renderingIsComplete() {
@@ -120,8 +131,18 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
 
     private func buildEdgePipeline(_ view: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws -> MTLRenderPipelineState {
 
-        let vertexFunction = library.makeFunction(name: "monochrome_wireframe_vertex")
-        let fragmentFunction = library.makeFunction(name: "wireframe_fragment")
+        let vertexFunctionName = "monochrome_edge_vertex"
+        let fragmentFunctionName = "edge_fragment"
+
+        guard let vertexFunction = library.makeFunction(name: vertexFunctionName)
+        else {
+            throw ZRenderError.noSuchFunction(name: vertexFunctionName)
+        }
+
+        guard let fragmentFunction = library.makeFunction(name: fragmentFunctionName)
+        else {
+            throw ZRenderError.noSuchFunction(name: fragmentFunctionName)
+        }
 
         let vertexDescriptor = MTLVertexDescriptor()
 
@@ -134,13 +155,13 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
         vertexDescriptor.layouts[nodePositionBufferIndex].stepFunction = MTLVertexStepFunction.perVertex
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
+
         pipelineDescriptor.label = "EdgePipeline"
-        // pipelineDescriptor.sampleCount = view.sampleCount
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
 
-        // These are for fadeout of the edges
+        // These are for fadeout
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
         pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
         pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
@@ -155,6 +176,55 @@ public class MonochromeWireframe: ZWireframe { // ¿ObservableObject
 
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
+
+    private func buildNodePipeline(_ view: MTKView, _ device: MTLDevice, _ library: MTLLibrary) throws -> MTLRenderPipelineState {
+
+        let vertexFunctionName = "monochrome_node_vertex"
+        let fragmentFunctionName = "node_fragment_dot"
+
+        guard let vertexFunction = library.makeFunction(name: vertexFunctionName)
+        else {
+            throw ZRenderError.noSuchFunction(name: vertexFunctionName)
+        }
+
+        guard let fragmentFunction = library.makeFunction(name: fragmentFunctionName)
+        else {
+            throw ZRenderError.noSuchFunction(name: fragmentFunctionName)
+        }
+
+        let vertexDescriptor = MTLVertexDescriptor()
+
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].format = MTLVertexFormat.float3
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].offset = 0
+        vertexDescriptor.attributes[WireframeVertexAttribute.position.rawValue].bufferIndex = nodePositionBufferIndex
+
+        vertexDescriptor.layouts[nodePositionBufferIndex].stride = MemoryLayout<SIMD3<Float>>.stride
+        vertexDescriptor.layouts[nodePositionBufferIndex].stepRate = 1
+        vertexDescriptor.layouts[nodePositionBufferIndex].stepFunction = MTLVertexStepFunction.perVertex
+
+        let pipelineDescriptor = MTLRenderPipelineDescriptor()
+
+        pipelineDescriptor.label = "NodePipeline"
+        pipelineDescriptor.vertexFunction = vertexFunction
+        pipelineDescriptor.fragmentFunction = fragmentFunction
+        pipelineDescriptor.vertexDescriptor = vertexDescriptor
+
+        // These are for fadeout
+        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+
+        // I'm guessing that these might help with other things that get drawn on top
+        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+
+        pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
+        pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
+        pipelineDescriptor.stencilAttachmentPixelFormat = view.depthStencilPixelFormat
+
+        return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+    }
+
 }
 
 public struct MonochromeWireframeUpdate: Sendable {

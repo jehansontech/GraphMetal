@@ -47,8 +47,8 @@ public protocol ZRenderable {
 
     func prepareToDraw(_ date: Date)
 
-    // STET: We pass a command encoder rather than having a renderable create its own
-    // so that the renderer can register the uniforms buffer with the encoder first.
+    /// We pass a command encoder rather than having the renderable create its own
+    /// so that the renderer can add common commands forst, e.g., registering the uniforms buffer.
     func encodeCommands(_ encoder: MTLRenderCommandEncoder)
 
     func renderingIsComplete()
@@ -61,6 +61,7 @@ public enum ZRenderError: Error {
     case noDefaultLibrary
     case noCommandQueue
     case noDepthStencilState
+    case noSuchFunction(name: String)
     case badVertexDescriptor
     case bufferCreationFailed(bufferLabel: String)
     case snapshotInProgress
@@ -190,7 +191,7 @@ public class ZRenderer: ObservableObject {
 
     public func encodeCommands(_ encoder: MTLRenderCommandEncoder) {
         encoder.setDepthStencilState(depthState)
-        uniforms.encodeDrawCommands(encoder)
+        uniforms.encodeCommands(encoder)
         wireframe.encodeCommands(encoder)
         for i in decorations.indices {
             decorations[i].encodeCommands(encoder)
@@ -544,6 +545,8 @@ struct ZUniformsBufferManager {
 
     private let inFlightSemaphore: DispatchSemaphore
 
+    private var uniformsBufferIndex: Int { RenderConstants.uniformsBufferIndex }
+
     private var uniformsBufferRotation = 0
 
     private var uniformsBufferOffset = 0
@@ -608,13 +611,13 @@ struct ZUniformsBufferManager {
 
     }
 
-    func encodeDrawCommands(_ encoder: MTLRenderCommandEncoder) {
+    func encodeCommands(_ encoder: MTLRenderCommandEncoder) {
         encoder.setVertexBuffer(uniformsBuffer,
                                 offset:uniformsBufferOffset,
-                                index: ZRenderConstants.uniformsBufferIndex)
+                                index: uniformsBufferIndex)
         encoder.setFragmentBuffer(uniformsBuffer,
                                   offset:uniformsBufferOffset,
-                                  index:  ZRenderConstants.uniformsBufferIndex)
+                                  index:  uniformsBufferIndex)
     }
 
     func renderingIsComplete() {
