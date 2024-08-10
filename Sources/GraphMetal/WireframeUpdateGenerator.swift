@@ -11,9 +11,6 @@ import GenericGraph
 
 public struct WireframeUpdateGenerator {
 
-    // TODO: impl
-    // private var generateNodeColors: Bool
-
     /// key = nodeNumber; value = buffer index
     private var nodeIndices: [Int: Int]? = nil
 
