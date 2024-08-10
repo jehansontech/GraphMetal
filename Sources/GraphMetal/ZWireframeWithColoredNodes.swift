@@ -21,7 +21,7 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     public private(set) var bbox: BoundingBox? = nil
 
-    private var pendingUpdate: ZWireframeWithColoredNodesUpdate
+    private var pendingUpdate: ZWireframeWithColoredNodes.Update
 
     private var device: MTLDevice!
 
@@ -53,10 +53,10 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         self.nodeShape = nodeShape
         self.nodeSize = nodeSize
         self.defaultElementColor = defaultElementColor
-        self.pendingUpdate = ZWireframeWithColoredNodesUpdate()
+        self.pendingUpdate = ZWireframeWithColoredNodes.Update()
     }
 
-    public func addUpdate(_ update: ZWireframeWithColoredNodesUpdate) {
+    public func addUpdate(_ update: ZWireframeWithColoredNodes.Update) {
         pendingUpdate.merge(update)
     }
 
@@ -84,6 +84,7 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
                                                         length: bufferLength,
                                                         options: bufferOptions)
         }
+
         if let newEdgeIndices = pendingUpdate.edgeIndices {
             pendingUpdate.edgeIndices = nil
 
@@ -255,28 +256,30 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
 
+    public struct Update: Sendable {
+
+        public var bbox: BoundingBox?
+
+        public var nodePositions: [SIMD3<Float>]?
+
+        /// Interleaved (source, target) pairs where each value is an index into nodePositions array.
+        public var edgeIndices: [UInt32]?
+
+        public var nodeColors: [SIMD4<Float>]?
+
+        init(bbox: BoundingBox? = nil,
+             nodePositions: [SIMD3<Float>]? = nil,
+             edgeIndices: [UInt32]? = nil,
+             nodeColors: [SIMD4<Float>]? = nil) {
+            self.bbox = bbox
+            self.nodePositions = nodePositions
+            self.edgeIndices = edgeIndices
+            self.nodeColors = nodeColors
+        }
+    }
 }
 
-public struct ZWireframeWithColoredNodesUpdate: Sendable {
-
-    public var bbox: BoundingBox?
-
-    public var nodePositions: [SIMD3<Float>]?
-
-    /// Interleaved (source, target) pairs where each value is an index into nodePositions array.
-    public var edgeIndices: [UInt32]?
-
-    public var nodeColors: [SIMD4<Float>]?
-
-    init(bbox: BoundingBox? = nil,
-         nodePositions: [SIMD3<Float>]? = nil,
-         edgeIndices: [UInt32]? = nil,
-         nodeColors: [SIMD4<Float>]? = nil) {
-        self.bbox = bbox
-        self.nodePositions = nodePositions
-        self.edgeIndices = edgeIndices
-        self.nodeColors = nodeColors
-    }
+extension ZWireframeWithColoredNodes.Update {
 
     public mutating func clear() {
         bbox = nil
@@ -285,7 +288,7 @@ public struct ZWireframeWithColoredNodesUpdate: Sendable {
         nodeColors = nil
     }
 
-    public mutating func merge(_ other: ZWireframeWithColoredNodesUpdate) {
+    public mutating func merge(_ other: ZWireframeWithColoredNodes.Update) {
         if let newBBox = other.bbox {
             self.bbox = newBBox
         }
@@ -299,12 +302,9 @@ public struct ZWireframeWithColoredNodesUpdate: Sendable {
             self.nodeColors = newNodeColors
         }
     }
-}
-
-extension ZWireframeWithColoredNodesUpdate {
 
     /// Call this if node set has changed.
-    public static func makeTotalUpdate<G: Graph>(_ graph: G) -> ZWireframeWithColoredNodesUpdate
+    public static func makeTotalUpdate<G: Graph>(_ graph: G) -> ZWireframeWithColoredNodes.Update
     where G.NodeType.ValueType: EmbeddedValue & ColoredValue
     {
 
@@ -322,8 +322,7 @@ extension ZWireframeWithColoredNodesUpdate {
             let nodePosition = node.value?.location ?? .zero
             newNodePositions.insert(nodePosition, at: nodeIndex)
 
-            // TODO: skip node colors if self.coloredNodes == false
-            let nodeColor = node.value?.color ?? .zero
+            let nodeColor = node.value?.color ?? ZWireframeConstants.defaultElementColor
             newNodeColors.insert(nodeColor, at: nodeIndex)
 
             if newBBox == nil {
@@ -350,7 +349,7 @@ extension ZWireframeWithColoredNodesUpdate {
             }
         }
 
-        return ZWireframeWithColoredNodesUpdate(bbox: newBBox,
+        return ZWireframeWithColoredNodes.Update(bbox: newBBox,
                                                 nodePositions: newNodePositions,
                                                 edgeIndices: newEdgeIndices,
                                                 nodeColors: newNodeColors)
