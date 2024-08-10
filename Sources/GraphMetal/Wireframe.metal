@@ -1,3 +1,9 @@
+//
+//  Wireframe.metal
+//  GraphMetal
+//
+//  Created by Jim Hanson on 7/18/24.
+//
 
 #include <metal_stdlib>
 
@@ -9,7 +15,21 @@
 #endif
 
 #include <simd/simd.h>
-#include "Uniforms.metal"
+using namespace metal;
+
+typedef struct
+{
+    simd_float4x4 projectionMatrix;
+    simd_float4x4 modelViewMatrix;
+    float pointSize;
+    simd_float4 edgeColor;
+    simd_float4 backgroundColor;
+    float fadeoutMidpoint;
+    float fadeoutDistance;
+    float pulsePhase;
+} Uniforms;
+
+
 using namespace metal;
 
 typedef NS_ENUM(NSInteger, WireframeBufferIndex)
@@ -150,7 +170,7 @@ vertex EdgeVertexOut colored_edge_vertex(ColoredVertexIn vertexIn [[stage_in]],
 }
 
 fragment float4 edge_fragment(EdgeVertexOut interpolated [[stage_in]],
-                              const device Uniforms&  uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+                              const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
 
     // Fadeout. Note that distance is -z
     interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);

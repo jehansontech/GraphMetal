@@ -13,33 +13,45 @@ import GenericGraph
 
 public struct ZRenderConstants {
 
+    public static let defaultDarkBackground = SIMD4<Float>(0.025, 0.025, 0.025, 1)
+
+    public static let defaultLightBackground = SIMD4<Float>(0.975, 0.975, 0.975, 1)
+
     public static let uniformsBufferIndex = 0
 
     public static let nodePositionBufferIndex = 1
 
-    public static let defaultElementColor = SIMD4<Float>(0.2, 0.2, 0.2, 1)
+    public static let nodeColorBufferIndex = 2
 
-    public static let defaultDarkBackground = SIMD4<Float>(0.025, 0.025, 0.025, 1)
+    public static let edgeColorBufferIndex = 3
 
-    public static let defaultLightBackground = SIMD4<Float>(0.975, 0.975, 0.975, 1)
+    // public static let defaultElementColor = SIMD4<Float>(0.2, 0.2, 0.2, 1)
+
+//    public static let pointSizeMinimum: Float = 1
+//
+//    /// EMPIRICAL
+//    public static let pointSizeMaximum: Float = 100
+//
+//    /// EMPIRICAL
+//    public static let pointSizeScaleFactor: Float = 400
 }
 
-public struct ZRenderSettings: Sendable {
-
-    public var pointSize: Float
-
-    public var defaultEdgeColor: SIMD4<Float>
-
-    public var backgroundColor: SIMD4<Float>
-
-    public init(pointSize: Float = 16,
-                defaultEdgeColor: SIMD4<Float> = ZRenderConstants.defaultElementColor,
-                backgroundColor: SIMD4<Float> =  ZRenderConstants.defaultDarkBackground) {
-        self.pointSize = pointSize
-        self.defaultEdgeColor = defaultEdgeColor
-        self.backgroundColor = backgroundColor
-    }
-}
+//public struct ZRenderSettings: Sendable {
+//
+//    // public var pointSize: Float
+//
+//    // public var defaultEdgeColor: SIMD4<Float>
+//
+//    public var backgroundColor: SIMD4<Float>
+//
+//    public init(pointSize: Float = 16,
+//                defaultEdgeColor: SIMD4<Float> = ZRenderConstants.defaultElementColor,
+//                backgroundColor: SIMD4<Float> =  ZRenderConstants.defaultDarkBackground) {
+//        self.pointSize = pointSize
+//        self.defaultEdgeColor = defaultEdgeColor
+//        self.backgroundColor = backgroundColor
+//    }
+//}
 
 public protocol ZRenderable {
 
@@ -67,30 +79,30 @@ public enum ZRenderError: Error {
     case snapshotInProgress
 }
 
-public class ZRenderer: ObservableObject {
-
-    private var povController: POVController
-
-    private var fovController: FOVController
-
-    private var wireframe: ZWireframe
-
-    @Published public var settings: ZRenderSettings
-
-    /// In "points"
-    // NOTE: Can't mark it Published b/c it gets changed within a view update.
-    public private(set) var viewBounds: CGRect
+public class ZRenderer: ObservableObject, Renderer {
 
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
     // TODO: make this no longer necessary.
     public var touchPlaneDistance: Float = 1
 
+    /// In "points"
+    // NOTE: Can't mark it Published b/c it gets changed within a view update.
+    public private(set) var viewBounds: CGRect
+
+    @Published public var backgroundColor: SIMD4<Float> = ZRenderConstants.defaultDarkBackground
+    
+    @Published public private(set) var snapshotRequested: Bool = false
+
+    private var povController: POVController
+
+    private var fovController: FOVController
+
     private var uniforms: ZUniformsBufferManager
 
-    private var decorations = [ZRenderable]()
+    private var wireframe: ZWireframe
 
-    @Published public private(set) var snapshotRequested: Bool = false
+    private var decorations = [ZRenderable]()
 
     private var snapshotCallback: ((String) -> Any?)? = nil
 
@@ -98,13 +110,11 @@ public class ZRenderer: ObservableObject {
 
     public init(_ povController: POVController,
                 _ fovController: FOVController,
-                _ wireframe: ZWireframe,
-                _ settings: ZRenderSettings = ZRenderSettings()) {
+                _ wireframe: ZWireframe) {
         self.povController = povController
         self.fovController = fovController
-        self.wireframe = wireframe
-        self.settings = settings
         self.uniforms = ZUniformsBufferManager()
+        self.wireframe = wireframe
         self.viewBounds = CGRect.zero // Dummy value
 
     }
@@ -112,10 +122,10 @@ public class ZRenderer: ObservableObject {
     public func setColorScheme(_ colorScheme: ColorScheme) {
         switch colorScheme {
         case .dark:
-            settings.backgroundColor = RenderConstants.defaultDarkBackground
+            self.backgroundColor = ZRenderConstants.defaultDarkBackground
             break
         case .light:
-            settings.backgroundColor = RenderConstants.defaultLightBackground
+            self.backgroundColor = ZRenderConstants.defaultLightBackground
             break
         @unknown default:
             break
@@ -221,9 +231,9 @@ public class ZRenderer: ObservableObject {
 
         return Uniforms(projectionMatrix: fovController.projectionMatrix,
                         modelViewMatrix: povController.viewMatrix,
-                        pointSize: makePointSize(),
-                        edgeColor: settings.defaultEdgeColor,
-                        backgroundColor: settings.backgroundColor,
+                        pointSize: wireframe.makePointSize(povController.pov.location),
+                        edgeColor: wireframe.defaultElementColor,
+                        backgroundColor: self.backgroundColor,
                         fadeoutMidpoint: fovController.fadeoutMidpoint,
                         fadeoutDistance: fovController.fadeoutDistance,
                         pulsePhase: makePulsePhase(date))
@@ -233,32 +243,23 @@ public class ZRenderer: ObservableObject {
         let millisSinceReferenceDate = Int(date.timeIntervalSinceReferenceDate * 1000)
         return 0.001 * Float(millisSinceReferenceDate % 1000)
     }
-
-    private func makePointSize() -> Float {
-        if let bbox = wireframe.bbox {
-            let d = distance(povController.pov.location, bbox.center)
-            if d > 0 {
-                let newSize = RenderConstants.pointSizeScaleFactor  * settings.pointSize / d
-                return newSize.clamp(RenderConstants.pointSizeMinimum, RenderConstants.pointSizeMaximum)
-            }
-        }
-
-        // Fallback
-        return settings.pointSize
-    }
 }
 
 // ============================================================================
 // MARK: - ZRenderCoordinator
 // ============================================================================
 
-public class ZRenderCoordinator: NSObject, MTKViewDelegate {
+// EXPERIMENTAL
+public protocol Renderer {
 
-    public var backgroundColor: SIMD4<Float> { renderer.settings.backgroundColor }
+    var backgroundColor: SIMD4<Float> { get set }
+}
+
+public class ZRenderCoordinator: NSObject, MTKViewDelegate {
     
     public let device: MTLDevice!
 
-    private weak var renderer: ZRenderer!
+    weak var renderer: ZRenderer!
 
     private var gestureCoordinator: GestureCoordinator
 
