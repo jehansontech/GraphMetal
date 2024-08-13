@@ -17,7 +17,9 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     @Published public var nodeSize: Float
 
-    @Published public var defaultElementColor: SIMD4<Float>
+    @Published public var edgeColor: SIMD4<Float>
+
+    public var defaultColor: SIMD4<Float> { edgeColor }
 
     public private(set) var bbox: BoundingBox? = nil
 
@@ -49,10 +51,10 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     public init(nodeShape: ZWireframeNodeShape = ZWireframeConstants.defaultNodeShape,
                 nodeSize: Float = ZWireframeConstants.defaultNodeSize,
-                defaultElementColor: SIMD4<Float> = ZWireframeConstants.defaultElementColor) {
+                edgeColor: SIMD4<Float> = ZWireframeConstants.defaultElementColor) {
         self.nodeShape = nodeShape
         self.nodeSize = nodeSize
-        self.defaultElementColor = defaultElementColor
+        self.edgeColor = edgeColor
         self.pendingUpdate = ZWireframeWithColoredNodes.Update()
     }
 

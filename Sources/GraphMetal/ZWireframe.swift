@@ -14,9 +14,10 @@ import GenericGraph
 public protocol ZWireframe: ZRenderable {
 
     /// Nominal factor used in calculating rendered sizes of nodes
-    var nodeSize: Float { get set }
+    var nodeSize: Float { get }
 
-    var defaultElementColor: SIMD4<Float> { get set }
+    /// Default value used when a graph element's color information is unspecified
+    var defaultColor: SIMD4<Float> { get }
 
     var bbox: BoundingBox? { get }
 }

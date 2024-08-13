@@ -17,7 +17,9 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
     @Published public var nodeSize: Float
 
-    @Published public var defaultElementColor: SIMD4<Float>
+    @Published public var graphColor: SIMD4<Float>
+
+    public var defaultColor: SIMD4<Float> { graphColor }
 
     public private(set) var bbox: BoundingBox? = nil
 
@@ -41,10 +43,10 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
     public init(nodeShape: ZWireframeNodeShape = ZWireframeConstants.defaultNodeShape,
                 nodeSize: Float = ZWireframeConstants.defaultNodeSize,
-                defaultElementColor: SIMD4<Float> = ZWireframeConstants.defaultElementColor) {
+                graphColor: SIMD4<Float> = ZWireframeConstants.defaultElementColor) {
         self.nodeShape = nodeShape
         self.nodeSize = nodeSize
-        self.defaultElementColor = defaultElementColor
+        self.graphColor = graphColor
         self.pendingUpdate = ZMonochromeWireframe.Update()
     }
 

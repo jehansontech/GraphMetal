@@ -232,7 +232,7 @@ public class ZRenderer: ObservableObject, Renderer {
         return Uniforms(projectionMatrix: fovController.projectionMatrix,
                         modelViewMatrix: povController.viewMatrix,
                         pointSize: wireframe.makePointSize(povController.pov.location),
-                        edgeColor: wireframe.defaultElementColor,
+                        edgeColor: wireframe.defaultColor,
                         backgroundColor: self.backgroundColor,
                         fadeoutMidpoint: fovController.fadeoutMidpoint,
                         fadeoutDistance: fovController.fadeoutDistance,
