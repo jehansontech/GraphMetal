@@ -276,38 +276,262 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
             self.edgeIndices = edgeIndices
             self.nodeColors = nodeColors
         }
+
+        public mutating func clear() {
+            bbox = nil
+            nodePositions = nil
+            edgeIndices = nil
+            nodeColors = nil
+        }
+
+        public mutating func merge(_ other: Update) {
+            if let newBBox = other.bbox {
+                self.bbox = newBBox
+            }
+            if let newNodePositions = other.nodePositions {
+                self.nodePositions = newNodePositions
+            }
+            if let newEdgeIndices = other.edgeIndices {
+                self.edgeIndices = newEdgeIndices
+            }
+            if let newNodeColors = other.nodeColors {
+                self.nodeColors = newNodeColors
+            }
+        }
+    }
+
+    public struct UpdateGenerator<G: Graph> where G.NodeType.ValueType : EmbeddedValue & ColoredValue {
+
+        public var graph: G? {
+            didSet {
+                self.graphHasChanged(nodeSet: true)
+            }
+        }
+
+        public var defaultNodePosition: SIMD3<Float>
+
+        public var defaultNodeColor: SIMD4<Float>
+
+        private var buildNodePositions: Bool = false
+
+        private var buildEdgeIndices: Bool = false
+
+        private var buildNodeColors: Bool = false
+
+        /// key: nodeNumber, value: index into nodePositions and nodeColors arrays
+        /// nodeIndexMap, nodePositions, and nodeColors arrays are always built together
+        private var nodeIndexMap = [Int: Int]()
+
+        /// nodeIndexMap, nodePositions, and nodeColors arrays are always built together
+        private var nodePositions: [SIMD3<Float>]? = nil
+
+        /// nodeIndexMap, nodePositions, and nodeColors arrays are always built together
+        private var nodeColors: [SIMD4<Float>]? = nil
+
+        /// key is nodeNumber
+        private var nodePositionChanges = [Int: SIMD3<Float>]()
+
+        /// key is nodeNumber
+        private var nodeColorChanges = [Int: SIMD4<Float>]()
+
+        public init(graph: G? = nil,
+                    defaultNodePosition: SIMD3<Float> = .zero,
+                    defaultNodeColor: SIMD4<Float> = .zero) {
+            self.graph = graph
+            self.defaultNodePosition = defaultNodePosition
+            self.defaultNodeColor = defaultNodeColor
+            self.graphHasChanged(nodeSet: true)
+        }
+
+        public mutating func graphHasChanged(nodeSet: Bool = false,
+                                             edgeSet: Bool = false,
+                                             nodePositions: Bool = false,
+                                             nodeColors: Bool = false) {
+            if nodeSet || nodePositions || nodeColors {
+                buildNodePositions = true
+                buildEdgeIndices = true
+                buildNodeColors = true
+                self.nodePositionChanges.removeAll()
+                self.nodeColorChanges.removeAll()
+            }
+            if edgeSet {
+                buildEdgeIndices = true
+            }
+        }
+
+        /// key is nodeNumber in both maps
+        public mutating func graphHasChanged(nodePositionChanges: [Int: SIMD3<Float>]? = nil,
+                                             nodeColorChanges: [Int: SIMD4<Float>]? = nil) {
+            if buildNodePositions {
+                // We're going to be building nodePositions and nodeColors
+                // arrays directly from the graph.
+                return
+            }
+
+            if let nodePositionChanges {
+                self.nodePositionChanges.merge(nodePositionChanges, uniquingKeysWith: { (_, new) in new })
+            }
+            if let nodeColorChanges {
+                self.nodeColorChanges.merge(nodeColorChanges, uniquingKeysWith: { (_, new) in new })
+            }
+        }
+
+        public mutating func makeUpdate() -> Update {
+
+            guard let graph = self.graph
+            else {
+                return makeNullUpdate()
+            }
+
+            let nodePositionsNeeded = !nodePositionChanges.isEmpty || buildEdgeIndices
+            let nodePositionsBuilt = nodePositions != nil
+            let nodeColorsNeeded = !nodeColorChanges.isEmpty
+            let nodeColorsBuilt = nodeColors != nil
+
+            let newUpdate: Update
+            if buildNodePositions ||
+                (nodePositionsNeeded && !nodePositionsBuilt) ||
+                (nodeColorsNeeded && !nodeColorsBuilt) {
+                newUpdate = makeFullUpdate(graph)
+            }
+            else if !nodePositionChanges.isEmpty || !nodeColorChanges.isEmpty {
+                newUpdate = makeNodePropertiesUpdate(graph)
+            }
+            else if buildEdgeIndices {
+                newUpdate = makeEdgeUpdate(graph)
+            }
+            else {
+                newUpdate = makeNullUpdate()
+            }
+
+            updateMade()
+            return newUpdate
+        }
+
+        private mutating func makeNullUpdate() -> Update {
+            return Update()
+        }
+
+        private mutating func makeFullUpdate(_ graph: G) -> Update {
+            var newNodeIndexMap = [Int: Int]()
+            var newBBox = BoundingBox(firstNodePosition(graph))
+            var newNodePositions = [SIMD3<Float>](repeating: defaultNodePosition, count: graph.nodes.count)
+            var newNodeColors = [SIMD4<Float>](repeating: defaultNodeColor, count: graph.nodes.count)
+
+            var nodeIndex = 0
+            for node in graph.nodes {
+                newNodeIndexMap[node.nodeNumber] = nodeIndex
+                if let position = node.value?.location {
+                    newBBox.cover(position)
+                    newNodePositions[nodeIndex] = position
+                }
+                if let color = node.value?.color {
+                    newNodeColors[nodeIndex] = color
+                }
+                nodeIndex += 1
+            }
+            self.nodeIndexMap = newNodeIndexMap
+            self.nodePositions = newNodePositions
+            self.nodeColors = newNodeColors
+
+            let newEdgeIndices: [UInt32]? = self.buildEdgeIndices ? Self.makeEdgeIndices(graph, nodeIndexMap) : nil
+            return Update(bbox: newBBox,
+                          nodePositions: self.nodePositions,
+                          edgeIndices: newEdgeIndices,
+                          nodeColors: newNodeColors)
+        }
+
+        /// ASSUMES that nodeIndexMap is non-nil and correct
+        /// ASSUMES that nodePositions is non-nil
+        /// ASSUMES that nodeColors is non-nil
+        private mutating func makeNodePropertiesUpdate(_ graph: G) -> Update {
+
+            let newBBox: BoundingBox?
+            let newNodePositions: [SIMD3<Float>]?
+            if self.nodePositionChanges.isEmpty {
+                newBBox = nil
+                newNodePositions = nil
+            }
+            else {
+                for (nodeNumber, posn) in self.nodePositionChanges {
+                    if let nodeIndex = nodeIndexMap[nodeNumber] {
+                        nodePositions![nodeIndex] = posn
+                    }
+                }
+
+                var bbox = BoundingBox(nodePositions!.first ?? .zero)
+                for posn in nodePositions! {
+                    bbox.cover(posn)
+                }
+
+                newBBox = bbox
+                newNodePositions = self.nodePositions
+            }
+
+            let newNodeColors: [SIMD4<Float>]?
+            if self.nodeColorChanges.isEmpty {
+                newNodeColors = nil
+            }
+            else {
+                for (nodeNumber, color) in self.nodeColorChanges {
+                    if let nodeIndex = nodeIndexMap[nodeNumber] {
+                        nodeColors![nodeIndex] = color
+                    }
+                }
+                newNodeColors = self.nodeColors
+            }
+
+            let newEdgeIndices: [UInt32]? = self.buildEdgeIndices ? Self.makeEdgeIndices(graph, nodeIndexMap) : nil
+            return Update(bbox: newBBox,
+                          nodePositions: newNodePositions,
+                          edgeIndices: newEdgeIndices,
+                          nodeColors: newNodeColors)
+        }
+
+        /// ASSUMES that nodeIndexMap is non-nil and correct
+        private mutating func makeEdgeUpdate(_ graph: G) -> Update {
+            let newEdgeIndices = Self.makeEdgeIndices(graph, nodeIndexMap)
+            return Update(edgeIndices: newEdgeIndices)
+        }
+
+        private mutating func updateMade() {
+            self.buildNodePositions = false
+            self.buildEdgeIndices = false
+            self.buildNodeColors = false
+            self.nodePositionChanges.removeAll()
+            self.nodeColorChanges.removeAll()
+        }
+
+        private func firstNodePosition(_ graph: G) -> SIMD3<Float> {
+            return graph.nodes.first?.value?.location ?? defaultNodePosition
+        }
+
+        private static func makeEdgeIndices(_ graph: G, _ nodeIndexMap: [Int: Int]) -> [UInt32] {
+            var edgeIndices = [UInt32]()
+            var edgeIndex: Int = 0
+            for node in graph.nodes {
+                for edge in node.outEdges {
+                    if let sourceIndex = nodeIndexMap[edge.source.nodeNumber],
+                       let targetIndex = nodeIndexMap[edge.target.nodeNumber] {
+                        edgeIndices.insert(UInt32(sourceIndex), at: edgeIndex)
+                        edgeIndex += 1
+                        edgeIndices.insert(UInt32(targetIndex), at: edgeIndex)
+                        edgeIndex += 1
+                    }
+                }
+            }
+            return edgeIndices
+        }
     }
 }
 
 extension ZWireframeWithColoredNodes.Update {
 
-    public mutating func clear() {
-        bbox = nil
-        nodePositions = nil
-        edgeIndices = nil
-        nodeColors = nil
-    }
-
-    public mutating func merge(_ other: ZWireframeWithColoredNodes.Update) {
-        if let newBBox = other.bbox {
-            self.bbox = newBBox
-        }
-        if let newNodePositions = other.nodePositions {
-            self.nodePositions = newNodePositions
-        }
-        if let newEdgeIndices = other.edgeIndices {
-            self.edgeIndices = newEdgeIndices
-        }
-        if let newNodeColors = other.nodeColors {
-            self.nodeColors = newNodeColors
-        }
-    }
 
     /// Call this if node set has changed.
     public static func makeTotalUpdate<G: Graph>(_ graph: G) -> Self
     where G.NodeType.ValueType: EmbeddedValue & ColoredValue
     {
-
         // key is nodeNumber in graph, value is index into self.nodePositions array
         var nodeIndexMap = [Int: Int]()
 
@@ -356,9 +580,21 @@ extension ZWireframeWithColoredNodes.Update {
     }
 
     // ======================================================================================
-    // MARK: - old-style update TO BE FIXED
+    // MARK: - old update generator code
+    //
+    // - QQ: can I assume that graph.nodes returns same order every time so long as
+    //       the graph's node set has not changed?
+    //   AA: I don't think so!
+    // - That means I need to build and use the node-index map
+    //       [ nodeNumber -> (index in nodePositions buffer) ]
+    //   and when I iterate over nodes, do a lookup to convert from node.nodeNumber to array
+    //   index when I'm changing node position and/or node color.
+    // - For scenarios in which the node colors or positions changes much more frequently
+    //   than the node set, I want a stateful update generator in which the node-index map is
+    //   cached.
     // ======================================================================================
 
+//
 //    public static func makeUpdate<GraphType: Graph>(_ graph: GraphType,
 //                                                    _ change: RenderableGraphChange) -> Self?
 //    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue,
@@ -429,7 +665,7 @@ extension ZWireframeWithColoredNodes.Update {
 //                    nodeColors: newNodeColors)
 //
 //    }
-
+//
 //    private static func makeNodePropertiesUpdate<GraphType: Graph>(_ graph: GraphType,
 //                                                                   _ makeEdgeIndices: Bool) -> Self
 //    where GraphType.NodeType.ValueType: EmbeddedValue & ColoredValue
@@ -533,37 +769,54 @@ extension ZWireframeWithColoredNodes.Update {
 //        return update
 //    }
 //
-    private static func makeEdgeSetUpdate<GraphType: Graph>(_ graph: GraphType) -> Self
-    {
-        return Self(edgeIndices: makeEdgeIndexArray(graph, makeNodeIndexMap(graph)))
-    }
-
-    private static func makeNodeIndexMap<GraphType: Graph>(_ graph: GraphType) -> [Int: Int]
-    {
-        var newNodeIndices = [Int: Int]()
-        var nodeIndex: Int = 0
-        for node in graph.nodes {
-            newNodeIndices[node.nodeNumber] = nodeIndex
-            nodeIndex += 1
-        }
-        return newNodeIndices
-    }
-
-    private static func makeEdgeIndexArray<GraphType: Graph>(_ graph: GraphType, _ nodeIndices: [Int: Int]) -> [UInt32]
-    {
-        var edgeIndices = [UInt32]()
-        var edgeIndex: Int = 0
-        for node in graph.nodes {
-            for edge in node.outEdges {
-                if let sourceIndex = nodeIndices[edge.source.nodeNumber],
-                   let targetIndex = nodeIndices[edge.target.nodeNumber] {
-                    edgeIndices.insert(UInt32(sourceIndex), at: edgeIndex)
-                    edgeIndex += 1
-                    edgeIndices.insert(UInt32(targetIndex), at: edgeIndex)
-                    edgeIndex += 1
-                }
-            }
-        }
-        return edgeIndices
-    }
+//
+//    private static func makeNodeColorUpdate<GraphType: Graph> -> Self 
+//    where GraphType.NodeType.ValueType: ColoredValue {
+//        var newNodeColors = [SIMD4<Float>]()
+//        var nodeIndex: Int = 0
+//
+//        // FIXME: this assumes that graph.nodes will return nodes in the same order every time!
+//
+//        for node in graph.nodes {
+//            let nodeColor = node.value?.color ?? ZWireframeConstants.defaultElementColor
+//            newNodeColors.insert(nodeColor, at: nodeIndex)
+//            nodeIndex += 1
+//        }
+//
+//        return Self(nodeColors: newNodeColors)
+//    }
+//
+//    private static func makeEdgeSetUpdate<GraphType: Graph>(_ graph: GraphType) -> Self
+//    {
+//        return Self(edgeIndices: makeEdgeIndexArray(graph, makeNodeIndexMap(graph)))
+//    }
+//
+//    private static func makeNodeIndexMap<GraphType: Graph>(_ graph: GraphType) -> [Int: Int]
+//    {
+//        var newNodeIndices = [Int: Int]()
+//        var nodeIndex: Int = 0
+//        for node in graph.nodes {
+//            newNodeIndices[node.nodeNumber] = nodeIndex
+//            nodeIndex += 1
+//        }
+//        return newNodeIndices
+//    }
+//
+//    private static func makeEdgeIndexArray<GraphType: Graph>(_ graph: GraphType, _ nodeIndices: [Int: Int]) -> [UInt32]
+//    {
+//        var edgeIndices = [UInt32]()
+//        var edgeIndex: Int = 0
+//        for node in graph.nodes {
+//            for edge in node.outEdges {
+//                if let sourceIndex = nodeIndices[edge.source.nodeNumber],
+//                   let targetIndex = nodeIndices[edge.target.nodeNumber] {
+//                    edgeIndices.insert(UInt32(sourceIndex), at: edgeIndex)
+//                    edgeIndex += 1
+//                    edgeIndices.insert(UInt32(targetIndex), at: edgeIndex)
+//                    edgeIndex += 1
+//                }
+//            }
+//        }
+//        return edgeIndices
+//    }
 }

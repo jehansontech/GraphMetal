@@ -63,6 +63,7 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
             pendingUpdate.bbox = nil
             self.bbox = newBBox
         }
+
         if let newNodePositions = pendingUpdate.nodePositions {
             pendingUpdate.nodePositions = nil
             self.nodeCount = newNodePositions.count
@@ -76,14 +77,15 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
                                                         length: bufferLength,
                                                         options: bufferOptions)
         }
+
         if let newEdgeIndices = pendingUpdate.edgeIndices {
             pendingUpdate.edgeIndices = nil
+            self.edgeIndexCount = newEdgeIndices.count
 
             // We're replacing the buffer rather than modifying its contents
             // so that we don't have to deal with sync between CPU and GPU.
 
-            self.edgeIndexCount = newEdgeIndices.count
-            let bufferLength = newEdgeIndices.count * MemoryLayout<UInt32>.size
+            let bufferLength = edgeIndexCount * MemoryLayout<UInt32>.size
             let bufferOptions: MTLResourceOptions = []
             self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
                                                      length: bufferLength,
@@ -240,95 +242,184 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
             self.nodePositions = nodePositions
             self.edgeIndices = edgeIndices
         }
-    }
-}
 
-
-extension ZMonochromeWireframe.Update {
-
-    public mutating func clear() {
-        bbox = nil
-        nodePositions = nil
-        edgeIndices = nil
-    }
-
-    public mutating func merge(_ other: ZMonochromeWireframe.Update) {
-        if let newBBox = other.bbox {
-            self.bbox = newBBox
+        public mutating func clear() {
+            self.bbox = nil
+            self.nodePositions = nil
+            self.edgeIndices = nil
         }
-        if let newNodePositions = other.nodePositions {
+
+        public mutating func merge(_ other: Update) {
+            if let newBBox = other.bbox {
+                self.bbox = newBBox
+            }
+            if let newNodePositions = other.nodePositions {
+                self.nodePositions = newNodePositions
+            }
+            if let newEdgeIndices = other.edgeIndices {
+                self.edgeIndices = newEdgeIndices
+            }
+        }
+    }
+
+    public struct UpdateGenerator<G: Graph> where G.NodeType.ValueType : EmbeddedValue {
+
+        public var graph: G? {
+            didSet {
+                self.graphHasChanged(nodeSet: true)
+            }
+        }
+
+        public var defaultNodePosition: SIMD3<Float>
+
+        private var buildNodePositions: Bool = false
+
+        private var buildEdgeIndices: Bool = false
+
+        /// key: nodeNumber, value: index in nodePositions array
+        /// nodeIndexMap and nodePositions array are always built together
+        private var nodeIndexMap = [Int: Int]()
+
+        /// nodeIndexMap and nodePositions array are always built together
+        private var nodePositions: [SIMD3<Float>]? = nil
+
+        /// key is node number
+        private var nodePositionChanges = [Int: SIMD3<Float>]()
+
+        public init(graph: G? = nil,
+                    defaultNodePosition: SIMD3<Float> = .zero) {
+            self.graph = graph
+            self.defaultNodePosition = defaultNodePosition
+            self.graphHasChanged(nodeSet: true)
+        }
+
+        public mutating func graphHasChanged(nodeSet: Bool = false,
+                                             edgeSet: Bool = false,
+                                             nodePositions: Bool = false) {
+            if nodeSet || nodePositions {
+                buildNodePositions = true
+                buildEdgeIndices = true
+                self.nodePositionChanges.removeAll()
+            }
+            if edgeSet {
+                buildEdgeIndices = true
+            }
+        }
+
+        /// key is nodeNumber
+        public mutating func graphHasChanged(nodePositionChanges: [Int: SIMD3<Float>]? = nil) {
+            if !buildNodePositions,
+               let nodePositionChanges {
+                self.nodePositionChanges.merge(nodePositionChanges, uniquingKeysWith: { (_, new) in new })
+            }
+        }
+
+        public mutating func makeUpdate() -> Update {
+
+            guard let graph = self.graph
+            else {
+                return makeNullUpdate()
+            }
+
+            let nodePositionsNeeded = !nodePositionChanges.isEmpty || buildEdgeIndices
+            let nodePositionsBuilt = nodePositions != nil
+
+            let newUpdate: Update
+            if buildNodePositions || (nodePositionsNeeded && !nodePositionsBuilt) {
+                newUpdate =  makeFullUpdate(graph)
+            }
+            else if !nodePositionChanges.isEmpty {
+                newUpdate =  makeNodePositionUpdate(graph)
+            }
+            else if buildEdgeIndices {
+                newUpdate =  makeEdgeUpdate(graph)
+            }
+            else {
+                newUpdate =  makeNullUpdate()
+            }
+
+            updateMade()
+            return newUpdate
+        }
+
+        private mutating func makeNullUpdate() -> Update {
+            return Update()
+        }
+
+        private mutating func makeFullUpdate(_ graph: G) -> Update {
+            var newNodeIndexMap = [Int: Int]()
+            var newBBox = BoundingBox(firstNodePosition(graph))
+            var newNodePositions = [SIMD3<Float>](repeating: defaultNodePosition, count: graph.nodes.count)
+
+            var nodeIndex = 0
+            for node in graph.nodes {
+                newNodeIndexMap[node.nodeNumber] = nodeIndex
+                if let position = node.value?.location {
+                    newBBox.cover(position)
+                    newNodePositions[nodeIndex] = position
+                }
+                nodeIndex += 1
+            }
+            self.nodeIndexMap = newNodeIndexMap
             self.nodePositions = newNodePositions
+
+            let newEdgeIndices: [UInt32]? = self.buildEdgeIndices ? Self.makeEdgeIndices(graph, nodeIndexMap) : nil
+            return Update(bbox: newBBox,
+                          nodePositions: self.nodePositions,
+                          edgeIndices: newEdgeIndices)
         }
-        if let newEdgeIndices = other.edgeIndices {
-            self.edgeIndices = newEdgeIndices
-        }
-    }
 
-    /// Call this if node set has changed.
-    public static func makeTotalUpdate<G: Graph>(_ graph: G) -> ZMonochromeWireframe.Update
-    where G.NodeType.ValueType: EmbeddedValue
-    {
-
-        // key is nodeNumber in graph, value is index into self.nodePositions array
-        var nodeIndexMap = [Int: Int]()
-
-        var newBBox: BoundingBox? = nil
-        var newNodePositions = [SIMD3<Float>]()
-
-        var nodeIndex: Int = 0
-        for node in graph.nodes {
-            nodeIndexMap[node.nodeNumber] = nodeIndex
-
-            if let nodePosition = node.value?.location {
-                newNodePositions.insert(nodePosition, at: nodeIndex)
-                if newBBox == nil {
-                    newBBox = BoundingBox(nodePosition)
-                }
-                else {
-                    newBBox!.cover(nodePosition)
+        /// ASSUMES that nodePositions array is non-nil
+        /// ASSUMES that nodeIndexMap is non-nil and correct
+        private mutating func makeNodePositionUpdate(_ graph: G) -> Update {
+            for (nodeNumber, posn) in self.nodePositionChanges {
+                if let nodeIndex = nodeIndexMap[nodeNumber] {
+                    nodePositions![nodeIndex] = posn
                 }
             }
-            nodeIndex += 1
+
+            var newBBox = BoundingBox(nodePositions!.first ?? .zero)
+            for posn in nodePositions! {
+                newBBox.cover(posn)
+            }
+
+            let newEdgeIndices: [UInt32]? = self.buildEdgeIndices ? Self.makeEdgeIndices(graph, nodeIndexMap) : nil
+            return Update(bbox: newBBox,
+                          nodePositions: self.nodePositions,
+                          edgeIndices: newEdgeIndices)
         }
 
-        return ZMonochromeWireframe.Update(bbox: newBBox,
-                                         nodePositions: newNodePositions,
-                                         edgeIndices: makeEdgeIndices(graph, nodeIndexMap))
-    }
-
-    /// Call this if edge set has changed but node set has not
-    public static func makeEdgeSetChange<G: Graph>(_ graph: G) -> ZMonochromeWireframe.Update
-    where G.NodeType.ValueType: EmbeddedValue
-    {
-        return ZMonochromeWireframe.Update(edgeIndices: makeEdgeIndices(graph, makeNodeIndexMap(graph)))
-    }
-
-    private static func makeNodeIndexMap<GraphType: Graph>(_ graph: GraphType) -> [Int: Int]
-    {
-        var newNodeIndices = [Int: Int]()
-        var nodeIndex: Int = 0
-        for node in graph.nodes {
-            newNodeIndices[node.nodeNumber] = nodeIndex
-            nodeIndex += 1
+        /// ASSUMES that nodeIndexMap is non-nil and correct
+        private mutating func makeEdgeUpdate(_ graph: G) -> Update {
+            let newEdgeIndices = Self.makeEdgeIndices(graph, nodeIndexMap)
+            return Update(edgeIndices: newEdgeIndices)
         }
-        return newNodeIndices
-    }
 
-    private static func makeEdgeIndices<GraphType: Graph>(_ graph: GraphType, _ nodeIndices: [Int: Int]) -> [UInt32]
-    {
-        var edgeIndices = [UInt32]()
-        var edgeIndex: Int = 0
-        for node in graph.nodes {
-            for edge in node.outEdges {
-                if let sourceIndex = nodeIndices[edge.source.nodeNumber],
-                   let targetIndex = nodeIndices[edge.target.nodeNumber] {
-                    edgeIndices.insert(UInt32(sourceIndex), at: edgeIndex)
-                    edgeIndex += 1
-                    edgeIndices.insert(UInt32(targetIndex), at: edgeIndex)
-                    edgeIndex += 1
+        private mutating func updateMade() {
+            self.buildNodePositions = false
+            self.buildEdgeIndices = false
+            self.nodePositionChanges.removeAll()
+        }
+
+        private func firstNodePosition(_ graph: G) -> SIMD3<Float> {
+            return graph.nodes.first?.value?.location ?? defaultNodePosition
+        }
+
+        private static func makeEdgeIndices(_ graph: G, _ nodeIndexMap: [Int: Int]) -> [UInt32] {
+            var edgeIndices = [UInt32]()
+            var edgeIndex: Int = 0
+            for node in graph.nodes {
+                for edge in node.outEdges {
+                    if let sourceIndex = nodeIndexMap[edge.source.nodeNumber],
+                       let targetIndex = nodeIndexMap[edge.target.nodeNumber] {
+                        edgeIndices.insert(UInt32(sourceIndex), at: edgeIndex)
+                        edgeIndex += 1
+                        edgeIndices.insert(UInt32(targetIndex), at: edgeIndex)
+                        edgeIndex += 1
+                    }
                 }
             }
+            return edgeIndices
         }
-        return edgeIndices
     }
 }
