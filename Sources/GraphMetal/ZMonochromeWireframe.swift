@@ -70,28 +70,38 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
             pendingUpdate.nodePositions = nil
             self.nodeCount = newNodePositions.count
 
-            // We're replacing the buffer rather than modifying its contents
-            // so that we don't have to deal with sync between CPU and GPU.
+            if self.nodeCount == 0 {
+                self.nodePositionBuffer = nil
+            }
+            else {
+                // We're replacing the buffer rather than modifying its contents
+                // so that we don't have to deal with sync between CPU and GPU.
 
-            let bufferLength = nodeCount * MemoryLayout<SIMD3<Float>>.size
-            let bufferOptions: MTLResourceOptions = []
-            self.nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
-                                                        length: bufferLength,
-                                                        options: bufferOptions)
+                let bufferLength = nodeCount * MemoryLayout<SIMD3<Float>>.size
+                let bufferOptions: MTLResourceOptions = []
+                self.nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
+                                                            length: bufferLength,
+                                                            options: bufferOptions)
+            }
         }
 
         if let newEdgeIndices = pendingUpdate.edgeIndices {
             pendingUpdate.edgeIndices = nil
             self.edgeIndexCount = newEdgeIndices.count
 
-            // We're replacing the buffer rather than modifying its contents
-            // so that we don't have to deal with sync between CPU and GPU.
+            if self.edgeIndexCount == 0 {
+                self.edgeIndexBuffer = nil
+            }
+            else {
+                // We're replacing the buffer rather than modifying its contents
+                // so that we don't have to deal with sync between CPU and GPU.
 
-            let bufferLength = edgeIndexCount * MemoryLayout<UInt32>.size
-            let bufferOptions: MTLResourceOptions = []
-            self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
-                                                     length: bufferLength,
-                                                     options: bufferOptions)
+                let bufferLength = edgeIndexCount * MemoryLayout<UInt32>.size
+                let bufferOptions: MTLResourceOptions = []
+                self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
+                                                         length: bufferLength,
+                                                         options: bufferOptions)
+            }
         }
     }
 
@@ -103,21 +113,18 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
             return
         }
 
-        guard let edgeIndexBuffer = self.edgeIndexBuffer
-        else {
-            return
-        }
-
         encoder.pushDebugGroup("MonochromeWireframe")
         encoder.setVertexBuffer(nodePositionBuffer,
                                 offset: 0,
                                 index: nodePositionBufferIndex)
-        encoder.setRenderPipelineState(edgePipelineState)
-        encoder.drawIndexedPrimitives(type: .line,
-                                      indexCount: edgeIndexCount,
-                                      indexType: MTLIndexType.uint32,
-                                      indexBuffer: edgeIndexBuffer,
-                                      indexBufferOffset: 0)
+        if let edgeIndexBuffer = self.edgeIndexBuffer {
+            encoder.setRenderPipelineState(edgePipelineState)
+            encoder.drawIndexedPrimitives(type: .line,
+                                          indexCount: edgeIndexCount,
+                                          indexType: MTLIndexType.uint32,
+                                          indexBuffer: edgeIndexBuffer,
+                                          indexBufferOffset: 0)
+        }
         encoder.setRenderPipelineState(nodePipelineState)
         encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
         encoder.popDebugGroup()

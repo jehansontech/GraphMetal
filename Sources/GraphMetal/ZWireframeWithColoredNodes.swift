@@ -73,32 +73,24 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
             pendingUpdate.bbox = nil
             self.bbox = newBBox
         }
+
         if let newNodePositions = pendingUpdate.nodePositions {
             pendingUpdate.nodePositions = nil
             self.nodeCount = newNodePositions.count
 
-            // We're replacing the buffer rather than modifying its contents
-            // so that we don't have to deal with sync between CPU and GPU.
+            if self.nodeCount == 0 {
+                self.nodePositionBuffer = nil
+            }
+            else {
+                // We're replacing the buffer rather than modifying its contents
+                // so that we don't have to deal with sync between CPU and GPU.
 
-            let bufferLength = nodeCount * MemoryLayout<SIMD3<Float>>.size
-            let bufferOptions: MTLResourceOptions = []
-            self.nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
-                                                        length: bufferLength,
-                                                        options: bufferOptions)
-        }
-
-        if let newEdgeIndices = pendingUpdate.edgeIndices {
-            pendingUpdate.edgeIndices = nil
-
-            // We're replacing the buffer rather than modifying its contents
-            // so that we don't have to deal with sync between CPU and GPU.
-
-            self.edgeIndexCount = newEdgeIndices.count
-            let bufferLength = newEdgeIndices.count * MemoryLayout<UInt32>.size
-            let bufferOptions: MTLResourceOptions = []
-            self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
-                                                     length: bufferLength,
-                                                     options: bufferOptions)
+                let bufferLength = nodeCount * MemoryLayout<SIMD3<Float>>.size
+                let bufferOptions: MTLResourceOptions = []
+                self.nodePositionBuffer = device.makeBuffer(bytes: newNodePositions,
+                                                            length: bufferLength,
+                                                            options: bufferOptions)
+            }
         }
 
         if let newNodeColors =  pendingUpdate.nodeColors {
@@ -106,11 +98,38 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
             // TODO: sanity check newNodeColors.count == self.nodeCount
 
-            let bufferLength = newNodeColors.count * MemoryLayout<SIMD4<Float>>.size
-            let bufferOptions: MTLResourceOptions = []
-            self.nodeColorBuffer = device.makeBuffer(bytes: newNodeColors,
-                                                     length: bufferLength,
-                                                     options: bufferOptions)
+            if self.nodeCount == 0 {
+                self.nodeColorBuffer = nil
+            }
+            else {
+                // We're replacing the buffer rather than modifying its contents
+                // so that we don't have to deal with sync between CPU and GPU.
+
+                let bufferLength = newNodeColors.count * MemoryLayout<SIMD4<Float>>.size
+                let bufferOptions: MTLResourceOptions = []
+                self.nodeColorBuffer = device.makeBuffer(bytes: newNodeColors,
+                                                         length: bufferLength,
+                                                         options: bufferOptions)
+            }
+        }
+
+        if let newEdgeIndices = pendingUpdate.edgeIndices {
+            pendingUpdate.edgeIndices = nil
+            self.edgeIndexCount = newEdgeIndices.count
+
+            if self.edgeIndexCount == 0 {
+                self.edgeIndexBuffer = nil
+            }
+            else {
+                // We're replacing the buffer rather than modifying its contents
+                // so that we don't have to deal with sync between CPU and GPU.
+
+                let bufferLength = newEdgeIndices.count * MemoryLayout<UInt32>.size
+                let bufferOptions: MTLResourceOptions = []
+                self.edgeIndexBuffer = device.makeBuffer(bytes: newEdgeIndices,
+                                                         length: bufferLength,
+                                                         options: bufferOptions)
+            }
         }
     }
 
@@ -122,7 +141,8 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
             return
         }
 
-        guard let edgeIndexBuffer = self.edgeIndexBuffer
+        guard
+            let nodeColorBuffer = self.nodeColorBuffer
         else {
             return
         }
@@ -134,12 +154,15 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         encoder.setVertexBuffer(nodeColorBuffer,
                                 offset: 0,
                                 index: nodeColorBufferIndex)
-        encoder.setRenderPipelineState(edgePipelineState)
-        encoder.drawIndexedPrimitives(type: .line,
-                                      indexCount: edgeIndexCount,
-                                      indexType: MTLIndexType.uint32,
-                                      indexBuffer: edgeIndexBuffer,
-                                      indexBufferOffset: 0)
+
+        if let edgeIndexBuffer = self.edgeIndexBuffer {
+            encoder.setRenderPipelineState(edgePipelineState)
+            encoder.drawIndexedPrimitives(type: .line,
+                                          indexCount: edgeIndexCount,
+                                          indexType: MTLIndexType.uint32,
+                                          indexBuffer: edgeIndexBuffer,
+                                          indexBufferOffset: 0)
+        }
         encoder.setRenderPipelineState(nodePipelineState)
         encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
         encoder.popDebugGroup()

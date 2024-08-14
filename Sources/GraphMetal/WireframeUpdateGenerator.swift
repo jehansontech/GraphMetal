@@ -8,7 +8,6 @@
 import Wacoma
 import GenericGraph
 
-
 public struct WireframeUpdateGenerator {
 
     /// key = nodeNumber; value = buffer index
@@ -231,3 +230,92 @@ public struct WireframeUpdateGenerator {
         return edgeIndices
     }
 }
+
+public struct RenderableGraphChange: Codable, Sendable {
+
+    public static let none = RenderableGraphChange()
+
+    public static let all = RenderableGraphChange(nodes: true,
+                                                  nodeColors: true,
+                                                  nodePositions: true,
+                                                  edges: true,
+                                                  edgeColors: true)
+
+    public static let topology = RenderableGraphChange(nodes: true,
+                                                       nodeColors: false,
+                                                       nodePositions: false,
+                                                       edges: true,
+                                                       edgeColors: false)
+
+    public static let geometry = RenderableGraphChange(nodes: false,
+                                                       nodeColors: false,
+                                                       nodePositions: true,
+                                                       edges: false,
+                                                       edgeColors: false)
+
+    public static let colors = RenderableGraphChange(nodes: false,
+                                                     nodeColors: true,
+                                                     nodePositions: false,
+                                                     edges: false,
+                                                     edgeColors: true)
+
+    public static let nodeColors = RenderableGraphChange(nodes: false,
+                                                         nodeColors: true,
+                                                         nodePositions: false,
+                                                         edges: false,
+                                                         edgeColors: false)
+
+    public static let edgeColors = RenderableGraphChange(nodes: false,
+                                                         nodeColors: false,
+                                                         nodePositions: false,
+                                                         edges: false,
+                                                         edgeColors: true)
+
+    public static let nodes = RenderableGraphChange(nodes: true,
+                                                    nodeColors: false,
+                                                    nodePositions: false,
+                                                    edges: false,
+                                                    edgeColors: false)
+
+    public static let edges = RenderableGraphChange(nodes: false,
+                                                    nodeColors: false,
+                                                    nodePositions: false,
+                                                    edges: true,
+                                                    edgeColors: false)
+
+    /// indicates whether any nodes have been added and/or removed
+    public var nodes: Bool
+
+    /// indicates whether any nodes have changed color
+    public var nodeColors: Bool
+
+    /// indicates whether any nodes have changed position
+    public var nodePositions: Bool
+
+    /// indicates whether any edges have been added and/or removed
+    public var edges: Bool
+
+    /// indicates whether any edges have changed color
+    public var edgeColors: Bool
+
+    public init(nodes: Bool = false,
+                nodeColors: Bool = false,
+                nodePositions: Bool = false,
+                edges: Bool = false,
+                edgeColors: Bool = false) {
+        self.nodes = nodes
+        self.nodeColors = nodeColors
+        self.nodePositions = nodePositions
+        self.edges = edges
+        self.edgeColors = edgeColors
+    }
+
+    public mutating func merge(_ change: RenderableGraphChange) {
+        self.nodes = self.nodes || change.nodes
+        self.nodeColors = self.nodeColors || change.nodeColors
+        self.nodePositions = self.nodePositions || change.nodePositions
+        self.edges = self.edges || change.edges
+        self.edgeColors = self.edgeColors || change.edgeColors
+    }
+}
+
