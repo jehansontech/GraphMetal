@@ -207,91 +207,29 @@ extension Graph where NodeType.ValueType: EmbeddedValue {
 //    }
 }
 
-//public struct RenderableGraphChange: Codable, Sendable {
-//
-//    public static let none = RenderableGraphChange()
-//    
-//    public static let all = RenderableGraphChange(nodes: true,
-//                                                  nodeColors: true,
-//                                                  nodePositions: true,
-//                                                  edges: true,
-//                                                  edgeColors: true)
-//
-//    public static let topology = RenderableGraphChange(nodes: true,
-//                                                       nodeColors: false,
-//                                                       nodePositions: false,
-//                                                       edges: true,
-//                                                       edgeColors: false)
-//
-//    public static let geometry = RenderableGraphChange(nodes: false,
-//                                                       nodeColors: false,
-//                                                       nodePositions: true,
-//                                                       edges: false,
-//                                                       edgeColors: false)
-//
-//    public static let colors = RenderableGraphChange(nodes: false,
-//                                                     nodeColors: true,
-//                                                     nodePositions: false,
-//                                                     edges: false,
-//                                                     edgeColors: true)
-//
-//    public static let nodeColors = RenderableGraphChange(nodes: false,
-//                                                         nodeColors: true,
-//                                                         nodePositions: false,
-//                                                         edges: false,
-//                                                         edgeColors: false)
-//
-//    public static let edgeColors = RenderableGraphChange(nodes: false,
-//                                                         nodeColors: false,
-//                                                         nodePositions: false,
-//                                                         edges: false,
-//                                                         edgeColors: true)
-//
-//    public static let nodes = RenderableGraphChange(nodes: true,
-//                                                    nodeColors: false,
-//                                                    nodePositions: false,
-//                                                    edges: false,
-//                                                    edgeColors: false)
-//
-//    public static let edges = RenderableGraphChange(nodes: false,
-//                                                    nodeColors: false,
-//                                                    nodePositions: false,
-//                                                    edges: true,
-//                                                    edgeColors: false)
-//
-//    /// indicates whether any nodes have been added and/or removed
-//    public var nodes: Bool
-//
-//    /// indicates whether any nodes have changed color
-//    public var nodeColors: Bool
-//
-//    /// indicates whether any nodes have changed position
-//    public var nodePositions: Bool
-//
-//    /// indicates whether any edges have been added and/or removed
-//    public var edges: Bool
-//
-//    /// indicates whether any edges have changed color
-//    public var edgeColors: Bool
-//
-//    public init(nodes: Bool = false,
-//                nodeColors: Bool = false,
-//                nodePositions: Bool = false,
-//                edges: Bool = false,
-//                edgeColors: Bool = false) {
-//        self.nodes = nodes
-//        self.nodeColors = nodeColors
-//        self.nodePositions = nodePositions
-//        self.edges = edges
-//        self.edgeColors = edgeColors
-//    }
-//
-//    public mutating func merge(_ change: RenderableGraphChange) {
-//        self.nodes = self.nodes || change.nodes
-//        self.nodeColors = self.nodeColors || change.nodeColors
-//        self.nodePositions = self.nodePositions || change.nodePositions
-//        self.edges = self.edges || change.edges
-//        self.edgeColors = self.edgeColors || change.edgeColors
-//    }
-//}
-//
+public struct TouchRay: Codable, Sendable {
+
+    /// Ray's point of origin in world coordinates
+    public var origin: SIMD3<Float>
+
+    /// Unit vector giving ray's direction in world coordinates
+    public var direction: SIMD3<Float>
+
+    /// Start and end of the ray, given as distance along ray
+    public var range: ClosedRange<Float>
+
+    /// cross1 and cross2 are two vectors perpendicular to ray direction giving its rate of spreading.
+    /// They give the semi-major and semi-minor axes of the ellipse that is the cross-section (we
+    /// don't know which is which).
+    public var cross1: SIMD3<Float>
+    public var cross2: SIMD3<Float>
+
+    public init(origin: SIMD3<Float>, direction: SIMD3<Float>, range: ClosedRange<Float>, cross1: SIMD3<Float>, cross2: SIMD3<Float>) {
+        self.origin = origin
+        self.direction = direction
+        self.range = range
+        self.cross1 = cross1
+        self.cross2 = cross2
+    }
+}
+

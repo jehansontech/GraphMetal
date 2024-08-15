@@ -11,6 +11,21 @@ import MetalKit
 import Wacoma
 import GenericGraph
 
+public enum WireframeBufferIndex: NSInteger {
+    case uniform = 0
+    // case nodePositions = 1
+    // case nodeColors = 2
+}
+
+public enum WireframeVertexAttribute: NSInteger {
+    case position = 0
+    case color = 1
+}
+
+public enum WireframeTextureIndex: Int {
+    case color = 0
+}
+
 public protocol ZWireframe: ZRenderable {
 
     /// Nominal factor used in calculating rendered sizes of nodes
@@ -65,9 +80,9 @@ public enum ZWireframeNodeShape {
     var fragmentFunctionName: String {
         switch self {
         case .disc:
-            "node_fragment_disc"
+            "sprite_fragment_disc"
         case .ring:
-            "node_fragment_ring"
+            "sprite_fragment_ring"
         }
     }
 }

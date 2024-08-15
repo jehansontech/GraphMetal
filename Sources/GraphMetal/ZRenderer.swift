@@ -52,7 +52,7 @@ public enum ZRenderError: Error {
     case snapshotInProgress
 }
 
-public class ZRenderer: ObservableObject, Renderer {
+public class ZRenderer: ObservableObject { //, Renderer {
 
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
@@ -228,10 +228,10 @@ public class ZRenderer: ObservableObject, Renderer {
 // ============================================================================
 
 // EXPERIMENTAL
-public protocol Renderer {
-
-    var backgroundColor: SIMD4<Float> { get set }
-}
+//public protocol Renderer: AnyObject {
+//
+//    var backgroundColor: SIMD4<Float> { get set }
+//}
 
 public class ZRenderCoordinator: NSObject, MTKViewDelegate {
     
@@ -536,7 +536,7 @@ struct ZUniformsBufferManager {
 
     private let inFlightSemaphore: DispatchSemaphore
 
-    private var uniformsBufferIndex: Int { RenderConstants.uniformsBufferIndex }
+    private var uniformsBufferIndex: Int { ZRenderConstants.uniformsBufferIndex }
 
     private var uniformsBufferRotation = 0
 

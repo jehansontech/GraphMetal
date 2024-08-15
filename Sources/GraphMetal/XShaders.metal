@@ -1,21 +1,9 @@
-//
-//  Wireframe.metal
-//  GraphMetal
-//
-//  Created by Jim Hanson on 7/18/24.
-//
 
 #include <metal_stdlib>
-
-#ifdef __METAL_VERSION__
-#define NS_ENUM(_type, _name) enum _name : _type _name; enum _name : _type
-#define NSInteger metal::int32_t
-#else
-#import <Foundation/Foundation.h>
-#endif
-
 #include <simd/simd.h>
+#import "ShaderTypes.h"
 using namespace metal;
+
 
 typedef struct
 {
@@ -23,37 +11,18 @@ typedef struct
     simd_float4x4 modelViewMatrix;
     float pointSize;
     simd_float4 edgeColor;
-    simd_float4 backgroundColor;
     float fadeoutMidpoint;
     float fadeoutDistance;
     float pulsePhase;
-} Uniforms;
+} XWireframeUniforms;
 
-
-using namespace metal;
-
-typedef NS_ENUM(NSInteger, WireframeBufferIndex)
-{
-    WireframeBufferIndexUniform = 0
-};
-
-typedef NS_ENUM(NSInteger, WireframeVertexAttribute)
-{
-    WireframeVertexAttributePosition = 0,
-    WireframeVertexAttributeColor    = 1,
-};
-
-typedef NS_ENUM(NSInteger, WireframeTextureIndex)
-{
-    WireframeTextureIndexColor = 0,
-};
 
 /*
  Returns a value that decreases linearly with increasing distance z from a size=scale
  at midpoint-distance to size=0 at midpoint+distance. Expects z >= 0.
  Clamps the return value to be non-negative.
  */
-float nodeSize(float scale, float z, float midpoint, float distance) {
+float x_nodeSize(float scale, float z, float midpoint, float distance) {
     // let p1 = midpoint-distance
     //     p2 = midpoint+distance
     // at z = p1 we have f = 1
@@ -71,46 +40,41 @@ float nodeSize(float scale, float z, float midpoint, float distance) {
  and alpha = 0 at z = midpoint +/- distance. Expects z >= 0.
  Clamps the return value to [0, 1].
  */
-float fadeout(float z, float midpoint, float distance) {
+float x_fadeout(float z, float midpoint, float distance) {
     float w = 1 - abs(z - midpoint) / distance;
     return (w < 0) ? 0 : (w > 1) ? 1 : w;
 }
-
 
 /*
  Returns the given value multiplied by the given phase.
  Phase assumed to be a number between 0 and 1
  */
-float pulseAmplitude(float v, float phase) {
+float x_pulseAmplitude(float v, float phase) {
     return v * phase;
 }
-
-struct MonochromeVertexIn {
-    float3 position [[attribute(WireframeVertexAttributePosition)]];
-};
-
-struct ColoredVertexIn {
-    float3 position [[attribute(WireframeVertexAttributePosition)]];
-    float4 color    [[attribute(WireframeVertexAttributeColor)]];
-};
 
 // =============================================================================
 // beams
 // =============================================================================
 
-struct BeamVertexOut {
+struct XBeamVertexIn {
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
+    float4 color    [[attribute(WireframeVertexAttributeColor)]];
+};
+
+struct XBeamVertexOut {
     float4 position [[position]];
     float3 fragmentPosition;
     float4 color;
 };
 
-vertex BeamVertexOut beam_vertex(ColoredVertexIn vertexIn [[stage_in]],
-                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+vertex XBeamVertexOut x_beam_vertex(XBeamVertexIn vertexIn [[stage_in]],
+                                 const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
 
-    BeamVertexOut vertexOut;
+    XBeamVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
@@ -118,10 +82,13 @@ vertex BeamVertexOut beam_vertex(ColoredVertexIn vertexIn [[stage_in]],
     return vertexOut;
 }
 
-fragment float4 beam_fragment(BeamVertexOut interpolated [[stage_in]],
-                              const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+fragment float4 x_beam_fragment(XBeamVertexOut interpolated           [[ stage_in ]],
+                              const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
-    // (Beams don't fade out)
+    //    // fadeout
+    //    // Note that distance is -z
+    //    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+
 
     // transparent edges
     if (interpolated.color.a <= 0) {
@@ -135,19 +102,23 @@ fragment float4 beam_fragment(BeamVertexOut interpolated [[stage_in]],
 // edges
 // =============================================================================
 
-struct EdgeVertexOut {
+struct XEdgeVertexIn {
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
+};
+
+struct XEdgeVertexOut {
     float4 position [[position]];
     float3 fragmentPosition;
     float4 color;
 };
 
-vertex EdgeVertexOut monochrome_edge_vertex(MonochromeVertexIn vertexIn [[stage_in]],
-                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+vertex XEdgeVertexOut x_edge_vertex(XEdgeVertexIn vertexIn [[stage_in]],
+                               const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
 
-    EdgeVertexOut vertexOut;
+    XEdgeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = uniforms.edgeColor;
@@ -155,25 +126,12 @@ vertex EdgeVertexOut monochrome_edge_vertex(MonochromeVertexIn vertexIn [[stage_
     return vertexOut;
 }
 
-vertex EdgeVertexOut colored_edge_vertex(ColoredVertexIn vertexIn [[stage_in]],
-                                            const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+fragment float4 x_edge_fragment(XEdgeVertexOut interpolated           [[ stage_in ]],
+                             const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
-    float4x4 mv_Matrix = uniforms.modelViewMatrix;
-    float4x4 proj_Matrix = uniforms.projectionMatrix;
-
-    EdgeVertexOut vertexOut;
-    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
-    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
-    vertexOut.color = vertexIn.color;
-
-    return vertexOut;
-}
-
-fragment float4 edge_fragment(EdgeVertexOut interpolated [[stage_in]],
-                              const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
-
-    // Fadeout. Note that distance is -z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    // fadeout
+    // Note that distance is -z
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
 
     // transparent edges
@@ -188,100 +146,93 @@ fragment float4 edge_fragment(EdgeVertexOut interpolated [[stage_in]],
 // nodes
 // =============================================================================
 
-struct NodeVertexOut {
+struct XNodeVertexIn {
+    float3 position [[attribute(WireframeVertexAttributePosition)]];
+    float4 color    [[attribute(WireframeVertexAttributeColor)]];
+};
+
+struct XNodeVertexOut {
     float4 position [[position]];
     float  pointSize [[point_size]];
     float3 fragmentPosition;
     float4 color;
 };
 
-vertex NodeVertexOut monochrome_node_vertex(MonochromeVertexIn vertexIn [[stage_in]],
-                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+vertex XNodeVertexOut x_node_vertex(XNodeVertexIn vertexIn [[stage_in]],
+                                 const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
 
-    NodeVertexOut vertexOut;
-    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
-    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
-    vertexOut.color = uniforms.edgeColor;
-
-    vertexOut.pointSize = nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
-
-    return vertexOut;
-}
-
-vertex NodeVertexOut colored_node_vertex(ColoredVertexIn vertexIn [[stage_in]],
-                                 const device Uniforms&  uniforms [[buffer(WireframeBufferIndexUniform)]]) {
-
-    float4x4 mv_Matrix = uniforms.modelViewMatrix;
-    float4x4 proj_Matrix = uniforms.projectionMatrix;
-
-    NodeVertexOut vertexOut;
+    XNodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    vertexOut.pointSize = nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    // WAS vertexOut.pointSize = uniforms.pointSize;
+    vertexOut.pointSize = x_nodeSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
 
-vertex NodeVertexOut colored_node_vertex_size2(ColoredVertexIn vertexIn [[stage_in]],
-                                       const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex XNodeVertexOut x_node_vertex_size2(XNodeVertexIn vertexIn [[stage_in]],
+                                       const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
 
-    NodeVertexOut vertexOut;
+    XNodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    vertexOut.pointSize = nodeSize(2 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    // WAS: vertexOut.pointSize = 2 * uniforms.pointSize;
+    vertexOut.pointSize = x_nodeSize(2 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
 
-vertex NodeVertexOut colored_node_vertex_size3(ColoredVertexIn vertexIn [[stage_in]],
-                                       const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex XNodeVertexOut x_node_vertex_size3(XNodeVertexIn vertexIn [[stage_in]],
+                                       const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
 
-    NodeVertexOut vertexOut;
+    XNodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    vertexOut.pointSize = nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    // WAS: vertexOut.pointSize = 3 * uniforms.pointSize;
+    vertexOut.pointSize = x_nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
 
-vertex NodeVertexOut colored_node_vertex_size4(ColoredVertexIn vertexIn [[stage_in]],
-                                       const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+vertex XNodeVertexOut x_node_vertex_size4(XNodeVertexIn vertexIn [[stage_in]],
+                                       const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     float4x4 mv_Matrix = uniforms.modelViewMatrix;
     float4x4 proj_Matrix = uniforms.projectionMatrix;
 
-    NodeVertexOut vertexOut;
+    XNodeVertexOut vertexOut;
     vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    vertexOut.pointSize = nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    // WAS: vertexOut.pointSize = 4 * uniforms.pointSize;
+    vertexOut.pointSize = x_nodeSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
 
-fragment float4 node_fragment_square(NodeVertexOut interpolated                [[ stage_in ]],
+fragment float4 x_node_fragment_square(XNodeVertexOut interpolated                [[ stage_in ]],
                                      float2 pointCoord                         [[point_coord]],
-                                     const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                     const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -291,13 +242,13 @@ fragment float4 node_fragment_square(NodeVertexOut interpolated                [
     return interpolated.color;
 }
 
-fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[ stage_in ]],
+fragment float4 x_node_fragment_hollowSquare(XNodeVertexOut interpolated         [[ stage_in ]],
                                            float2 pointCoord                         [[point_coord]],
-                                           const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                           const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -311,9 +262,9 @@ fragment float4 node_fragment_hollowSquare(NodeVertexOut interpolated         [[
     return interpolated.color;
 }
 
-fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated         [[ stage_in ]],
+fragment float4 x_node_fragment_blinkingHollowSquare(XNodeVertexOut interpolated         [[ stage_in ]],
                                                    float2 pointCoord                         [[point_coord]],
-                                                   const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                                   const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // blink
     if (uniforms.pulsePhase > 0.5) {
@@ -322,7 +273,7 @@ fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated   
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -336,13 +287,13 @@ fragment float4 node_fragment_blinkingHollowSquare(NodeVertexOut interpolated   
     return interpolated.color;
 }
 
-fragment float4 node_fragment_disc(NodeVertexOut interpolated                [[ stage_in ]],
+fragment float4 x_node_fragment_disc(XNodeVertexOut interpolated                [[ stage_in ]],
                                   float2 pointCoord                         [[point_coord]],
-                                  const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                  const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -357,13 +308,13 @@ fragment float4 node_fragment_disc(NodeVertexOut interpolated                [[ 
     return interpolated.color;
 }
 
-fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ stage_in ]],
+fragment float4 x_node_fragment_ring(XNodeVertexOut interpolated                [[ stage_in ]],
                                    float2 pointCoord                         [[point_coord]],
-                                   const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                   const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -379,13 +330,13 @@ fragment float4 node_fragment_ring(NodeVertexOut interpolated                [[ 
     return interpolated.color;
 }
 
-fragment float4 node_fragment_diamond(NodeVertexOut interpolated                [[ stage_in ]],
+fragment float4 x_node_fragment_diamond(XNodeVertexOut interpolated                [[ stage_in ]],
                                       float2 pointCoord                         [[point_coord]],
-                                      const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                      const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -429,13 +380,13 @@ fragment float4 node_fragment_diamond(NodeVertexOut interpolated                
     return interpolated.color;
 }
 
-fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       [[ stage_in ]],
+fragment float4 x_node_fragment_pulsatingDiamond(XNodeVertexOut interpolated       [[ stage_in ]],
                                                float2 pointCoord                         [[point_coord]],
-                                               const device Uniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
+                                               const device XWireframeUniforms&  uniforms [[ buffer(WireframeBufferIndexUniform) ]]) {
 
     // fadeout
     // NOTE that *forward* distance = -interpolated.fragmentPosition.z
-    interpolated.color.a *= fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    interpolated.color.a *= x_fadeout(-interpolated.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     // transparent nodes
     if (interpolated.color.a <= 0) {
@@ -444,7 +395,7 @@ fragment float4 node_fragment_pulsatingDiamond(NodeVertexOut interpolated       
 
     // diamond 2x taller than wide, inscribed in the unit square
     // start out filled, gradually thin toward the edges
-    float lineThickness = 0. + (0.5 - pulseAmplitude(0.5, uniforms.pulsePhase));
+    float lineThickness = 0. + (0.5 - x_pulseAmplitude(0.5, uniforms.pulsePhase));
     if (pointCoord.x > 0.5) {
         if (pointCoord.y > 0.5) {
             // upper right quadrant

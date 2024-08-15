@@ -133,18 +133,27 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         }
     }
 
+    private var drawCount: Int = 0
+
     public func encodeCommands(_ encoder: MTLRenderCommandEncoder) {
+        drawCount += 1
 
         guard
             let nodePositionBuffer = self.nodePositionBuffer
         else {
+            print("ZWireframeWithColoredNodes.encodeCommands: nodePositionBuffer is nil")
             return
         }
 
         guard
             let nodeColorBuffer = self.nodeColorBuffer
         else {
+            print("ZWireframeWithColoredNodes.encodeCommands: nodeColorBuffer is nil")
             return
+        }
+
+        if drawCount == 1 {
+            print("ZWireframeWithColoredNodes.encodeCommands: doing nodes")
         }
 
         encoder.pushDebugGroup("ZWireframeWithColoredNodes")
@@ -550,59 +559,59 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
     }
 }
 
-extension ZWireframeWithColoredNodes.Update {
-
-
-    /// Call this if node set has changed.
-    public static func makeTotalUpdate<G: Graph>(_ graph: G) -> Self
-    where G.NodeType.ValueType: EmbeddedValue & ColoredValue
-    {
-        // key is nodeNumber in graph, value is index into self.nodePositions array
-        var nodeIndexMap = [Int: Int]()
-
-        var newBBox: BoundingBox? = nil
-        var newNodePositions = [SIMD3<Float>]()
-        var newNodeColors = [SIMD4<Float>]()
-
-        var nodeIndex: Int = 0
-        for node in graph.nodes {
-            nodeIndexMap[node.nodeNumber] = nodeIndex
-
-            let nodePosition = node.value?.location ?? .zero
-            newNodePositions.insert(nodePosition, at: nodeIndex)
-
-            let nodeColor = node.value?.color ?? ZWireframeConstants.defaultElementColor
-            newNodeColors.insert(nodeColor, at: nodeIndex)
-
-            if newBBox == nil {
-                newBBox = BoundingBox(nodePosition)
-            }
-            else {
-                newBBox!.cover(nodePosition)
-            }
-
-            nodeIndex += 1
-        }
-
-        var newEdgeIndices = [UInt32]()
-        var edgeIndicesIndex: Int = 0 // index into newEdgeIndices array
-        for node in graph.nodes {
-            for edge in node.outEdges {
-                if let sourceIndex = nodeIndexMap[edge.source.nodeNumber],
-                   let targetIndex = nodeIndexMap[edge.target.nodeNumber] {
-                    newEdgeIndices.insert(UInt32(sourceIndex), at: edgeIndicesIndex)
-                    edgeIndicesIndex += 1
-                    newEdgeIndices.insert(UInt32(targetIndex), at: edgeIndicesIndex)
-                    edgeIndicesIndex += 1
-                }
-            }
-        }
-
-        return ZWireframeWithColoredNodes.Update(bbox: newBBox,
-                                                 nodePositions: newNodePositions,
-                                                 edgeIndices: newEdgeIndices,
-                                                 nodeColors: newNodeColors)
-    }
+//extension ZWireframeWithColoredNodes.Update {
+//
+//
+//    /// Call this if node set has changed.
+//    public static func makeTotalUpdate<G: Graph>(_ graph: G) -> Self
+//    where G.NodeType.ValueType: EmbeddedValue & ColoredValue
+//    {
+//        // key is nodeNumber in graph, value is index into self.nodePositions array
+//        var nodeIndexMap = [Int: Int]()
+//
+//        var newBBox: BoundingBox? = nil
+//        var newNodePositions = [SIMD3<Float>]()
+//        var newNodeColors = [SIMD4<Float>]()
+//
+//        var nodeIndex: Int = 0
+//        for node in graph.nodes {
+//            nodeIndexMap[node.nodeNumber] = nodeIndex
+//
+//            let nodePosition = node.value?.location ?? .zero
+//            newNodePositions.insert(nodePosition, at: nodeIndex)
+//
+//            let nodeColor = node.value?.color ?? ZWireframeConstants.defaultElementColor
+//            newNodeColors.insert(nodeColor, at: nodeIndex)
+//
+//            if newBBox == nil {
+//                newBBox = BoundingBox(nodePosition)
+//            }
+//            else {
+//                newBBox!.cover(nodePosition)
+//            }
+//
+//            nodeIndex += 1
+//        }
+//
+//        var newEdgeIndices = [UInt32]()
+//        var edgeIndicesIndex: Int = 0 // index into newEdgeIndices array
+//        for node in graph.nodes {
+//            for edge in node.outEdges {
+//                if let sourceIndex = nodeIndexMap[edge.source.nodeNumber],
+//                   let targetIndex = nodeIndexMap[edge.target.nodeNumber] {
+//                    newEdgeIndices.insert(UInt32(sourceIndex), at: edgeIndicesIndex)
+//                    edgeIndicesIndex += 1
+//                    newEdgeIndices.insert(UInt32(targetIndex), at: edgeIndicesIndex)
+//                    edgeIndicesIndex += 1
+//                }
+//            }
+//        }
+//
+//        return ZWireframeWithColoredNodes.Update(bbox: newBBox,
+//                                                 nodePositions: newNodePositions,
+//                                                 edgeIndices: newEdgeIndices,
+//                                                 nodeColors: newNodeColors)
+//    }
 
     // ======================================================================================
     // MARK: - old update generator code
@@ -844,4 +853,4 @@ extension ZWireframeWithColoredNodes.Update {
 //        }
 //        return edgeIndices
 //    }
-}
+// }

@@ -27,7 +27,7 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
     private var device: MTLDevice!
 
-    private var nodePositionBufferIndex: Int { RenderConstants.nodePositionBufferIndex }
+    private var nodePositionBufferIndex: Int { ZRenderConstants.nodePositionBufferIndex }
 
     private var nodeCount: Int = 0
 

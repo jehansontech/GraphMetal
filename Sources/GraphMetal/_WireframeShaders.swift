@@ -1,19 +1,19 @@
-import MetalKit
-import simd
-
-public enum WireframeBufferIndex: NSInteger {
-    case uniform = 0
-}
-
-public enum WireframeVertexAttribute: NSInteger {
-    case position = 0
-    case color = 1
-}
-
-public enum WireframeTextureIndex: Int {
-    case color = 0
-}
-
+//import MetalKit
+//import simd
+//
+//public enum WireframeBufferIndex: NSInteger {
+//    case uniform = 0
+//}
+//
+//public enum WireframeVertexAttribute: NSInteger {
+//    case position = 0
+//    case color = 1
+//}
+//
+//public enum WireframeTextureIndex: Int {
+//    case color = 0
+//}
+//
 //public struct Uniforms {
 //    public var projectionMatrix: simd_float4x4
 //    public var modelViewMatrix: simd_float4x4

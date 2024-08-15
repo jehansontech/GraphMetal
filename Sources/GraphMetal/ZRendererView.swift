@@ -63,6 +63,7 @@ public struct ZRendererView {
 
         // Update and unpause
         doUpdate(mtkView, coordinator)
+        // NO EFFECT mtkView.setNeedsDisplay()
         mtkView.enableSetNeedsDisplay = false
         mtkView.isPaused = false
 
