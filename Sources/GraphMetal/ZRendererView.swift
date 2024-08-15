@@ -22,6 +22,8 @@ public struct ZRendererView {
     }
 
     public func makeCoordinator() -> ZRenderCoordinator {
+        print("ZRendererView.makeCoordinator: entered")
+
         // Docco sez, "Implement this method if changes to your view might affect other
         // parts of your app. In your implementation, create a custom Swift instance that
         // can communicate with other parts of your interface. For example, you might
@@ -37,9 +39,9 @@ public struct ZRendererView {
     }
 
     public func makeMTKView(_ coordinator: ZRenderCoordinator) -> MTKView {
-        // Docco sez, "Creates the view object and configures its initial state."
+        print("ZRendererView.makeMTKView: entered")
 
-        // print("RendererView.makeMTKView")
+        // Docco sez, "Creates the view object and configures its initial state."
 
         let mtkView = MTKView()
 
@@ -64,29 +66,29 @@ public struct ZRendererView {
         mtkView.enableSetNeedsDisplay = false
         mtkView.isPaused = false
 
+        print("ZRendererView.makeMTKView: exiting")
         return mtkView
     }
 
     public func updateMTKView(_ mtkView: MTKView, _ coordinator: ZRenderCoordinator) {
-        // Docco sez, "Updates the state of the specified view with
-        // new information from SwiftUI." This struct gets recreated many many times,
-        // and I think the system calls makeMTKView the first time this is created
-        // but it calls this method all the subsequent times.
-        //
-        // EMPIRICAL: I'm seeing this method called once per handful of calls to draw()
+        print("ZRendererView.updateMTKView: entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
 
-        // print("RendererView.updateMTKView")
+        // Docco sez, "Updates the state of the specified view with new information
+        // from SwiftUI." The ZRendererView struct gets recreated many many times
+        // (just like regular SwiftUI views). I believe the system calls makeMTKView
+        // the first time the struct is created but it calls this method all subsequent
+        // times.
+
         doUpdate(mtkView, coordinator)
+        print("ZRendererView.updateMTKView: exiting")
     }
 
     private func doUpdate(_ mtkView: MTKView, _ coordinator: ZRenderCoordinator) {
 
-        // print("RendererView.doUpdate: Entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
-
         // NOTE mtkView's bounds are measured in points while its drawableSize is measured
         // in pixels. They need not match, e.g., on my ipad, bounds = (0.0, 0.0, 1180.0, 820.0)
         // and drawableSize =  (2360.0, 1640.0)
-
+        //
         // RenderController's settings MIGHT have changed. The only one we care about
         // here is backgroundColor.
 
@@ -113,6 +115,7 @@ extension ZRendererView: UIViewRepresentable {
     public func makeUIView(context: Context) -> MTKView {
         let mtkView = makeMTKView(context.coordinator)
         mtkView.isMultipleTouchEnabled = true
+        mtkView.contentMode = .redraw
         return mtkView
     }
 

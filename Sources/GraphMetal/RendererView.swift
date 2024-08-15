@@ -37,9 +37,9 @@ public struct RendererView {
     }
 
     public func makeMTKView(_ coordinator: RenderCoordinator) -> MTKView {
-        // Docco sez, "Creates the view object and configures its initial state."
-
         // print("RendererView.makeMTKView")
+
+        // Docco sez, "Creates the view object and configures its initial state."
 
         let mtkView = MTKView()
 
@@ -68,6 +68,8 @@ public struct RendererView {
     }
 
     public func updateMTKView(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
+        print("RendererView.updateMTKView: entered")
+
         // Docco sez, "Updates the state of the specified view with
         // new information from SwiftUI." This struct gets recreated many many times,
         // and I think the system calls makeMTKView the first time this is created
@@ -75,13 +77,11 @@ public struct RendererView {
         // 
         // EMPIRICAL: I'm seeing this method called once per handful of calls to draw()
 
-        // print("RendererView.updateMTKView")
         doUpdate(mtkView, coordinator)
     }
 
     private func doUpdate(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
-
-        // print("RendererView.doUpdate: Entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
+        print("RendererView.doUpdate: Entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
         
         // NOTE mtkView's bounds are measured in points while its drawableSize is measured
         // in pixels. They need not match, e.g., on my ipad, bounds = (0.0, 0.0, 1180.0, 820.0)

@@ -19,6 +19,7 @@ public protocol ZWireframe: ZRenderable {
     /// Default value used when a graph element's color information is unspecified
     var defaultColor: SIMD4<Float> { get }
 
+    /// Bounding box of the graph being rendered, in world coordinates
     var bbox: BoundingBox? { get }
 }
 

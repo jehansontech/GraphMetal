@@ -24,34 +24,7 @@ public struct ZRenderConstants {
     public static let nodeColorBufferIndex = 2
 
     public static let edgeColorBufferIndex = 3
-
-    // public static let defaultElementColor = SIMD4<Float>(0.2, 0.2, 0.2, 1)
-
-//    public static let pointSizeMinimum: Float = 1
-//
-//    /// EMPIRICAL
-//    public static let pointSizeMaximum: Float = 100
-//
-//    /// EMPIRICAL
-//    public static let pointSizeScaleFactor: Float = 400
 }
-
-//public struct ZRenderSettings: Sendable {
-//
-//    // public var pointSize: Float
-//
-//    // public var defaultEdgeColor: SIMD4<Float>
-//
-//    public var backgroundColor: SIMD4<Float>
-//
-//    public init(pointSize: Float = 16,
-//                defaultEdgeColor: SIMD4<Float> = ZRenderConstants.defaultElementColor,
-//                backgroundColor: SIMD4<Float> =  ZRenderConstants.defaultDarkBackground) {
-//        self.pointSize = pointSize
-//        self.defaultEdgeColor = defaultEdgeColor
-//        self.backgroundColor = backgroundColor
-//    }
-//}
 
 public protocol ZRenderable {
 
@@ -83,6 +56,7 @@ public class ZRenderer: ObservableObject, Renderer {
 
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
+    // FIXME: needs to be set properly
     // TODO: make this no longer necessary.
     public var touchPlaneDistance: Float = 1
 
@@ -120,6 +94,7 @@ public class ZRenderer: ObservableObject, Renderer {
     }
 
     public func setColorScheme(_ colorScheme: ColorScheme) {
+        print("ZRenderer.setColorScheme: entered")
         switch colorScheme {
         case .dark:
             self.backgroundColor = ZRenderConstants.defaultDarkBackground
@@ -152,6 +127,7 @@ public class ZRenderer: ObservableObject, Renderer {
     }
 
     public func setup(_ mtkView: MTKView) throws {
+        print("ZRenderer.setup: entered")
 
         guard let device = mtkView.device
         else {
@@ -174,6 +150,8 @@ public class ZRenderer: ObservableObject, Renderer {
         for i in decorations.indices {
             try decorations[i].setup(mtkView, device, defaultLibrary)
         }
+
+        print("ZRenderer.setup: exiting")
     }
 
     public func updateViewBounds(_ viewBounds: CGRect) {
@@ -266,6 +244,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
     private let commandQueue: MTLCommandQueue
 
     public init(_ renderer: ZRenderer, _ gestureHandlers: GestureHandlers) throws {
+        print("ZRenderCoordinator.init: entered")
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
         }
@@ -283,6 +262,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
         self.renderer = renderer
         self.gestureCoordinator = GestureCoordinator(gestureHandlers)
         super.init()
+        print("ZRenderCoordinator.init: exiting")
     }
 
     public func setup(_ mtkView: MTKView) {
@@ -290,7 +270,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
             try renderer.setup(mtkView)
         }
         catch {
-            fatalError("Problem in RenderDelegate setup: \(error)")
+            fatalError("Problem in Renderer setup: \(error)")
         }
     }
 
@@ -304,7 +284,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
     public func mtkView(_ view: MTKView, drawableSizeWillChange newSize: CGSize) {
 
-        // print("Renderer.mtkView. view.bounds: \(view.bounds), newSize: \(newSize)")
+        print("ZRendererCoordinator.mtkView: entered. view.bounds: \(view.bounds), newSize: \(newSize)")
 
         // Docco for this method sez: "Updates the view’s contents upon receiving a change
         // in layout, resolution, or size." And: "Use this method to recompute any view or
@@ -317,16 +297,19 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
         // what we care about.
 
         renderer.updateViewBounds(view.bounds)
+        // NO EFFECT view.setNeedsDisplay()
+
+        print("ZRendererCoordinator.mtkView: exiting")
     }
 
-    //    private var drawCount: Int = 0
+    private var drawCount: Int = 0
 
     public func draw(in view: MTKView) {
-        //        drawCount += 1
+        drawCount += 1
 
-        //        if drawCount % 60 == 1 {
-        //            print("RenderCoordinator.draw #\(drawCount) entered")
-        //        }
+        if drawCount == 1 {
+            print("ZRenderCoordinator.draw #\(drawCount) entered")
+        }
 
         // Swift compiler sez that the snapshot needs to be taken before the current drawable
         // is presented. This means it will capture the figure that was drawn the in PREVIOUS
@@ -339,9 +322,9 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
         renderer.prepareToDraw(view)
 
-        //        if drawCount % 60 == 1 {
-        //            print("RenderCoordinator.draw #\(drawCount) prepareToDraw done")
-        //        }
+        if drawCount == 1 {
+            print("ZRenderCoordinator.draw #\(drawCount) prepareToDraw done")
+        }
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
 
@@ -358,15 +341,21 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
                 }
 
                 if let drawable = view.currentDrawable {
+                    if drawCount == 1 {
+                        print("ZRenderCoordinator.draw #\(drawCount) presenting drawable")
+                    }
                     commandBuffer.present(drawable)
                 }
+            }
+            if drawCount == 1 {
+                print("ZRenderCoordinator.draw #\(drawCount) committing command buffer")
             }
             commandBuffer.commit()
         }
 
-        //        if drawCount % 60 == 1 {
-        //            print("RenderCoordinator.draw #\(drawCount) exiting")
-        //        }
+        if drawCount == 1 {
+            print("ZRenderCoordinator.draw #\(drawCount) exiting")
+        }
     }
 
     func saveSnapshot(_ view: MTKView) -> String {

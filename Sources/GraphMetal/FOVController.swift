@@ -70,64 +70,79 @@ public class PerspectiveFOVController: ObservableObject, FOVController {
 
     public static let defaultZFar: Float = 1000
 
+    public static let defaultYFOV: Float  = .piOverThree
+
     public static var defaultFadeoutDistance: Float {
         return defaultZFar - defaultZNear
     }
 
     public static var defaultFadeoutMidpoint: Float {
-        return defaultZNear
+        return defaultZNear + defaultFadeoutDistance/2
     }
 
-    public static var defaultYFOV: Float {
-        return .piOverThree
+
+    //    public var drawableSize = CGSize(width: 1, height: 1) // dummy values > 0 for safety
+    //
+    //    public var viewBounds = CGRect(x: 0, y: 0, width: 1, height: 1) // dummy values > 0 for safety
+
+    public var aspectRatio: Float {
+        didSet {
+            self.projectionMatrix = makeProjectionMatrix()
+        }
+    }
+
+    public var zNear: Float  {
+        didSet {
+            self.projectionMatrix = makeProjectionMatrix()
+        }
+    }
+
+    public var zFar: Float  {
+        didSet {
+            self.projectionMatrix = makeProjectionMatrix()
+        }
+    }
+
+    /// angular width in radians
+    public var yFOV: Float  {
+        didSet {
+            self.projectionMatrix = makeProjectionMatrix()
+        }
     }
 
     @Published public var fadeoutMidpoint: Float
 
     @Published public var fadeoutDistance: Float
 
-    //    public var drawableSize = CGSize(width: 1, height: 1) // dummy values > 0 for safety
-    //
-    //    public var viewBounds = CGRect(x: 0, y: 0, width: 1, height: 1) // dummy values > 0 for safety
-
-    public var aspectRatio: Float
-
-    public var zNear: Float
-
-    public var zFar: Float
-
-    /// angular width in radians
-    public var yFOV: Float
+    public let initialFadeoutMidpoint: Float
+    
+    public let initialFadeoutDistance: Float
 
     public let initialYFOV: Float
 
-    public var projectionMatrix: float4x4 {
-        return float4x4(perspectiveProjectionRHFovY: yFOV,
-                        aspectRatio: aspectRatio,
-                        nearZ: zNear,
-                        farZ: zFar)
-    }
+    public private(set) var projectionMatrix: float4x4
 
     public init(fadeoutMidpoint: Float = PerspectiveFOVController.defaultFadeoutMidpoint,
                 fadeoutDistance: Float = PerspectiveFOVController.defaultFadeoutDistance,
-                zNear: Float = PerspectiveFOVController.defaultZNear,
-                zFar: Float = PerspectiveFOVController.defaultZFar,
                 yFOV: Float = PerspectiveFOVController.defaultYFOV) {
+        self.aspectRatio = 1 // Dummy value
+        self.zNear = PerspectiveFOVController.defaultZNear
+        self.zFar = PerspectiveFOVController.defaultZFar
+        self.yFOV = yFOV
         self.fadeoutMidpoint = fadeoutMidpoint
         self.fadeoutDistance = fadeoutDistance
-        self.aspectRatio = 1 // Dummy value
-        self.zNear = zNear
-        self.zFar = zFar
-        self.yFOV = yFOV
+        self.initialFadeoutMidpoint = fadeoutMidpoint
+        self.initialFadeoutDistance = fadeoutDistance
         self.initialYFOV = yFOV
+        self.projectionMatrix = float4x4() // Dummy value
     }
 
     public func reset() {
-        // FIXME: decide what to do about these
-        //        self.fadeoutMidpoint = 0
-        //        self.fadeoutDistance = 1000
+        // TODO: decide what to do about these
         //        self.zNear = 0.001
         //        self.zFar = 1000
+        self.fadeoutDistance = initialFadeoutDistance
+        self.fadeoutMidpoint = initialFadeoutMidpoint
         self.yFOV = initialYFOV
     }
 
@@ -144,4 +159,10 @@ public class PerspectiveFOVController: ObservableObject, FOVController {
         self.aspectRatio = viewBounds.height > 0 ? Float(viewBounds.width) / Float(viewBounds.height) : 1
     }
 
+    private func makeProjectionMatrix() -> float4x4 {
+        return float4x4(perspectiveProjectionRHFovY: yFOV,
+                        aspectRatio: aspectRatio,
+                        nearZ: zNear,
+                        farZ: zFar)
+    }
 }
