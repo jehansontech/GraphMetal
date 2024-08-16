@@ -298,7 +298,7 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
                           edgeIndices: [],
                           nodeColors: [])
         }
-        
+
         public var bbox: BoundingBox?
 
         public var nodePositions: [SIMD3<Float>]?
@@ -341,23 +341,19 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         }
     }
 
-    public struct UpdateGenerator<G: Graph> where G.NodeType.ValueType : EmbeddedValue & ColoredValue {
-
-        public var graph: G? {
-            didSet {
-                self.graphHasChanged(nodeSet: true)
-            }
-        }
+    public struct UpdateGenerator {
 
         public var defaultNodePosition: SIMD3<Float>
 
         public var defaultNodeColor: SIMD4<Float>
 
-        private var buildNodePositions: Bool = false
+        private var buildNodePositions: Bool
 
-        private var buildEdgeIndices: Bool = false
+        private var buildEdgeIndices: Bool
 
-        private var buildNodeColors: Bool = false
+        private var buildNodeColors: Bool
+
+        private var graphID: GraphID? = nil
 
         /// key: nodeNumber, value: index into nodePositions and nodeColors arrays
         /// nodeIndexMap, nodePositions, and nodeColors arrays are always built together
@@ -375,19 +371,25 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         /// key is nodeNumber
         private var nodeColorChanges = [Int: SIMD4<Float>]()
 
-        public init(graph: G? = nil,
-                    defaultNodePosition: SIMD3<Float> = .zero,
+        public init(defaultNodePosition: SIMD3<Float> = .zero,
                     defaultNodeColor: SIMD4<Float> = .zero) {
-            self.graph = graph
             self.defaultNodePosition = defaultNodePosition
             self.defaultNodeColor = defaultNodeColor
-            self.graphHasChanged(nodeSet: true)
+            self.buildNodePositions = true
+            self.buildEdgeIndices = true
+            self.buildNodeColors = true
         }
 
-        public mutating func graphHasChanged(nodeSet: Bool = false,
-                                             edgeSet: Bool = false,
-                                             nodePositions: Bool = false,
-                                             nodeColors: Bool = false) {
+        public mutating func graphHasChanged<G: Graph>(_ graph: G,
+                                                       nodeSet: Bool = false,
+                                                       edgeSet: Bool = false,
+                                                       nodePositions: Bool = false,
+                                                       nodeColors: Bool = false)
+        where G.NodeType.ValueType : EmbeddedValue & ColoredValue
+        {
+            if checkForNewGraph(graph.id) {
+                return
+            }
             if nodeSet || nodePositions || nodeColors {
                 buildNodePositions = true
                 buildEdgeIndices = true
@@ -401,14 +403,19 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         }
 
         /// key is nodeNumber in both maps
-        public mutating func graphHasChanged(nodePositionChanges: [Int: SIMD3<Float>]? = nil,
-                                             nodeColorChanges: [Int: SIMD4<Float>]? = nil) {
-            if buildNodePositions {
-                // We're going to be building nodePositions and nodeColors
-                // arrays directly from the graph.
+        public mutating func graphHasChanged<G: Graph>(_ graph: G,
+                                                       nodePositionChanges: [Int: SIMD3<Float>]? = nil,
+                                                       nodeColorChanges: [Int: SIMD4<Float>]? = nil)
+        where G.NodeType.ValueType : EmbeddedValue & ColoredValue
+        {
+            if checkForNewGraph(graph.id) {
                 return
             }
-
+            if buildNodePositions {
+                // We're going to be building nodePositions and nodeColors
+                // arrays directly from the graph so the args are ignorable.
+                return
+            }
             if let nodePositionChanges {
                 self.nodePositionChanges.merge(nodePositionChanges, uniquingKeysWith: { (_, new) in new })
             }
@@ -417,12 +424,10 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
             }
         }
 
-        public mutating func makeUpdate() -> Update {
-
-            guard let graph = self.graph
-            else {
-                return makeNullUpdate()
-            }
+        public mutating func makeUpdate<G: Graph>(_ graph: G) -> Update 
+        where G.NodeType.ValueType : EmbeddedValue & ColoredValue
+        {
+            checkForNewGraph(graph.id)
 
             let nodePositionsNeeded = !nodePositionChanges.isEmpty || buildEdgeIndices
             let nodePositionsBuilt = nodePositions != nil
@@ -449,11 +454,26 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
             return newUpdate
         }
 
+        /// If it's a new graph, sets flags for full update and returns true.
+        @discardableResult private mutating func checkForNewGraph(_ graphID: GraphID) -> Bool {
+            if self.graphID == nil || self.graphID != graphID {
+                self.graphID = graphID
+                buildNodePositions = true
+                buildEdgeIndices = true
+                buildNodeColors = true
+                self.nodePositionChanges.removeAll()
+                self.nodeColorChanges.removeAll()
+                return true
+            }
+            return false
+        }
         private mutating func makeNullUpdate() -> Update {
             return Update()
         }
 
-        private mutating func makeFullUpdate(_ graph: G) -> Update {
+        private mutating func makeFullUpdate<G: Graph>(_ graph: G) -> Update
+        where G.NodeType.ValueType : EmbeddedValue & ColoredValue
+        {
             var newNodeIndexMap = [Int: Int]()
             var newBBox = BoundingBox(firstNodePosition(graph))
             var newNodePositions = [SIMD3<Float>](repeating: defaultNodePosition, count: graph.nodes.count)
@@ -485,7 +505,9 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         /// ASSUMES that nodeIndexMap is non-nil and correct
         /// ASSUMES that nodePositions is non-nil
         /// ASSUMES that nodeColors is non-nil
-        private mutating func makeNodePropertiesUpdate(_ graph: G) -> Update {
+        private mutating func makeNodePropertiesUpdate<G: Graph>(_ graph: G) -> Update
+        where G.NodeType.ValueType : EmbeddedValue & ColoredValue
+        {
 
             let newBBox: BoundingBox?
             let newNodePositions: [SIMD3<Float>]?
@@ -530,7 +552,7 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         }
 
         /// ASSUMES that nodeIndexMap is non-nil and correct
-        private mutating func makeEdgeUpdate(_ graph: G) -> Update {
+        private mutating func makeEdgeUpdate<G: Graph>(_ graph: G) -> Update {
             let newEdgeIndices = Self.makeEdgeIndices(graph, nodeIndexMap)
             return Update(edgeIndices: newEdgeIndices)
         }
@@ -543,11 +565,13 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
             self.nodeColorChanges.removeAll()
         }
 
-        private func firstNodePosition(_ graph: G) -> SIMD3<Float> {
+        private func firstNodePosition<G: Graph>(_ graph: G) -> SIMD3<Float> 
+        where G.NodeType.ValueType : EmbeddedValue
+        {
             return graph.nodes.first?.value?.location ?? defaultNodePosition
         }
 
-        private static func makeEdgeIndices(_ graph: G, _ nodeIndexMap: [Int: Int]) -> [UInt32] {
+        private static func makeEdgeIndices<G: Graph>(_ graph: G, _ nodeIndexMap: [Int: Int]) -> [UInt32] {
             var edgeIndices = [UInt32]()
             var edgeIndex: Int = 0
             for node in graph.nodes {

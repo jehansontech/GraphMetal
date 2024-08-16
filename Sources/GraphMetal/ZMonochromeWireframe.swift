@@ -330,8 +330,12 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
             if checkForNewGraph(graph.id) {
                 return
             }
-            if !buildNodePositions,
-               let nodePositionChanges {
+            if buildNodePositions {
+                // We're going to be building nodePositions array directly
+                // from the graph so the arg are ignorable.
+                return
+            }
+            if let nodePositionChanges {
                 self.nodePositionChanges.merge(nodePositionChanges, uniquingKeysWith: { (_, new) in new })
             }
         }
@@ -426,9 +430,7 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
         }
 
         /// ASSUMES that nodeIndexMap is non-nil and correct
-        private mutating func makeEdgeUpdate<G: Graph>(_ graph: G) -> Update
-        where G.NodeType.ValueType : EmbeddedValue
-        {
+        private mutating func makeEdgeUpdate<G: Graph>(_ graph: G) -> Update {
             let newEdgeIndices = Self.makeEdgeIndices(graph, nodeIndexMap)
             return Update(edgeIndices: newEdgeIndices)
         }
