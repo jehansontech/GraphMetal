@@ -320,9 +320,15 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
                 self.renderer.renderingIsComplete()
             }
 
-            // Delay getting the RenderPassDescriptor until we absolutely it in order
-            // to avoid blocking the display pipeline any longer than necessary.
+            // Delay getting the RenderPassDescriptor until we absolutely need it,
+            // in order to avoid blocking the display pipeline any longer than
+            // necessary.
             if let renderPassDescriptor = view.currentRenderPassDescriptor {
+
+                // [2024-08-16] EMPIRICAL: don't modify the renderPassDescriptor by
+                // setting a loadAction or clearAction because it will interfere
+                // with rendering on my ipad (tho not on the simulator).
+
                 if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
                     renderer.encodeCommands(renderEncoder)
                     renderEncoder.endEncoding()
