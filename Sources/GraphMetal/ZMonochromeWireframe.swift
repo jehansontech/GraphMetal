@@ -237,6 +237,12 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
     public struct Update: Sendable {
 
+        public static func emptyGraph() -> Update {
+            return Update(bbox: BoundingBox(.zero),
+                          nodePositions: [],
+                          edgeIndices: [])
+        }
+        
         public var bbox: BoundingBox?
 
         public var nodePositions: [SIMD3<Float>]?

@@ -292,6 +292,13 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     public struct Update: Sendable {
 
+        public static func emptyGraph() -> Update {
+            return Update(bbox: BoundingBox(.zero),
+                          nodePositions: [],
+                          edgeIndices: [],
+                          nodeColors: [])
+        }
+        
         public var bbox: BoundingBox?
 
         public var nodePositions: [SIMD3<Float>]?
