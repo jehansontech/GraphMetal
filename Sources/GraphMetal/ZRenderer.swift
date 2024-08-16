@@ -52,7 +52,7 @@ public enum ZRenderError: Error {
     case snapshotInProgress
 }
 
-public class ZRenderer: ObservableObject { //, Renderer {
+public class ZRenderer: ObservableObject {
 
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
@@ -94,7 +94,7 @@ public class ZRenderer: ObservableObject { //, Renderer {
     }
 
     public func setColorScheme(_ colorScheme: ColorScheme) {
-        print("ZRenderer.setColorScheme: entered")
+        // print("ZRenderer.setColorScheme: entered")
         switch colorScheme {
         case .dark:
             self.backgroundColor = ZRenderConstants.defaultDarkBackground
@@ -127,7 +127,7 @@ public class ZRenderer: ObservableObject { //, Renderer {
     }
 
     public func setup(_ mtkView: MTKView) throws {
-        print("ZRenderer.setup: entered")
+        // print("ZRenderer.setup: entered")
 
         guard let device = mtkView.device
         else {
@@ -151,7 +151,7 @@ public class ZRenderer: ObservableObject { //, Renderer {
             try decorations[i].setup(mtkView, device, defaultLibrary)
         }
 
-        print("ZRenderer.setup: exiting")
+        // print("ZRenderer.setup: exiting")
     }
 
     public func updateViewBounds(_ viewBounds: CGRect) {
@@ -168,13 +168,6 @@ public class ZRenderer: ObservableObject { //, Renderer {
         for i in decorations.indices {
             decorations[i].prepareToDraw(date)
         }
-    }
-
-    public func makeRenderPassDescriptor(_ view: MTKView) -> MTLRenderPassDescriptor? {
-        let newDescriptor = view.currentRenderPassDescriptor
-        newDescriptor?.colorAttachments[0].loadAction = .clear
-        newDescriptor?.colorAttachments[0].storeAction = .dontCare
-        return newDescriptor
     }
 
     public func encodeCommands(_ encoder: MTLRenderCommandEncoder) {
@@ -227,12 +220,6 @@ public class ZRenderer: ObservableObject { //, Renderer {
 // MARK: - ZRenderCoordinator
 // ============================================================================
 
-// EXPERIMENTAL
-//public protocol Renderer: AnyObject {
-//
-//    var backgroundColor: SIMD4<Float> { get set }
-//}
-
 public class ZRenderCoordinator: NSObject, MTKViewDelegate {
     
     public let device: MTLDevice!
@@ -244,7 +231,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
     private let commandQueue: MTLCommandQueue
 
     public init(_ renderer: ZRenderer, _ gestureHandlers: GestureHandlers) throws {
-        print("ZRenderCoordinator.init: entered")
+        // print("ZRenderCoordinator.init: entered")
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
         }
@@ -262,7 +249,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
         self.renderer = renderer
         self.gestureCoordinator = GestureCoordinator(gestureHandlers)
         super.init()
-        print("ZRenderCoordinator.init: exiting")
+        // print("ZRenderCoordinator.init: exiting")
     }
 
     public func setup(_ mtkView: MTKView) {
@@ -284,7 +271,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
     public func mtkView(_ view: MTKView, drawableSizeWillChange newSize: CGSize) {
 
-        print("ZRendererCoordinator.mtkView: entered. view.bounds: \(view.bounds), newSize: \(newSize)")
+        // print("ZRendererCoordinator.mtkView: entered. view.bounds: \(view.bounds), newSize: \(newSize)")
 
         // Docco for this method sez: "Updates the view’s contents upon receiving a change
         // in layout, resolution, or size." And: "Use this method to recompute any view or
@@ -299,17 +286,16 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
         renderer.updateViewBounds(view.bounds)
         // NO EFFECT view.setNeedsDisplay()
 
-        print("ZRendererCoordinator.mtkView: exiting")
+        // print("ZRendererCoordinator.mtkView: exiting")
     }
 
-    private var drawCount: Int = 0
+    // private var drawCount: Int = 0
 
     public func draw(in view: MTKView) {
-        drawCount += 1
-
-        if drawCount == 1 {
-            print("ZRenderCoordinator.draw #\(drawCount) entered")
-        }
+//        drawCount += 1
+//        if drawCount == 1 {
+//            print("ZRenderCoordinator.draw #\(drawCount) entered")
+//        }
 
         // Swift compiler sez that the snapshot needs to be taken before the current drawable
         // is presented. This means it will capture the figure that was drawn the in PREVIOUS
@@ -322,9 +308,9 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
         renderer.prepareToDraw(view)
 
-        if drawCount == 1 {
-            print("ZRenderCoordinator.draw #\(drawCount) prepareToDraw done")
-        }
+//        if drawCount == 1 {
+//            print("ZRenderCoordinator.draw #\(drawCount) prepareToDraw done")
+//        }
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
 
@@ -334,28 +320,28 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
             // Delay getting the RenderPassDescriptor until we absolutely it in order
             // to avoid blocking the display pipeline any longer than necessary.
-            if let renderPassDescriptor = renderer.makeRenderPassDescriptor(view) {
+            if let renderPassDescriptor = view.currentRenderPassDescriptor {
                 if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
                     renderer.encodeCommands(renderEncoder)
                     renderEncoder.endEncoding()
                 }
 
                 if let drawable = view.currentDrawable {
-                    if drawCount == 1 {
-                        print("ZRenderCoordinator.draw #\(drawCount) presenting drawable")
-                    }
+//                    if drawCount == 1 {
+//                        print("ZRenderCoordinator.draw #\(drawCount) presenting drawable")
+//                    }
                     commandBuffer.present(drawable)
                 }
             }
-            if drawCount == 1 {
-                print("ZRenderCoordinator.draw #\(drawCount) committing command buffer")
-            }
+//            if drawCount == 1 {
+//                print("ZRenderCoordinator.draw #\(drawCount) committing command buffer")
+//            }
             commandBuffer.commit()
         }
 
-        if drawCount == 1 {
-            print("ZRenderCoordinator.draw #\(drawCount) exiting")
-        }
+//        if drawCount == 1 {
+//            print("ZRenderCoordinator.draw #\(drawCount) exiting")
+//        }
     }
 
     func saveSnapshot(_ view: MTKView) -> String {

@@ -357,7 +357,7 @@ public class XRenderer: NSObject, MTKViewDelegate {
 
     public func mtkView(_ view: MTKView, drawableSizeWillChange newSize: CGSize) {
 
-        // print("XRenderer.mtkView. view.bounds: \(view.bounds), newSize: \(newSize)")
+        // print("XRenderer.mtkView: entered. view.bounds: \(view.bounds), newSize: \(newSize)")
 
         // Docco for this method sez: "Updates the view’s contents upon receiving a change
         // in layout, resolution, or size." And: "Use this method to recompute any view or
@@ -368,6 +368,9 @@ public class XRenderer: NSObject, MTKViewDelegate {
 
         // newSize is in pixels, view.bounds is in points.
         controller.update(view.bounds)
+
+        // print("XRenderer.mtkView: exiting.")
+
     }
 
     public func draw(in view: MTKView) {

@@ -22,7 +22,7 @@ public struct ZRendererView {
     }
 
     public func makeCoordinator() -> ZRenderCoordinator {
-        print("ZRendererView.makeCoordinator: entered")
+        // print("ZRendererView.makeCoordinator: entered")
 
         // Docco sez, "Implement this method if changes to your view might affect other
         // parts of your app. In your implementation, create a custom Swift instance that
@@ -39,7 +39,7 @@ public struct ZRendererView {
     }
 
     public func makeMTKView(_ coordinator: ZRenderCoordinator) -> MTKView {
-        print("ZRendererView.makeMTKView: entered")
+        // print("ZRendererView.makeMTKView: entered")
 
         // Docco sez, "Creates the view object and configures its initial state."
 
@@ -63,16 +63,15 @@ public struct ZRendererView {
 
         // Update and unpause
         doUpdate(mtkView, coordinator)
-        // NO EFFECT mtkView.setNeedsDisplay()
         mtkView.enableSetNeedsDisplay = false
         mtkView.isPaused = false
 
-        print("ZRendererView.makeMTKView: exiting")
+        // print("ZRendererView.makeMTKView: exiting")
         return mtkView
     }
 
     public func updateMTKView(_ mtkView: MTKView, _ coordinator: ZRenderCoordinator) {
-        print("ZRendererView.updateMTKView: entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
+        // print("ZRendererView.updateMTKView: entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
 
         // Docco sez, "Updates the state of the specified view with new information
         // from SwiftUI." The ZRendererView struct gets recreated many many times
@@ -81,7 +80,7 @@ public struct ZRendererView {
         // times.
 
         doUpdate(mtkView, coordinator)
-        print("ZRendererView.updateMTKView: exiting")
+        // print("ZRendererView.updateMTKView: exiting")
     }
 
     private func doUpdate(_ mtkView: MTKView, _ coordinator: ZRenderCoordinator) {
