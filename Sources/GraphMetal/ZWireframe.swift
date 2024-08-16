@@ -80,9 +80,9 @@ public enum ZWireframeNodeShape {
     var fragmentFunctionName: String {
         switch self {
         case .disc:
-            "sprite_fragment_disc"
+            "node_fragment_disc"
         case .ring:
-            "sprite_fragment_ring"
+            "node_fragment_ring"
         }
     }
 }
