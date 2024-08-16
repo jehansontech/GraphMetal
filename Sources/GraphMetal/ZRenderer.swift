@@ -76,7 +76,7 @@ public class ZRenderer: ObservableObject {
 
     private var wireframe: ZWireframe
 
-    private var decorations = [ZRenderable]()
+    private var decorations: [ZRenderable]
 
     private var snapshotCallback: ((String) -> Any?)? = nil
 
@@ -84,11 +84,13 @@ public class ZRenderer: ObservableObject {
 
     public init(_ povController: POVController,
                 _ fovController: FOVController,
-                _ wireframe: ZWireframe) {
+                _ wireframe: ZWireframe,
+                decorations: [ZRenderable] = []) {
         self.povController = povController
         self.fovController = fovController
         self.uniforms = ZUniformsBufferManager()
         self.wireframe = wireframe
+        self.decorations = decorations
         self.viewBounds = CGRect.zero // Dummy value
 
     }
