@@ -22,11 +22,13 @@ public struct ZRenderConstants {
     public static let nodePositionBufferIndex = 1
 
     public static let nodeColorBufferIndex = 2
-
-    public static let edgeColorBufferIndex = 3
 }
 
-public protocol ZRenderable {
+public protocol ZRenderable: AnyObject {
+
+//    var bufferCount: Int { get }
+//
+//    func setBufferIndices(_ indices: [Int])
 
     func setup(_ view: MTKView, _ device: MTLDevice, _ defaultLibrary: MTLLibrary) throws
 
@@ -80,7 +82,7 @@ public class ZRenderer: ObservableObject {
 
     private var snapshotCallback: ((String) -> Any?)? = nil
 
-    private var depthState: MTLDepthStencilState!
+    private var depthStencilState: MTLDepthStencilState!
 
     public init(_ povController: POVController,
                 _ fovController: FOVController,
@@ -92,7 +94,6 @@ public class ZRenderer: ObservableObject {
         self.wireframe = wireframe
         self.decorations = decorations
         self.viewBounds = CGRect.zero // Dummy value
-
     }
 
     public func setColorScheme(_ colorScheme: ColorScheme) {
@@ -141,11 +142,11 @@ public class ZRenderer: ObservableObject {
             throw ZRenderError.noDefaultLibrary
         }
 
-        guard let depthState = makeDepthState(device)
+        guard let depthStencilState = makeDepthStencilState(device)
         else {
             throw ZRenderError.noDepthStencilState
         }
-        self.depthState = depthState
+        self.depthStencilState = depthStencilState
 
         try uniforms.setup(device)
         try wireframe.setup(mtkView, device, defaultLibrary)
@@ -173,7 +174,7 @@ public class ZRenderer: ObservableObject {
     }
 
     public func encodeCommands(_ encoder: MTLRenderCommandEncoder) {
-        encoder.setDepthStencilState(depthState)
+        encoder.setDepthStencilState(depthStencilState)
         uniforms.encodeCommands(encoder)
         wireframe.encodeCommands(encoder)
         for i in decorations.indices {
@@ -189,7 +190,7 @@ public class ZRenderer: ObservableObject {
         }
     }
 
-    private func makeDepthState(_ device: MTLDevice)  -> MTLDepthStencilState? {
+    private func makeDepthStencilState(_ device: MTLDevice)  -> MTLDepthStencilState? {
         let depthStateDesciptor = MTLDepthStencilDescriptor()
         depthStateDesciptor.depthCompareFunction = MTLCompareFunction.lessEqual
         depthStateDesciptor.isDepthWriteEnabled = true

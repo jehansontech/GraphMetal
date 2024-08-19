@@ -27,11 +27,9 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     private var device: MTLDevice!
 
-    private var nodePositionBufferIndex: Int { ZRenderConstants.nodePositionBufferIndex }
+    private var nodePositionBufferIndex: Int
 
-    private var nodeColorBufferIndex: Int { ZRenderConstants.nodeColorBufferIndex }
-
-    private var edgeColorBufferIndex: Int { ZRenderConstants.edgeColorBufferIndex }
+    private var nodeColorBufferIndex: Int
 
     private var nodeCount: Int = 0
 
@@ -56,6 +54,8 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         self.nodeSize = nodeSize
         self.edgeColor = edgeColor
         self.pendingUpdate = ZWireframeWithColoredNodes.Update()
+        self.nodePositionBufferIndex = ZRenderConstants.nodePositionBufferIndex
+        self.nodeColorBufferIndex = ZRenderConstants.nodeColorBufferIndex
     }
 
     public func addUpdate(_ update: ZWireframeWithColoredNodes.Update) {
