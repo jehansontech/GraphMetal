@@ -34,4 +34,16 @@ typedef NS_ENUM(EnumBackingType, WireframeTextureIndex)
     WireframeTextureIndexColor = 0,
 };
 
+typedef struct
+{
+    simd_float4x4 projectionMatrix;
+    simd_float4x4 modelViewMatrix;
+    float pointSize;
+    simd_float4 edgeColor;
+    simd_float4 backgroundColor;
+    float fadeoutMidpoint;
+    float fadeoutDistance;
+    float pulsePhase;
+} Uniforms;
+
 #endif /* ShaderTypes_h */
