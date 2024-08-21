@@ -13,6 +13,8 @@ import GenericGraph
 
 public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
+    public var firstAvailableBufferIndex: Int { 2 }
+
     public let nodeShape: ZWireframeNodeShape
 
     @Published public var nodeSize: Float
@@ -27,7 +29,7 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
     private var device: MTLDevice!
 
-    private var nodePositionBufferIndex: Int { ZRenderConstants.nodePositionBufferIndex }
+    private let nodePositionBufferIndex: Int
 
     private var nodeCount: Int = 0
 
@@ -48,6 +50,7 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
         self.nodeSize = nodeSize
         self.graphColor = graphColor
         self.pendingUpdate = ZMonochromeWireframe.Update()
+        self.nodePositionBufferIndex = ZRenderConstants.nodePositionBufferIndex
     }
 
     public func addUpdate(_ update: ZMonochromeWireframe.Update) {

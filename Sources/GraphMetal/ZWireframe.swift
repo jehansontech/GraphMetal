@@ -116,6 +116,8 @@ public struct WireframeGraphChange: Codable, Sendable {
 
 public protocol ZWireframe: ZRenderable {
 
+    var firstAvailableBufferIndex: Int { get }
+
     /// Nominal factor used in calculating rendered sizes of nodes
     var nodeSize: Float { get }
 

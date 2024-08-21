@@ -13,6 +13,8 @@ import GenericGraph
 
 public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
+    public var firstAvailableBufferIndex: Int { 3 }
+    
     public let nodeShape: ZWireframeNodeShape
 
     @Published public var nodeSize: Float
@@ -27,9 +29,9 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     private var device: MTLDevice!
 
-    private var nodePositionBufferIndex: Int
+    private let nodePositionBufferIndex: Int
 
-    private var nodeColorBufferIndex: Int
+    private let nodeColorBufferIndex: Int
 
     private var nodeCount: Int = 0
 
