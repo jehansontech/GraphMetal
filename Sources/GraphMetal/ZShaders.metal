@@ -314,7 +314,7 @@ vertex SpriteVertexOut sprite_vertex_size4(ColoredVertexIn vertexIn [[stage_in]]
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    vertexOut.pointSize = correctedPointSize(3 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    vertexOut.pointSize = correctedPointSize(4 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
