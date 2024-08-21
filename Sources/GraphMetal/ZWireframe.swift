@@ -151,10 +151,10 @@ public struct ZWireframeConstants {
 
     public static let defaultElementColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)
 
-    public static let pointSizeMinimum: Float = 1
+    public static let pointSizeMinimum: Float = 2
 
     /// EMPIRICAL
-    public static let pointSizeMaximum: Float = 100
+    public static let pointSizeMaximum: Float = 400
 
     /// EMPIRICAL
     static let pointSizeScaleFactor: Float = 400
