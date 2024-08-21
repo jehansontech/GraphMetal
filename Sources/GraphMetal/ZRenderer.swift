@@ -466,8 +466,62 @@ extension ZRenderer: DragHandler, PinchHandler, RotationHandler {
                         cross2: cross2)
     }
 
+    private func touchPlaneDistanceForDrag() -> Float? {
+        guard let bbox = wireframe.bbox
+        else {
+            return nil
+        }
+
+        // p1, p2 are two diagonally opposite corners of the bbox, in view coords.
+        let viewMatrix = povController.viewMatrix
+        let p1 = viewMatrix * SIMD4<Float>(bbox.min, 1)
+        let p2 = viewMatrix * SIMD4<Float>(bbox.max, 1)
+        let dMin = min(p1.z, p2.z)
+        let dMax = max(p1.z, p2.z)
+
+        // In view coordinates, forward is along the -z axis, so all the points we can see
+        // have negative z.
+        //
+        // If dMax < 0 then we're facing the bbox.
+        // If dMax >= 0 and dMin < 0 then we're inside the bbox.
+        // If dMin >= 0 then the bbox is behind us.
+        //
+        // Assume dMin is negative (else we can't touch the graph at all). If we're inside
+        // the bbox, then we'll touch the back wall. If we're facing it, we'll touch the
+        // front. I.e., we want the negative value that's closer to 0.
+        //
+        // Because our viewMatrix is only a rotation, not a rescaling, the distance between the POV
+        // and the plane we want to touch is the same in world coordinates as in view coordinates.
+        // We just need to correct the sign.
+
+        let facingTheBBox = dMax < 0
+        let distance: Float = abs(facingTheBBox ? dMax : dMin)
+
+        //        print("touchPlaneDistanceForDrag")
+        //        print("    world coords bbox \(bbox)")
+        //        print("    view coords bbox p1: \(p1.xyz.prettyString) p2: \(p2.xyz.prettyString)")
+        //        print("    facingTheBBox: \(facingTheBBox), distance: \(distance)")
+
+        return distance
+    }
+
+    private func touchPlaneDistanceForPinch() -> Float? {
+        guard let bbox = wireframe.bbox
+        else {
+            return nil
+        }
+
+        // p0 is the bbox center, in view coords.
+        let viewMatrix = povController.viewMatrix
+        let p0 = viewMatrix * SIMD4<Float>(bbox.center, 1)
+        return abs(p0.z)
+    }
+
     public func dragBegan(at location: SIMD2<Float>) {
         // print("RenderController.dragBegan")
+        if let newDistance = touchPlaneDistanceForDrag() {
+            touchPlaneDistance = newDistance
+        }
         povController.dragGestureBegan(at: touchPointAtDepth(at: location, depth: touchPlaneDistance))
     }
 
@@ -487,6 +541,9 @@ extension ZRenderer: DragHandler, PinchHandler, RotationHandler {
 
     public func pinchBegan(at location: SIMD2<Float>) {
         // print("RenderController.pinchBegan")
+        if let newDistance = touchPlaneDistanceForPinch() {
+            touchPlaneDistance = newDistance
+        }
         // HACK HACK HACK HACK use center of screen, not touch location
         povController.pinchGestureBegan(at: touchPointAtDepth(at: .zero, depth: touchPlaneDistance))
     }
