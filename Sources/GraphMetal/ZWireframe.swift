@@ -147,7 +147,7 @@ public struct ZWireframeConstants {
 
     public static let defaultNodeShape: ZWireframeNodeShape = .disc
 
-    public static let defaultNodeSize: Float = 16
+    public static let defaultNodeSize: Float = 4
 
     public static let defaultElementColor: SIMD4<Float> = SIMD4<Float>(0.2, 0.2, 0.2, 1)
 
