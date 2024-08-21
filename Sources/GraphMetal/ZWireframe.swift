@@ -157,7 +157,7 @@ public struct ZWireframeConstants {
     public static let pointSizeMaximum: Float = 400
 
     /// EMPIRICAL
-    static let pointSizeScaleFactor: Float = 400
+    static let pointSizeScaleFactor: Float = 100
 
 }
 
