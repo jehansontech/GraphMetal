@@ -154,9 +154,11 @@ public struct ZWireframeConstants {
     public static let pointSizeMinimum: Float = 2
 
     /// EMPIRICAL
-    public static let pointSizeMaximum: Float = 400
+    public static let pointSizeMaximum: Float = 1000
 
     /// EMPIRICAL
+    /// NOTE: The "nodeSize" fields in the arcoid files are calibrated for the present value,
+    /// so if you change this value you need to change all of them as well..
     static let pointSizeScaleFactor: Float = 100
 
 }
