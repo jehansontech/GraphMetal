@@ -168,7 +168,8 @@ vertex NodeVertexOut monochrome_node_vertex(MonochromeVertexIn vertexIn [[stage_
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = uniforms.edgeColor;
 
-    vertexOut.pointSize = correctedPointSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    // Make nodes 15% bigger than size 1 sprites
+    vertexOut.pointSize = correctedPointSize(1.15 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
@@ -184,7 +185,8 @@ vertex NodeVertexOut colored_node_vertex(ColoredVertexIn vertexIn [[stage_in]],
     vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
     vertexOut.color = vertexIn.color;
 
-    vertexOut.pointSize = correctedPointSize(uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
+    // Make nodes 15% bigger than size 1 sprites
+    vertexOut.pointSize = correctedPointSize(1.15 * uniforms.pointSize, -vertexOut.fragmentPosition.z, uniforms.fadeoutMidpoint, uniforms.fadeoutDistance);
 
     return vertexOut;
 }
