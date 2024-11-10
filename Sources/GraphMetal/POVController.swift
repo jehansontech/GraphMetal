@@ -809,6 +809,7 @@ struct CenteredPOVTangentialMove {
 ///
 struct CenteredPOVRadialMove {
 
+    let minRadius: Float = 0.001
     let maxRadiusChangeFactor: Float = 1000
 
     let initialPOV: CenteredPOV
@@ -826,7 +827,7 @@ struct CenteredPOVRadialMove {
     }
 
     func scaleChanged(scale: Float) -> CenteredPOV? {
-        let tmpRadius = (((initialRTP.x - pinchRadius) / scale) + pinchRadius).clamp(lowerBound: Float.epsilon)
+        let tmpRadius = (((initialRTP.x - pinchRadius) / scale) + pinchRadius).clamp(lowerBound: minRadius)
         let newRadius = (tmpRadius < maxRadiusChangeFactor * initialRTP.x) ? tmpRadius : initialRTP.x
         let newLocation = initialPOV.center + sphericalToCartesian(rtp: SIMD3<Float>(newRadius,
                                                                                      initialRTP.y,
