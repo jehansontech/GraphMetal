@@ -292,11 +292,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     public var defaultPOV = CenteredPOV()
 
-    public var markedPOV: CenteredPOV? = nil
-
-    public var markIsSet: Bool {
-        return markedPOV != nil
-    }
+    @Published public var markedPOV: CenteredPOV? = nil
 
     public var isFlightInProgress: Bool {
         return flightInProgress != nil
