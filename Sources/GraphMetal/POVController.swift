@@ -280,17 +280,19 @@ public class OrbitingPOVController: ObservableObject, POVController {
         }
     }
 
+    public var pov: POV { currentPOV }
+
     @Published public var orbitEnabled: Bool
 
     /// angular rotation rate in radians per second
     @Published public var orbitSpeed: Float
 
-    public var pov: POV { currentPOV }
+    @Published public var povCenterName: String? = nil
 
-    /// Not published because it changes too frequently
+    /// Not @Published because currentPOV.position changes too frequently
     public private(set) var currentPOV = CenteredPOV()
 
-    public var defaultPOV = CenteredPOV()
+    @Published public var defaultPOV = CenteredPOV()
 
     @Published public var markedPOV: CenteredPOV? = nil
 
@@ -354,7 +356,8 @@ public class OrbitingPOVController: ObservableObject, POVController {
         queuedFlights.append(CenteredPOVFlight.Spec(pov: pov, flightTime: trueFlightTime))
     }
 
-    public func centerOn(_ newCenter: SIMD3<Float>) {
+    public func centerOn(_ newCenter: SIMD3<Float>, _ newCenterName: String? = nil) {
+        self.povCenterName = newCenterName
         fly(to: CenteredPOV(location: currentPOV.location, center: newCenter, up: currentPOV.up))
     }
 
