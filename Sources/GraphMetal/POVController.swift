@@ -272,14 +272,6 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     static let defaultFlightTime: TimeInterval = 1
 
-    @Published public var orbitPermitted: Bool {
-        didSet {
-            if orbitPermitted == false {
-                orbitEnabled = false
-            }
-        }
-    }
-
     public var pov: POV { currentPOV }
 
     @Published public var orbitEnabled: Bool
@@ -315,20 +307,17 @@ public class OrbitingPOVController: ObservableObject, POVController {
     private var queuedFlights: [CenteredPOVFlight.Spec]
 
     public init(pov: CenteredPOV = CenteredPOV(),
-                orbitPermitted: Bool = true,
                 orbitEnabled: Bool = true,
                 orbitSpeed: Float = 1/8) {
         self.currentPOV = pov
         self.defaultPOV = pov
-        self.orbitPermitted = orbitPermitted
-        self.orbitEnabled = orbitEnabled && orbitPermitted
+        self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
         self.queuedFlights = [CenteredPOVFlight.Spec]()
     }
 
     public func reset() {
         self.currentPOV = defaultPOV
-        self.orbitPermitted = true
         self.orbitEnabled = true
         self.orbitSpeed = 1/8
         self.queuedFlights.removeAll()
