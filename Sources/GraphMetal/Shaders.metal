@@ -1,5 +1,5 @@
 //
-//  Wireframe.metal
+//  Shaders.metal
 //  GraphMetal
 //
 //  Created by Jim Hanson on 7/18/24.
@@ -7,7 +7,7 @@
 
 #include <metal_stdlib>
 #include <simd/simd.h>
-#import "ShaderTypes.h"
+#import "Shaders.h"
 using namespace metal;
 
 /*

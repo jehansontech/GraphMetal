@@ -1,5 +1,5 @@
 //
-//  ZWireframeWithColoredNodes.swift
+//  ColoredNodeWireframe.swift
 //
 //
 //  Created by Jim Hanson on 8/10/24.
@@ -11,11 +11,11 @@ import MetalKit
 import Wacoma
 import GenericGraph
 
-public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
+public class ColoredNodeWireframe: ObservableObject, Wireframe {
 
     public var firstAvailableBufferIndex: Int { 3 }
     
-    public let nodeShape: ZWireframeNodeShape
+    public let nodeShape: WireframeNodeShape
 
     @Published public var nodeSize: Float
 
@@ -25,7 +25,7 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     public private(set) var bbox: BoundingBox? = nil
 
-    private var pendingUpdate: ZWireframeWithColoredNodes.Update
+    private var pendingUpdate: ColoredNodeWireframe.Update
 
     private var device: MTLDevice!
 
@@ -49,18 +49,18 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
     private var nodePipelineState: MTLRenderPipelineState!
 
-    public init(nodeShape: ZWireframeNodeShape = ZWireframeConstants.defaultNodeShape,
-                nodeSize: Float = ZWireframeConstants.defaultNodeSize,
-                edgeColor: SIMD4<Float> = ZWireframeConstants.defaultElementColor) {
+    public init(nodeShape: WireframeNodeShape = WireframeConstants.defaultNodeShape,
+                nodeSize: Float = WireframeConstants.defaultNodeSize,
+                edgeColor: SIMD4<Float> = WireframeConstants.defaultElementColor) {
         self.nodeShape = nodeShape
         self.nodeSize = nodeSize
         self.edgeColor = edgeColor
-        self.pendingUpdate = ZWireframeWithColoredNodes.Update()
-        self.nodePositionBufferIndex = ZRenderConstants.nodePositionBufferIndex
-        self.nodeColorBufferIndex = ZRenderConstants.nodeColorBufferIndex
+        self.pendingUpdate = ColoredNodeWireframe.Update()
+        self.nodePositionBufferIndex = RenderConstants.nodePositionBufferIndex
+        self.nodeColorBufferIndex = RenderConstants.nodeColorBufferIndex
     }
 
-    public func addUpdate(_ update: ZWireframeWithColoredNodes.Update) {
+    public func addUpdate(_ update: ColoredNodeWireframe.Update) {
         pendingUpdate.merge(update)
     }
 
@@ -143,22 +143,18 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
         guard
             let nodePositionBuffer = self.nodePositionBuffer
         else {
-            // print("ZWireframeWithColoredNodes.encodeCommands: nodePositionBuffer is nil")
+            // Messages.debug("ColoredNodeWireframe.encodeCommands", "Aborting because nodePositionBuffer is nil")
             return
         }
 
         guard
             let nodeColorBuffer = self.nodeColorBuffer
         else {
-            // print("ZWireframeWithColoredNodes.encodeCommands: nodeColorBuffer is nil")
+            // Messages.debug("ColoredNodeWireframe.encodeCommands", "Aborting because nodeColorBuffer is nil")
             return
         }
 
-        //        if drawCount == 1 {
-        //            print("ZWireframeWithColoredNodes.encodeCommands: doing nodes")
-        //        }
-
-        encoder.pushDebugGroup("ZWireframeWithColoredNodes")
+        encoder.pushDebugGroup("ColoredNodeWireframe")
         encoder.setVertexBuffer(nodePositionBuffer,
                                 offset: 0,
                                 index: nodePositionBufferIndex)
@@ -167,6 +163,10 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
                                 index: nodeColorBufferIndex)
 
         if let edgeIndexBuffer = self.edgeIndexBuffer {
+            //        if drawCount == 1 {
+            //            print("ColoredNodeWireframe.encodeCommands: doing edges")
+            //        }
+
             encoder.setRenderPipelineState(edgePipelineState)
             encoder.drawIndexedPrimitives(type: .line,
                                           indexCount: edgeIndexCount,
@@ -174,6 +174,11 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
                                           indexBuffer: edgeIndexBuffer,
                                           indexBufferOffset: 0)
         }
+
+        //        if drawCount == 1 {
+        //            print("ColoredNodeWireframe.encodeCommands: doing nodes")
+        //        }
+
         encoder.setRenderPipelineState(nodePipelineState)
         encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: nodeCount)
         encoder.popDebugGroup()
@@ -195,12 +200,12 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
         guard let vertexFunction = library.makeFunction(name: edgeVertexFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: edgeVertexFunctionName)
+            throw RenderError.noSuchFunction(name: edgeVertexFunctionName)
         }
 
         guard let fragmentFunction = library.makeFunction(name: edgeFragmentFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: edgeFragmentFunctionName)
+            throw RenderError.noSuchFunction(name: edgeFragmentFunctionName)
         }
 
         let vertexDescriptor = MTLVertexDescriptor()
@@ -243,12 +248,12 @@ public class ZWireframeWithColoredNodes: ObservableObject, ZWireframe {
 
         guard let vertexFunction = library.makeFunction(name: nodeVertexFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: nodeVertexFunctionName)
+            throw RenderError.noSuchFunction(name: nodeVertexFunctionName)
         }
 
         guard let fragmentFunction = library.makeFunction(name: nodeFragmentFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: nodeFragmentFunctionName)
+            throw RenderError.noSuchFunction(name: nodeFragmentFunctionName)
         }
 
         let vertexDescriptor = MTLVertexDescriptor()

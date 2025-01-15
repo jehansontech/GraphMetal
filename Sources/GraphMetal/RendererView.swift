@@ -1,5 +1,5 @@
 //
-//  ZRendererView.swift
+//  RendererView.swift
 //  GraphMetal
 //
 //  Created by Jim Hanson on 1/8/22.
@@ -9,20 +9,19 @@ import SwiftUI
 import MetalKit
 import Wacoma
 
-public struct ZRendererView {
+public struct RendererView {
 
-    @ObservedObject var renderer: ZRenderer
+    @ObservedObject var renderer: Renderer
 
     var gestureHandlers: GestureHandlers?
 
-    public init(_ renderer: ZRenderer,
+    public init(_ renderer: Renderer,
                 _ gestureHandlers: GestureHandlers? = nil) {
         self.renderer = renderer
         self.gestureHandlers = gestureHandlers
     }
 
-    public func makeCoordinator() -> ZRenderCoordinator {
-        // print("ZRendererView.makeCoordinator: entered")
+    public func makeCoordinator() -> RenderCoordinator {
 
         // Docco sez, "Implement this method if changes to your view might affect other
         // parts of your app. In your implementation, create a custom Swift instance that
@@ -31,15 +30,14 @@ public struct ZRendererView {
         // the two to remain synchronized."
 
         do {
-            return try ZRenderCoordinator(renderer, gestureHandlers ?? GestureHandlers())
+            return try RenderCoordinator(renderer, gestureHandlers ?? GestureHandlers())
         }
         catch {
             fatalError("Problem creating render coordinator: \(error)")
         }
     }
 
-    public func makeMTKView(_ coordinator: ZRenderCoordinator) -> MTKView {
-        // print("ZRendererView.makeMTKView: entered")
+    public func makeMTKView(_ coordinator: RenderCoordinator) -> MTKView {
 
         // Docco sez, "Creates the view object and configures its initial state."
 
@@ -66,24 +64,21 @@ public struct ZRendererView {
         mtkView.enableSetNeedsDisplay = false
         mtkView.isPaused = false
 
-        // print("ZRendererView.makeMTKView: exiting")
         return mtkView
     }
 
-    public func updateMTKView(_ mtkView: MTKView, _ coordinator: ZRenderCoordinator) {
-        // print("ZRendererView.updateMTKView: entered. view bounds: \(mtkView.bounds), drawableSize: \(mtkView.drawableSize)")
+    public func updateMTKView(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
 
         // Docco sez, "Updates the state of the specified view with new information
-        // from SwiftUI." The ZRendererView struct gets recreated many many times
+        // from SwiftUI." The RendererView struct gets recreated many many times
         // (just like regular SwiftUI views). I believe the system calls makeMTKView
         // the first time the struct is created but it calls this method all subsequent
         // times.
 
         doUpdate(mtkView, coordinator)
-        // print("ZRendererView.updateMTKView: exiting")
     }
 
-    private func doUpdate(_ mtkView: MTKView, _ coordinator: ZRenderCoordinator) {
+    private func doUpdate(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
 
         // NOTE mtkView's bounds are measured in points while its drawableSize is measured
         // in pixels. They need not match, e.g., on my ipad, bounds = (0.0, 0.0, 1180.0, 820.0)
@@ -100,17 +95,17 @@ public struct ZRendererView {
 
     }
 
-    static public func dismantleMTKView(_ mtkView: MTKView, _ coordinator: ZRenderCoordinator) {
+    static public func dismantleMTKView(_ mtkView: MTKView, _ coordinator: RenderCoordinator) {
         coordinator.disconnectGestures(mtkView)
     }
 }
 
 #if os(iOS) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-extension ZRendererView: UIViewRepresentable {
+extension RendererView: UIViewRepresentable {
 
     public typealias UIViewType = MTKView
-    public typealias Coordinator = ZRenderCoordinator
+    public typealias Coordinator = RenderCoordinator
 
     public func makeUIView(context: Context) -> MTKView {
         let mtkView = makeMTKView(context.coordinator)
@@ -123,17 +118,17 @@ extension ZRendererView: UIViewRepresentable {
         return updateMTKView(mtkView, context.coordinator)
     }
 
-    static public func dismantleUIView(_ mtkView: MTKView, coordinator: ZRenderCoordinator) {
+    static public func dismantleUIView(_ mtkView: MTKView, coordinator: RenderCoordinator) {
         dismantleMTKView(mtkView, coordinator)
     }
 }
 
 #elseif os(macOS) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-extension ZRendererView: NSViewRepresentable {
+extension RendererView: NSViewRepresentable {
 
     public typealias NSViewType = MTKView
-    public typealias Coordinator = ZRenderCoordinator
+    public typealias Coordinator = RenderCoordinator
 
     public func makeNSView(context: Context) -> MTKView {
         return makeMTKView(context.coordinator)
@@ -143,7 +138,7 @@ extension ZRendererView: NSViewRepresentable {
         return updateMTKView(mtkView, context.coordinator)
     }
 
-    static public func dismantleNSView(_ mtkView: MTKView, coordinator: ZRenderCoordinator) {
+    static public func dismantleNSView(_ mtkView: MTKView, coordinator: RenderCoordinator) {
         dismantleMTKView(mtkView, coordinator)
     }
 }

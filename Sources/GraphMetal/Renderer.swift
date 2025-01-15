@@ -1,5 +1,5 @@
 //
-//  ZRenderer.swift
+//  Renderer.swift
 //  GraphMetal
 //
 //  Created by Jim Hanson on 8/3/24.
@@ -11,7 +11,7 @@ import MetalKit
 import Wacoma
 import GenericGraph
 
-public struct ZRenderConstants {
+public struct RenderConstants {
 
     public static let defaultDarkBackground = SIMD4<Float>(0.025, 0.025, 0.025, 1)
 
@@ -24,18 +24,14 @@ public struct ZRenderConstants {
     public static let nodeColorBufferIndex = 2
 }
 
-public protocol ZRenderable: AnyObject {
-
-//    var bufferCount: Int { get }
-//
-//    func setBufferIndices(_ indices: [Int])
+public protocol Renderable: AnyObject {
 
     func setup(_ view: MTKView, _ device: MTLDevice, _ defaultLibrary: MTLLibrary) throws
 
     func prepareToDraw(_ date: Date)
 
     /// We pass a command encoder rather than having the renderable create its own
-    /// so that the renderer can add common commands forst, e.g., registering the uniforms buffer.
+    /// so that the renderer can add common commands first, e.g., registering the uniforms buffer.
     func encodeCommands(_ encoder: MTLRenderCommandEncoder)
 
     func renderingIsComplete()
@@ -43,7 +39,7 @@ public protocol ZRenderable: AnyObject {
     func teardown()
 }
 
-public enum ZRenderError: Error {
+public enum RenderError: Error {
     case noDevice
     case noDefaultLibrary
     case noCommandQueue
@@ -54,7 +50,7 @@ public enum ZRenderError: Error {
     case snapshotInProgress
 }
 
-public class ZRenderer: ObservableObject {
+public class Renderer: ObservableObject {
 
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
@@ -66,7 +62,7 @@ public class ZRenderer: ObservableObject {
     // NOTE: Can't mark it Published b/c it gets changed within a view update.
     public private(set) var viewBounds: CGRect
 
-    @Published public var backgroundColor: SIMD4<Float> = ZRenderConstants.defaultDarkBackground
+    @Published public var backgroundColor: SIMD4<Float> = RenderConstants.defaultDarkBackground
     
     @Published public private(set) var snapshotRequested: Bool = false
 
@@ -74,11 +70,11 @@ public class ZRenderer: ObservableObject {
 
     private var fovController: FOVController
 
-    private var uniforms: ZUniformsBufferManager
+    private var uniforms: UniformsBufferManager
 
-    private var wireframe: ZWireframe
+    private var wireframe: Wireframe
 
-    private var decorations: [ZRenderable]
+    private var decorations: [Renderable]
 
     private var snapshotCallback: ((String) -> Any?)? = nil
 
@@ -86,11 +82,11 @@ public class ZRenderer: ObservableObject {
 
     public init(_ povController: POVController,
                 _ fovController: FOVController,
-                _ wireframe: ZWireframe,
-                decorations: [ZRenderable] = []) {
+                _ wireframe: Wireframe,
+                decorations: [Renderable] = []) {
         self.povController = povController
         self.fovController = fovController
-        self.uniforms = ZUniformsBufferManager()
+        self.uniforms = UniformsBufferManager()
         self.wireframe = wireframe
         self.decorations = decorations
         self.viewBounds = CGRect.zero // Dummy value
@@ -100,10 +96,10 @@ public class ZRenderer: ObservableObject {
         // print("ZRenderer.setColorScheme: entered")
         switch colorScheme {
         case .dark:
-            self.backgroundColor = ZRenderConstants.defaultDarkBackground
+            self.backgroundColor = RenderConstants.defaultDarkBackground
             break
         case .light:
-            self.backgroundColor = ZRenderConstants.defaultLightBackground
+            self.backgroundColor = RenderConstants.defaultLightBackground
             break
         @unknown default:
             break
@@ -112,7 +108,7 @@ public class ZRenderer: ObservableObject {
 
     public func requestSnapshot(_ callback: @escaping ((String) -> Any?)) throws {
         if snapshotRequested {
-            throw ZRenderError.snapshotInProgress
+            throw RenderError.snapshotInProgress
         }
         snapshotRequested = true
         snapshotCallback = callback
@@ -134,17 +130,17 @@ public class ZRenderer: ObservableObject {
 
         guard let device = mtkView.device
         else {
-            throw ZRenderError.noDevice
+            throw RenderError.noDevice
         }
 
         guard let defaultLibrary = try? device.makeDefaultLibrary(bundle: Bundle.module)
         else {
-            throw ZRenderError.noDefaultLibrary
+            throw RenderError.noDefaultLibrary
         }
 
         guard let depthStencilState = makeDepthStencilState(device)
         else {
-            throw ZRenderError.noDepthStencilState
+            throw RenderError.noDepthStencilState
         }
         self.depthStencilState = depthStencilState
 
@@ -220,39 +216,37 @@ public class ZRenderer: ObservableObject {
 }
 
 // ============================================================================
-// MARK: - ZRenderCoordinator
+// MARK: - RenderCoordinator
 // ============================================================================
 
-public class ZRenderCoordinator: NSObject, MTKViewDelegate {
+public class RenderCoordinator: NSObject, MTKViewDelegate {
     
     public let device: MTLDevice!
 
-    weak var renderer: ZRenderer!
+    weak var renderer: Renderer!
 
     private var gestureCoordinator: GestureCoordinator
 
     private let commandQueue: MTLCommandQueue
 
-    public init(_ renderer: ZRenderer, _ gestureHandlers: GestureHandlers) throws {
-        // print("ZRenderCoordinator.init: entered")
+    public init(_ renderer: Renderer, _ gestureHandlers: GestureHandlers) throws {
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
         }
         else {
-            throw ZRenderError.noDevice
+            throw RenderError.noDevice
         }
 
         if let queue = device.makeCommandQueue() {
             self.commandQueue = queue
         }
         else {
-            throw ZRenderError.noCommandQueue
+            throw RenderError.noCommandQueue
         }
 
         self.renderer = renderer
         self.gestureCoordinator = GestureCoordinator(gestureHandlers)
         super.init()
-        // print("ZRenderCoordinator.init: exiting")
     }
 
     public func setup(_ mtkView: MTKView) {
@@ -297,7 +291,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
     public func draw(in view: MTKView) {
 //        drawCount += 1
 //        if drawCount == 1 {
-//            print("ZRenderCoordinator.draw #\(drawCount) entered")
+//            print("RenderCoordinator.draw #\(drawCount) entered")
 //        }
 
         // Swift compiler sez that the snapshot needs to be taken before the current drawable
@@ -312,7 +306,7 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
         renderer.prepareToDraw(view)
 
 //        if drawCount == 1 {
-//            print("ZRenderCoordinator.draw #\(drawCount) prepareToDraw done")
+//            print("RenderCoordinator.draw #\(drawCount) prepareToDraw done")
 //        }
 
         if let commandBuffer = commandQueue.makeCommandBuffer() {
@@ -337,19 +331,19 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 
                 if let drawable = view.currentDrawable {
 //                    if drawCount == 1 {
-//                        print("ZRenderCoordinator.draw #\(drawCount) presenting drawable")
+//                        print("RenderCoordinator.draw #\(drawCount) presenting drawable")
 //                    }
                     commandBuffer.present(drawable)
                 }
             }
 //            if drawCount == 1 {
-//                print("ZRenderCoordinator.draw #\(drawCount) committing command buffer")
+//                print("RenderCoordinator.draw #\(drawCount) committing command buffer")
 //            }
             commandBuffer.commit()
         }
 
 //        if drawCount == 1 {
-//            print("ZRenderCoordinator.draw #\(drawCount) exiting")
+//            print("RenderCoordinator.draw #\(drawCount) exiting")
 //        }
     }
 
@@ -371,10 +365,10 @@ public class ZRenderCoordinator: NSObject, MTKViewDelegate {
 }
 
 // ============================================================================
-// MARK: - ZRenderer gesture handling
+// MARK: - Renderer gesture handling
 // ============================================================================
 
-extension ZRenderer: DragHandler, PinchHandler, RotationHandler {
+extension Renderer: DragHandler, PinchHandler, RotationHandler {
 
     /// Point in world coordinates corresponding to the given point on the glass
     /// location is in clip-space coords
@@ -582,13 +576,13 @@ extension ZRenderer: DragHandler, PinchHandler, RotationHandler {
 // MARK: - Uniforms buffer management
 // ============================================================================
 
-struct ZUniformsBufferManager {
+struct UniformsBufferManager {
 
     private let maxBuffersInFlight = 3
 
     private let inFlightSemaphore: DispatchSemaphore
 
-    private var uniformsBufferIndex: Int { ZRenderConstants.uniformsBufferIndex }
+    private var uniformsBufferIndex: Int { RenderConstants.uniformsBufferIndex }
 
     private var uniformsBufferRotation = 0
 
@@ -614,7 +608,7 @@ struct ZUniformsBufferManager {
             self.uniforms = UnsafeMutableRawPointer(uniformsBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
         }
         else {
-            throw ZRenderError.bufferCreationFailed(bufferLabel: bufferLabel)
+            throw RenderError.bufferCreationFailed(bufferLabel: bufferLabel)
         }
     }
 

@@ -1,5 +1,5 @@
 //
-//  ZMonochromeWireframe.swift
+//  MonochromeWireframe.swift
 //
 //
 //  Created by Jim Hanson on 8/10/24.
@@ -11,11 +11,11 @@ import MetalKit
 import Wacoma
 import GenericGraph
 
-public class ZMonochromeWireframe: ObservableObject, ZWireframe {
+public class MonochromeWireframe: ObservableObject, Wireframe {
 
     public var firstAvailableBufferIndex: Int { 2 }
 
-    public let nodeShape: ZWireframeNodeShape
+    public let nodeShape: WireframeNodeShape
 
     @Published public var nodeSize: Float
 
@@ -25,7 +25,7 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
     public private(set) var bbox: BoundingBox? = nil
 
-    private var pendingUpdate: ZMonochromeWireframe.Update
+    private var pendingUpdate: MonochromeWireframe.Update
 
     private var device: MTLDevice!
 
@@ -43,17 +43,17 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
     private var nodePipelineState: MTLRenderPipelineState!
 
-    public init(nodeShape: ZWireframeNodeShape = ZWireframeConstants.defaultNodeShape,
-                nodeSize: Float = ZWireframeConstants.defaultNodeSize,
-                graphColor: SIMD4<Float> = ZWireframeConstants.defaultElementColor) {
+    public init(nodeShape: WireframeNodeShape = WireframeConstants.defaultNodeShape,
+                nodeSize: Float = WireframeConstants.defaultNodeSize,
+                graphColor: SIMD4<Float> = WireframeConstants.defaultElementColor) {
         self.nodeShape = nodeShape
         self.nodeSize = nodeSize
         self.graphColor = graphColor
-        self.pendingUpdate = ZMonochromeWireframe.Update()
-        self.nodePositionBufferIndex = ZRenderConstants.nodePositionBufferIndex
+        self.pendingUpdate = MonochromeWireframe.Update()
+        self.nodePositionBufferIndex = RenderConstants.nodePositionBufferIndex
     }
 
-    public func addUpdate(_ update: ZMonochromeWireframe.Update) {
+    public func addUpdate(_ update: MonochromeWireframe.Update) {
         pendingUpdate.merge(update)
     }
 
@@ -149,12 +149,12 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
         guard let vertexFunction = library.makeFunction(name: edgeVertexFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: edgeVertexFunctionName)
+            throw RenderError.noSuchFunction(name: edgeVertexFunctionName)
         }
 
         guard let fragmentFunction = library.makeFunction(name: edgeFragmentFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: edgeFragmentFunctionName)
+            throw RenderError.noSuchFunction(name: edgeFragmentFunctionName)
         }
 
         let vertexDescriptor = MTLVertexDescriptor()
@@ -197,12 +197,12 @@ public class ZMonochromeWireframe: ObservableObject, ZWireframe {
 
         guard let vertexFunction = library.makeFunction(name: nodeVertexFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: nodeVertexFunctionName)
+            throw RenderError.noSuchFunction(name: nodeVertexFunctionName)
         }
 
         guard let fragmentFunction = library.makeFunction(name: nodeFragmentFunctionName)
         else {
-            throw ZRenderError.noSuchFunction(name: nodeFragmentFunctionName)
+            throw RenderError.noSuchFunction(name: nodeFragmentFunctionName)
         }
 
         let vertexDescriptor = MTLVertexDescriptor()

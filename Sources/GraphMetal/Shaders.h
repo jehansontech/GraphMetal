@@ -1,12 +1,12 @@
 //
-//  ShaderTypes.h
+//  Shaders.h
 //  GraphMetal
 //
 //  Created by Jim Hanson on 8/15/24.
 //
 
-#ifndef ShaderTypes_h
-#define ShaderTypes_h
+#ifndef Shaders_h
+#define Shaders_h
 
 #ifdef __METAL_VERSION__
 #define NS_ENUM(_type, _name) enum _name : _type _name; enum _name : _type
@@ -46,4 +46,4 @@ typedef struct
     float pulsePhase;
 } Uniforms;
 
-#endif /* ShaderTypes_h */
+#endif /* Shaders_h */

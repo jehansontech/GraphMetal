@@ -1,5 +1,5 @@
 //
-//  ZWireframe.swift
+//  Wireframe.swift
 //  GraphMetal
 //
 //  Created by Jim Hanson on 8/6/24.
@@ -114,7 +114,7 @@ public struct WireframeGraphChange: Codable, Sendable {
     }
 }
 
-public protocol ZWireframe: ZRenderable {
+public protocol Wireframe: Renderable {
 
     var firstAvailableBufferIndex: Int { get }
 
@@ -128,14 +128,14 @@ public protocol ZWireframe: ZRenderable {
     var bbox: BoundingBox? { get }
 }
 
-extension ZWireframe {
+extension Wireframe {
 
     public func makePointSize(_ povLocation: SIMD3<Float>) -> Float {
         if let bbox = self.bbox {
             let d = distance(povLocation, bbox.center)
             if d > 0 {
-                let newSize = ZWireframeConstants.pointSizeScaleFactor  * self.nodeSize / d
-                return newSize.clamp(ZWireframeConstants.pointSizeMinimum, ZWireframeConstants.pointSizeMaximum)
+                let newSize = WireframeConstants.pointSizeScaleFactor  * self.nodeSize / d
+                return newSize.clamp(WireframeConstants.pointSizeMinimum, WireframeConstants.pointSizeMaximum)
             }
         }
 
@@ -145,9 +145,9 @@ extension ZWireframe {
 
 }
 
-public struct ZWireframeConstants {
+public struct WireframeConstants {
 
-    public static let defaultNodeShape: ZWireframeNodeShape = .disc
+    public static let defaultNodeShape: WireframeNodeShape = .disc
 
     public static let defaultNodeSize: Float = 4
 
@@ -165,7 +165,7 @@ public struct ZWireframeConstants {
 
 }
 
-public enum ZWireframeNodeShape {
+public enum WireframeNodeShape {
     case disc
     case ring
 
