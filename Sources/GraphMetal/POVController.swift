@@ -288,8 +288,8 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     @Published public var markedPOV: CenteredPOV? = nil
 
-    public var isFlightInProgress: Bool {
-        return flightInProgress != nil
+    public var isFlying: Bool {
+        return flightInProgress != nil || !queuedFlights.isEmpty
     }
 
     public var settings = POVControllerSettings()
@@ -352,14 +352,19 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     public func hoverOver(_ point: SIMD3<Float>, _ distance: Float = 5) {
         self.orbitEnabled = false
+
+        // TODO: how can this be correct?
+        // It's doing displacement not final point.
+
         var displacementRTP = cartesianToSpherical(xyz: point - currentPOV.center)
         displacementRTP.x += distance
         let destination = sphericalToCartesian(rtp: displacementRTP)
+
         fly(to: CenteredPOV(location: destination, center: currentPOV.center, up: currentPOV.up))
     }
 
     public func dragGestureBegan(at touchPoint: SIMD3<Float>) {
-        if isFlightInProgress {
+        if isFlying {
             // print("OrbitingPOVController.dragGestureBegan: aborting because flight is in progress")
             return
         }
@@ -389,7 +394,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
 
     public func pinchGestureBegan(at pinchCenter: SIMD3<Float>) {
-        if isFlightInProgress {
+        if isFlying {
             // print("OrbitingPOVController.pinchGestureBegan: aborting because flight is in progress")
             return
         }
@@ -412,7 +417,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
     }
 
     public func rotationGestureBegan(at rotationCenter: SIMD3<Float>) {
-        if isFlightInProgress {
+        if isFlying {
             // print("OrbitingPOVController.rotationGestureBegan: aborting because flight is in progress")
             return
         }
@@ -445,13 +450,13 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
         // ==================================================================
         // Q: orbital motion even if we're flying?
-        // A: Yes, if it looks OK
+        // A: Naaah, unnecessary complication.
         //
         // Q: how about if we're handling a gesture?
         // A: Problem there is that we don't always get notified whenn a gesture
         //    ends. So we can't disallow update during a gesture.
         //
-        // If orbit speed is > 0 then it looks like we're flying east over
+        // If orbit speed is > 0 then it looks like we're flying *east* over
         // the figure.
         // ==================================================================
 
@@ -462,27 +467,24 @@ public class OrbitingPOVController: ObservableObject, POVController {
                                                  flightTime: spec.flightTime)
         }
 
-        var updatedPOV: CenteredPOV
         if let pov = flightInProgress?.update(timestamp) {
-            updatedPOV = pov
+            return pov
         }
         else {
-            flightInProgress = nil
-            updatedPOV = currentPOV
+            flightInProgress = nil // cleanup
+            var updatedPOV = currentPOV
+            if orbitEnabled, let t0 = _lastUpdateTimestamp {
+                let transform = float4x4(translationBy: updatedPOV.center)
+                * float4x4(rotationAround: updatedPOV.up, by: orbitSpeed * Float(timestamp.timeIntervalSince(t0)))
+                * float4x4(translationBy: -updatedPOV.center)
+                let newLocation = (transform * SIMD4<Float>(updatedPOV.location, 1)).xyz
+
+                updatedPOV = CenteredPOV(location: newLocation,
+                                         center: updatedPOV.center,
+                                         up: updatedPOV.up)
+            }
+            return updatedPOV
         }
-
-        if orbitEnabled, let t0 = _lastUpdateTimestamp {
-            let transform = float4x4(translationBy: updatedPOV.center)
-            * float4x4(rotationAround: updatedPOV.up, by: orbitSpeed * Float(timestamp.timeIntervalSince(t0)))
-            * float4x4(translationBy: -updatedPOV.center)
-            let newLocation = (transform * SIMD4<Float>(updatedPOV.location, 1)).xyz
-
-            updatedPOV = CenteredPOV(location: newLocation,
-                                     center: updatedPOV.center,
-                                     up: updatedPOV.up)
-        }
-
-        return updatedPOV
     }
 }
 
@@ -512,6 +514,7 @@ class CenteredPOVFlight {
     // Chosen because default frame rate is 60/sec
     static let minFlightTime: TimeInterval = 1/60
 
+    /// fraction of distance during which we are coasting
     static let coastingFraction: Double = 0.33
 
     /// Normalized units
@@ -523,6 +526,7 @@ class CenteredPOVFlight {
 
     let isJump: Bool
 
+    /// rate at which we accelerate or decelarate
     /// Normalized units
     let acceleration: Double
 
@@ -541,7 +545,7 @@ class CenteredPOVFlight {
     /// Normalized units
     private(set) var speed: Double = 0
 
-    /// fraction of the total distance that has been covered so far
+    /// fractional distance, i.e., fraction of the total distance that has been covered so far
     /// Normalized units
     private(set) var distance: Double = 0
 
@@ -676,12 +680,10 @@ class CenteredPOVFlight {
     }
 
     private func newPOV() -> CenteredPOV {
-        let newLocation = Float(distance) * (finalPOV.location - initialPOV.location) + initialPOV.location
-        let newCenter   = Float(distance) * (finalPOV.center - initialPOV.center) + initialPOV.center
-        let newUp       = Float(distance) * (finalPOV.up - initialPOV.up) + initialPOV.up
-        return CenteredPOV(location: newLocation,
-                           center: newCenter,
-                           up: newUp)
+        let newLocation = (Float(distance) * (finalPOV.location - initialPOV.location)) + initialPOV.location
+        let newCenter   = (Float(distance) * (finalPOV.center - initialPOV.center)) + initialPOV.center
+        let newUp       = (Float(distance) * (finalPOV.up - initialPOV.up)) + initialPOV.up
+        return CenteredPOV(location: newLocation, center: newCenter, up: newUp)
     }
 }
 
