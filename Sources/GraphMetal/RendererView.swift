@@ -87,7 +87,7 @@ public struct RendererView {
         // RenderController's settings MIGHT have changed. The only one we care about
         // here is backgroundColor.
 
-        let clearColor: SIMD4<Float> = coordinator.renderer.backgroundColor
+        let clearColor: SIMD4<Float> = coordinator.renderer.backgroundRenderColor
         mtkView.clearColor = MTLClearColorMake(Double(clearColor.x),
                                                Double(clearColor.y),
                                                Double(clearColor.z),

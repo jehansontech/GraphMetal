@@ -13,9 +13,9 @@ import GenericGraph
 
 public struct RenderConstants {
 
-    public static let defaultDarkBackground = SIMD4<Float>(0.025, 0.025, 0.025, 1)
+    public static let darkBackground = SIMD4<Float>(0.025, 0.025, 0.025, 1)
 
-    public static let defaultLightBackground = SIMD4<Float>(0.975, 0.975, 0.975, 1)
+    public static let lightBackground = SIMD4<Float>(0.975, 0.975, 0.975, 1)
 
     public static let uniformsBufferIndex = 0
 
@@ -52,17 +52,17 @@ public enum RenderError: Error {
 
 public class Renderer: ObservableObject {
 
+    // TODO: make this no longer necessary.
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
     // FIXME: needs to be set properly
-    // TODO: make this no longer necessary.
     public var touchPlaneDistance: Float = 1
 
     /// In "points"
     // NOTE: Can't mark it Published b/c it gets changed within a view update.
     public private(set) var viewBounds: CGRect
 
-    @Published public var backgroundColor: SIMD4<Float> = RenderConstants.defaultDarkBackground
+    @Published public var backgroundRenderColor: SIMD4<Float> = RenderConstants.darkBackground
     
     @Published public private(set) var snapshotRequested: Bool = false
 
@@ -90,20 +90,6 @@ public class Renderer: ObservableObject {
         self.wireframe = wireframe
         self.decorations = decorations
         self.viewBounds = CGRect.zero // Dummy value
-    }
-
-    public func setColorScheme(_ colorScheme: ColorScheme) {
-        // print("ZRenderer.setColorScheme: entered")
-        switch colorScheme {
-        case .dark:
-            self.backgroundColor = RenderConstants.defaultDarkBackground
-            break
-        case .light:
-            self.backgroundColor = RenderConstants.defaultLightBackground
-            break
-        @unknown default:
-            break
-        }
     }
 
     public func requestSnapshot(_ callback: @escaping ((String) -> Any?)) throws {
@@ -203,7 +189,7 @@ public class Renderer: ObservableObject {
                         modelViewMatrix: povController.viewMatrix,
                         pointSize: wireframe.makePointSize(povController.pov.location),
                         edgeColor: wireframe.defaultColor,
-                        backgroundColor: self.backgroundColor,
+                        backgroundColor: self.backgroundRenderColor,
                         fadeoutMidpoint: fovController.fadeoutMidpoint,
                         fadeoutDistance: fovController.fadeoutDistance,
                         pulsePhase: makePulsePhase(date))
