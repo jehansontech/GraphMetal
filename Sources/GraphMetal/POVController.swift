@@ -511,10 +511,10 @@ class CenteredPOVFlight {
     }
 
 
-    // Chosen because default frame rate is 60/sec
+    /// Chosen because default frame rate is 60/sec
     static let minFlightTime: TimeInterval = 1/60
 
-    /// fraction of distance during which we are coasting
+    /// fraction of time during which we are coasting
     static let coastingFraction: Double = 0.33
 
     /// Normalized units
@@ -596,7 +596,7 @@ class CenteredPOVFlight {
 
             let tC: TimeInterval = Self.coastingFraction * flightTime
             let tA: TimeInterval = (flightTime - tC) / 2
-            let tD: TimeInterval = flightTime - tA - tC // do this way b/c of roundoff.
+            let tD: TimeInterval = flightTime - tA - tC // do it this way b/c of roundoff error.
             let invA: Double = (tA * tA / 2.0) + (tA * tC) + (tA * tD) - (tD * tD / 2.0)
 
             let a = 1.0 / invA
