@@ -14,80 +14,7 @@ enum POVError: Error {
     case notOrthogonal(_ name1: String, _ name2: String, dotProduct: Float)
 }
 
-/// Point of View
-public protocol POVProtocol {
-
-    /// the POV's location in world coordinates
-    var location: SIMD3<Float> { get }
-
-    /// Unit vector giving the direction the POV is pointed
-    var forward: SIMD3<Float> { get }
-
-    /// Unit vector giving the POV's "up" direction. Orthogonal to forward.
-    var up: SIMD3<Float> { get }
-}
-
-/// POV whose forward vector always points toward a fixed point in world coordinates.
-public struct CenteredPOV: POVProtocol, Codable, Sendable, Hashable, Equatable, CustomStringConvertible   {
-
-    public var description: String {
-        "{ location: \(location.prettyString), forward: \(forward.prettyString), up: \(trueUp.prettyString) }"
-    }
-
-    public var radius: Float {
-        simd_distance(location, center)
-    }
-
-    public var forward: SIMD3<Float> {
-        normalize(center - location)
-    }
-
-    public var up: SIMD3<Float> {
-        get { trueUp }
-        set { trueUp = normalize(newValue - dot(forward, newValue) * forward) }
-    }
-
-    public var location: SIMD3<Float>
-
-    public var center: SIMD3<Float>
-
-    private var trueUp: SIMD3<Float>
-
-    /// location is any point
-    /// center can be any point not equal to location
-    /// up can be any nonzero vector not parallel to the displacement between center and location
-    public init(location: SIMD3<Float> = SIMD3<Float>(0, 0, -1),
-                center: SIMD3<Float> = SIMD3<Float>(0, 0, 0),
-                up: SIMD3<Float> = SIMD3<Float>(0,1,0)) {
-        self.location = location
-        self.center = center
-        let delta = center - location
-        self.trueUp =  normalize(up - (simd_dot(delta, up) / simd_dot(delta, delta)) * delta)
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(location: try container.decode(SIMD3<Float>.self, forKey: .location),
-                  center: try container.decode(SIMD3<Float>.self, forKey: .center),
-                  up: try container.decode(SIMD3<Float>.self, forKey: .up))
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(location, forKey: .location)
-        try container.encode(center, forKey: .center)
-        try container.encode(trueUp, forKey: .up)
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case location
-        case center
-        case up
-    }
-
-}
-
-public struct POV: POVProtocol, Codable, Hashable, Equatable, CustomStringConvertible {
+public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
 
     public var description: String {
         "{ location: \(location.prettyString), forward: \(trueForward.prettyString), up: \(trueUp.prettyString) }"
@@ -179,6 +106,8 @@ public struct POVControllerSettings {
 
     public var rotationSensitivity: Float
 
+    public var defaultFlightTime: TimeInterval
+
     public var flyCoastingThreshold: Double
 
     public var flyNormalizedAcceleration: Double
@@ -192,6 +121,7 @@ public struct POVControllerSettings {
         self.scrollSensitivity = 2.5
         self.panSensitivity = 2.5
         self.rotationSensitivity = 1.25
+        self.defaultFlightTime = 1
         self.flyCoastingThreshold = 0.33
         self.flyNormalizedAcceleration = 3.5 // WAS: 5.5, then 4
         self.flyMinSpeed  = 0.01
@@ -202,6 +132,7 @@ public struct POVControllerSettings {
         self.scrollSensitivity = 2.5
         self.panSensitivity = 2.5
         self.rotationSensitivity = 1.25
+        self.defaultFlightTime = 1
         self.flyCoastingThreshold = 0.33
         self.flyNormalizedAcceleration = 4 // WAS: 5.5
         self.flyMinSpeed  = 0.01
@@ -214,10 +145,10 @@ public protocol POVController {
 
     var settings: POVControllerSettings { get set }
 
+    var pov: POV { get }
+
     /// A point in world coordinates used for orientation.
     var referencePoint: SIMD3<Float> { get }
-
-    var pov: POVProtocol { get }
 
     var viewMatrix: float4x4 { get }
 
@@ -226,6 +157,8 @@ public protocol POVController {
     /// Sets the POV's properties to the values they should have at the given system time.
     /// This method is called during each rendering cycle as a way to support a POV that changes on its own.
     func update(_ timestamp: Date)
+
+    func flyTo(pov: POV, flightTime: TimeInterval)
 
     func dragGestureBegan(at: SIMD3<Float>)
 
@@ -264,15 +197,80 @@ extension POVController {
                                   SIMD4<Float>(u.z, v.z, n.z,  0),
                                   SIMD4<Float>(simd_dot(-u, pov.location), simd_dot(-v, pov.location), simd_dot(-n, pov.location),  1)))
     }
+
+    public func jumpTo(pov: POV) {
+        self.flyTo(pov: pov, flightTime: 0)
+    }
+
+    public func flyTo(pov: POV) {
+        self.flyTo(pov: pov, flightTime: settings.defaultFlightTime)
+    }
 }
 
-public class OrbitingPOVController: ObservableObject, POVController {
+/// POV whose forward vector always points toward a fixed point in world coordinates.
+public struct CenteredPOV: Codable, Sendable, Hashable, Equatable, CustomStringConvertible   {
 
-    static let defaultFlightTime: TimeInterval = 1
+    public var description: String {
+        "{ location: \(location.prettyString), center: \(center.prettyString), up: \(trueUp.prettyString) }"
+    }
 
-    public var referencePoint: SIMD3<Float> { povCenter }
+    public var radius: Float {
+        simd_distance(location, center)
+    }
 
-    public var pov: POVProtocol { currentPOV }
+    public var forward: SIMD3<Float> {
+        normalize(center - location)
+    }
+
+    public var up: SIMD3<Float> {
+        get { trueUp }
+        set { trueUp = normalize(newValue - dot(forward, newValue) * forward) }
+    }
+
+    public var location: SIMD3<Float>
+
+    public var center: SIMD3<Float>
+
+    private var trueUp: SIMD3<Float>
+
+    /// location is any point
+    /// center can be any point not equal to location
+    /// up can be any nonzero vector not parallel to the displacement between center and location
+    public init(location: SIMD3<Float> = SIMD3<Float>(0, 0, -1),
+                center: SIMD3<Float> = SIMD3<Float>(0, 0, 0),
+                up: SIMD3<Float> = SIMD3<Float>(0,1,0)) {
+        self.location = location
+        self.center = center
+        let delta = center - location
+        self.trueUp =  normalize(up - (simd_dot(delta, up) / simd_dot(delta, delta)) * delta)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(location: try container.decode(SIMD3<Float>.self, forKey: .location),
+                  center: try container.decode(SIMD3<Float>.self, forKey: .center),
+                  up: try container.decode(SIMD3<Float>.self, forKey: .up))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(location, forKey: .location)
+        try container.encode(center, forKey: .center)
+        try container.encode(trueUp, forKey: .up)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case location
+        case center
+        case up
+    }
+}
+
+public class CenteredPOVController: ObservableObject, POVController {
+
+    public var referencePoint: SIMD3<Float> { currentPOV.center }
+
+    public var pov: POV { POV(location: currentPOV.location, forward: currentPOV.forward, up: currentPOV.up) }
 
     public var povLocation: SIMD3<Float> { currentPOV.location }
 
@@ -287,10 +285,8 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     @Published public var povCenterName: String? = nil
 
-    /// Not @Published because currentPOV.position changes too frequently
+    /// Not @Published because position changes too frequently
     public private(set) var currentPOV = CenteredPOV()
-
-    public var defaultCenter: SIMD3<Float> = .zero
 
     @Published public var defaultPOV = CenteredPOV()
 
@@ -347,16 +343,15 @@ public class OrbitingPOVController: ObservableObject, POVController {
         markedPOV = nil
     }
 
-    public func flyTo(pov: POV, flightTime: TimeInterval? = nil) {
-        let trueFlightTime = flightTime ?? Self.defaultFlightTime
-        self.flyTo(location: pov.location, up: pov.up, flightTime: trueFlightTime)
+    public func flyTo(pov: POV, flightTime: TimeInterval) {
+        self.flyTo(location: pov.location, up: pov.up, flightTime: flightTime)
     }
 
     public func flyTo(location newLocation: SIMD3<Float>? = nil, center newCenter: SIMD3<Float>? = nil, up newUp: SIMD3<Float>? = nil, flightTime: TimeInterval? = nil) {
         let trueLocation = newLocation ?? self.povLocation
         let trueCenter = newCenter ?? self.povCenter
         let trueUp = newUp ?? self.povUp
-        let trueFlightTime = flightTime ?? Self.defaultFlightTime
+        let trueFlightTime = flightTime ?? settings.defaultFlightTime
         queuedFlights.append(CenteredPOVFlight.Spec(location: trueLocation, center: trueCenter, up: trueUp, flightTime: trueFlightTime))
     }
 
@@ -380,7 +375,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
         }
 
         // print("OrbitingPOVController.dragGestureBegan: beginning drag")
-        self.dragInProgress = CenteredPOVTangentialMove(self.pov, self.povCenter, touchPoint, settings)
+        self.dragInProgress = CenteredPOVTangentialMove(self.currentPOV, touchPoint, settings)
     }
 
     public func dragGestureChanged(panDistance pan: Float, scrollDistance scroll: Float) {
@@ -409,7 +404,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
             return
         }
         // print("OrbitingPOVController.pinchGestureBegan: starting pinch")
-        self.pinchInProgress = CenteredPOVRadialMove(self.pov, self.povCenter, pinchCenter, settings)
+        self.pinchInProgress = CenteredPOVRadialMove(self.currentPOV, pinchCenter, settings)
     }
 
     public func pinchGestureChanged(scale: Float) {
@@ -432,7 +427,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
             return
         }
         // print("OrbitingPOVController.rotationGestureBegan: beginning rotation")
-        self.rotationInProgress = CenteredPOVRoll(self.pov, self.povCenter, rotationCenter, settings)
+        self.rotationInProgress = CenteredPOVRoll(self.currentPOV, rotationCenter, settings)
     }
 
     public func rotationGestureChanged(radians: Float) {
@@ -536,8 +531,8 @@ class CenteredPOVFlight {
     /// Normalized units
     static let minSpeed: Double = 1/60
 
-//    let initialPOV: CenteredPOV
-//    let finalPOV: CenteredPOV
+    //    let initialPOV: CenteredPOV
+    //    let finalPOV: CenteredPOV
 
     let initialLocation: SIMD3<Float>
 
@@ -742,9 +737,7 @@ class CenteredPOVFlight {
 ///
 struct CenteredPOVTangentialMove {
 
-    let initialPOV: POVProtocol
-
-    let center: SIMD3<Float>
+    let initialPOV: CenteredPOV
 
     let initialTouch: SIMD3<Float>
 
@@ -763,18 +756,17 @@ struct CenteredPOVTangentialMove {
 
     let panFactor: Float
 
-    init(_ initialPOV: POVProtocol, _ center: SIMD3<Float>, _ touchPoint: SIMD3<Float>, _ settings: POVControllerSettings) {
+    init(_ initialPOV: CenteredPOV, _ touchPoint: SIMD3<Float>, _ settings: POVControllerSettings) {
 
         self.initialPOV = initialPOV
-        self.center = center
         self.initialTouch = touchPoint
         self.scrollRotationAxis = normalize(simd_cross(initialPOV.forward, initialPOV.up))
         self.panRotationAxis = initialPOV.up
 
-        let d = simd_dot((touchPoint - center), -initialPOV.forward)
+        let d = simd_dot((touchPoint - initialPOV.center), -initialPOV.forward)
         self.touchToCenterDistance = (d == 0) ? 1 : d
 
-        let initialDisplacementRTP = cartesianToSpherical(xyz: touchPoint - center)
+        let initialDisplacementRTP = cartesianToSpherical(xyz: touchPoint - initialPOV.center)
         self.initialTheta = initialDisplacementRTP.y
         self.initialPhi = initialDisplacementRTP.z
         // print("initialTheta: \(initialTheta), initialPhi: \(initialPhi)")
@@ -822,10 +814,10 @@ struct CenteredPOVTangentialMove {
         // print("dTheta: \(dTheta), dPhi: \(dPhi)")
 
         let newLocation = (
-            float4x4(translationBy: center)
+            float4x4(translationBy: initialPOV.center)
             * float4x4(rotationAround: panRotationAxis, by: dPhi)
             * float4x4(rotationAround: scrollRotationAxis, by: dTheta)
-            * float4x4(translationBy: -center)
+            * float4x4(translationBy: -initialPOV.center)
             * SIMD4<Float>(initialPOV.location, 1)
         ).xyz
 
@@ -835,7 +827,7 @@ struct CenteredPOVTangentialMove {
         ).xyz
 
         return CenteredPOV(location: newLocation,
-                           center: center,
+                           center: initialPOV.center,
                            up: newUp)
     }
 }
@@ -849,75 +841,42 @@ struct CenteredPOVRadialMove {
 
     let maxRadiusChangeFactor: Float = 1000
 
-    let initialPOV: POVProtocol
-
-    let center: SIMD3<Float>
+    let initialPOV: CenteredPOV
 
     let pinchRadius: Float
 
     /// displacement from POV center to POV location, in spherical world coordinates
     let initialRTP: SIMD3<Float>
 
-    init(_ initialPOV: POVProtocol, _ center: SIMD3<Float>, _ pinchCenter: SIMD3<Float>, _ settings: POVControllerSettings) {
+    init(_ initialPOV: CenteredPOV, _ pinchCenter: SIMD3<Float>, _ settings: POVControllerSettings) {
         self.initialPOV = initialPOV
-        self.center = center
-        self.pinchRadius = cartesianToSpherical(xyz: (pinchCenter-center)).x
-        self.initialRTP = cartesianToSpherical(xyz: (initialPOV.location-center))
+        self.pinchRadius = cartesianToSpherical(xyz: (pinchCenter-initialPOV.center)).x
+        self.initialRTP = cartesianToSpherical(xyz: (initialPOV.location-initialPOV.center))
         // print("pinchRadius: \(pinchRadius), initialRadius: \(initialRTP.x)")
     }
 
     func scaleChanged(scale: Float) -> CenteredPOV? {
         let tmpRadius = (((initialRTP.x - pinchRadius) / scale) + pinchRadius).clamp(lowerBound: minRadius)
         let newRadius = (tmpRadius < maxRadiusChangeFactor * initialRTP.x) ? tmpRadius : initialRTP.x
-        let newLocation = center + sphericalToCartesian(rtp: SIMD3<Float>(newRadius,
+        let newLocation = initialPOV.center + sphericalToCartesian(rtp: SIMD3<Float>(newRadius,
                                                                                      initialRTP.y,
                                                                                      initialRTP.z))
         // print("    scale: \(scale), newRadius: \(newRadius)")
         return CenteredPOV(location: newLocation,
-                           center: center,
+                           center: initialPOV.center,
                            up: initialPOV.up)
     }
 }
 
 
+struct CenteredPOVRoll {
 
-typealias CenteredPOVRoll = CenteredPOVRoll2
-
-/////
-///// This is a rotation of the POV's up vector about its forward vector
-/////
-//struct CenteredPOVRoll1 {
-//
-//    let initialPOV: CenteredPOV
-//    let rotationCenter: SIMD3<Float>
-//    let rotationSensitivity: Float
-//
-//    init(_ pov: CenteredPOV, _ rotationCenter: SIMD3<Float>, _ settings: POVControllerSettings) {
-//        self.initialPOV = pov
-//        self.rotationCenter = rotationCenter
-//        self.rotationSensitivity = settings.rotationSensitivity
-//    }
-//
-//    func rotationChanged(radians: Float) -> CenteredPOV? {
-//        let newUp = (
-//            float4x4(rotationAround: initialPOV.forward, by: Float(-rotationSensitivity * radians))
-//            * SIMD4<Float>(initialPOV.up, 1)).xyz
-//        return CenteredPOV(location: initialPOV.location,
-//                           center: initialPOV.center,
-//                           up: newUp)
-//    }
-//}
-
-struct CenteredPOVRoll2 {
-
-    let initialPOV: POVProtocol
-    let povCenter: SIMD3<Float>
+    let initialPOV: CenteredPOV
     let rotationCenter: SIMD3<Float>
     let rotationSensitivity: Float
 
-    init(_ initialPOV: POVProtocol, _ center: SIMD3<Float>, _ rotationCenter: SIMD3<Float>, _ settings: POVControllerSettings) {
+    init(_ initialPOV: CenteredPOV, _ rotationCenter: SIMD3<Float>, _ settings: POVControllerSettings) {
         self.initialPOV = initialPOV
-        self.povCenter = center
         self.rotationCenter = rotationCenter
         self.rotationSensitivity = settings.rotationSensitivity
     }
@@ -929,7 +888,7 @@ struct CenteredPOVRoll2 {
         // - Gets it right if the center of rotation is the center of the screen
         // - If center of rotation is not center of the screen, it does something but not what I expected
 
-        let rotationAxis = povCenter - rotationCenter
+        let rotationAxis = initialPOV.center - rotationCenter
 
         let transform = float4x4(rotationAround: rotationAxis, by: radians)
 
@@ -967,7 +926,7 @@ struct CenteredPOVRoll2 {
         //        * float4x4(rotationAround: rotationAxis, by: -theta)
 
         return CenteredPOV(location: (transform * SIMD4<Float>(initialPOV.location, 1)).xyz,
-                           center: povCenter,
+                           center: initialPOV.center,
                            up: (transform * SIMD4<Float>(initialPOV.up, 1)).xyz)
     }
 }
