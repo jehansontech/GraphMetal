@@ -59,9 +59,9 @@ extension FOVController {
         return max(zNear, fadeoutMidpoint-fadeoutDistance)...min(zFar, fadeoutMidpoint+fadeoutDistance)
     }
 
-    public func isInVisibleSlice(z: Float) -> Bool {
-        return z >= zNear && z <= zFar && z > fadeoutMidpoint - fadeoutDistance && z < fadeoutMidpoint + fadeoutDistance
-    }
+//    public func isInVisibleSlice(z: Float) -> Bool {
+//        return z >= zNear && z <= zFar && z > fadeoutMidpoint - fadeoutDistance && z < fadeoutMidpoint + fadeoutDistance
+//    }
 }
 
 public class PerspectiveFOVController: ObservableObject, FOVController {
@@ -80,31 +80,26 @@ public class PerspectiveFOVController: ObservableObject, FOVController {
         return defaultZNear + defaultFadeoutDistance/2
     }
 
-
-    //    public var drawableSize = CGSize(width: 1, height: 1) // dummy values > 0 for safety
-    //
-    //    public var viewBounds = CGRect(x: 0, y: 0, width: 1, height: 1) // dummy values > 0 for safety
-
-    public var aspectRatio: Float {
+    @Published public var aspectRatio: Float {
         didSet {
             self.projectionMatrix = makeProjectionMatrix()
         }
     }
 
-    public var zNear: Float  {
+    @Published public var zNear: Float  {
         didSet {
             self.projectionMatrix = makeProjectionMatrix()
         }
     }
 
-    public var zFar: Float  {
+    @Published public var zFar: Float  {
         didSet {
             self.projectionMatrix = makeProjectionMatrix()
         }
     }
 
     /// angular width in radians
-    public var yFOV: Float  {
+    @Published public var yFOV: Float  {
         didSet {
             self.projectionMatrix = makeProjectionMatrix()
         }
