@@ -351,10 +351,10 @@ public class OrbitingPOVController: ObservableObject, POVController {
         queuedFlights.append(CenteredPOVFlight.Spec(location: trueLocation, center: trueCenter, up: trueUp, flightTime: trueFlightTime))
     }
 
-    public func fly(to pov: CenteredPOV, flightTime: TimeInterval? = nil) {
-        let trueFlightTime = flightTime ?? Self.defaultFlightTime
-        queuedFlights.append(CenteredPOVFlight.Spec(location: pov.location, center: pov.center, up: pov.up, flightTime: trueFlightTime))
-    }
+//    public func fly(to pov: CenteredPOV, flightTime: TimeInterval? = nil) {
+//        let trueFlightTime = flightTime ?? Self.defaultFlightTime
+//        queuedFlights.append(CenteredPOVFlight.Spec(location: pov.location, center: pov.center, up: pov.up, flightTime: trueFlightTime))
+//    }
 
     public func centerOn(_ newCenter: SIMD3<Float>, _ newCenterName: String? = nil) {
         self.povCenterName = newCenterName
