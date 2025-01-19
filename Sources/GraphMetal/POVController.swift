@@ -244,7 +244,6 @@ public protocol POVController {
     func rotationGestureChanged(radians: Float)
 
     func rotationGestureEnded()
-
 }
 
 extension POVController {
@@ -271,11 +270,15 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     static let defaultFlightTime: TimeInterval = 1
 
-    public var referencePoint: SIMD3<Float> { center }
+    public var referencePoint: SIMD3<Float> { povCenter }
 
     public var pov: POVProtocol { currentPOV }
 
-    public var center: SIMD3<Float> { currentPOV.center }
+    public var povLocation: SIMD3<Float> { currentPOV.location }
+
+    public var povCenter: SIMD3<Float> { currentPOV.center }
+
+    public var povUp: SIMD3<Float> { currentPOV.up }
 
     @Published public var orbitEnabled: Bool
 
@@ -286,6 +289,8 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     /// Not @Published because currentPOV.position changes too frequently
     public private(set) var currentPOV = CenteredPOV()
+
+    public var defaultCenter: SIMD3<Float> = .zero
 
     @Published public var defaultPOV = CenteredPOV()
 
@@ -309,14 +314,17 @@ public class OrbitingPOVController: ObservableObject, POVController {
 
     private var queuedFlights: [CenteredPOVFlight.Spec]
 
-    public init(pov: CenteredPOV = CenteredPOV(),
+    public init(location: SIMD3<Float> = SIMD3<Float>(1, 1, 1),
+                center: SIMD3<Float> = SIMD3<Float>(0, 0, 0),
+                up: SIMD3<Float> = SIMD3<Float>(0, 1, 0),
                 orbitEnabled: Bool = true,
-                orbitSpeed: Float = 1/8) {
-        self.currentPOV = pov
-        self.defaultPOV = pov
+                orbitSpeed: Float = 0.125) {
+        let centeredPOV = CenteredPOV(location: location, center: center, up: up)
+        self.currentPOV = centeredPOV
+        self.defaultPOV = centeredPOV
         self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
-        self.queuedFlights = [CenteredPOVFlight.Spec]()
+        self.queuedFlights = .init()
     }
 
     public func reset() {
@@ -339,34 +347,30 @@ public class OrbitingPOVController: ObservableObject, POVController {
         markedPOV = nil
     }
 
-    public func jumpTo(location newLocation: SIMD3<Float>? = nil, center newCenter: SIMD3<Float>? = nil, up newUp: SIMD3<Float>? = nil) {
-        flyTo(location: newLocation, center: newCenter, up: newUp, flightTime: 0)
+    public func flyTo(pov: POV, flightTime: TimeInterval? = nil) {
+        let trueFlightTime = flightTime ?? Self.defaultFlightTime
+        self.flyTo(location: pov.location, up: pov.up, flightTime: trueFlightTime)
     }
 
     public func flyTo(location newLocation: SIMD3<Float>? = nil, center newCenter: SIMD3<Float>? = nil, up newUp: SIMD3<Float>? = nil, flightTime: TimeInterval? = nil) {
-        let trueLocation = newLocation ?? self.pov.location
-        let trueCenter = newCenter ?? self.center
-        let trueUp = newUp ?? self.pov.up
+        let trueLocation = newLocation ?? self.povLocation
+        let trueCenter = newCenter ?? self.povCenter
+        let trueUp = newUp ?? self.povUp
         let trueFlightTime = flightTime ?? Self.defaultFlightTime
         queuedFlights.append(CenteredPOVFlight.Spec(location: trueLocation, center: trueCenter, up: trueUp, flightTime: trueFlightTime))
     }
 
-//    public func fly(to pov: CenteredPOV, flightTime: TimeInterval? = nil) {
-//        let trueFlightTime = flightTime ?? Self.defaultFlightTime
-//        queuedFlights.append(CenteredPOVFlight.Spec(location: pov.location, center: pov.center, up: pov.up, flightTime: trueFlightTime))
-//    }
-
-    public func centerOn(_ newCenter: SIMD3<Float>, _ newCenterName: String? = nil) {
+    public func centerOn(_ newCenter: SIMD3<Float>, _ newCenterName: String? = nil, flightTime: TimeInterval? = nil) {
         self.povCenterName = newCenterName
-        flyTo(center: newCenter)
+        flyTo(center: newCenter, flightTime: flightTime)
     }
 
-    public func hoverOver(_ point: SIMD3<Float>, _ distance: Float = 5) {
+    public func hoverOver(_ point: SIMD3<Float>, _ distance: Float = 5, flightTime: TimeInterval? = nil) {
         self.orbitEnabled = false
-        var displacementRTP = cartesianToSpherical(xyz: point - self.center)
+        var displacementRTP = cartesianToSpherical(xyz: point - self.povCenter)
         displacementRTP.x += distance
         let destination = sphericalToCartesian(rtp: displacementRTP)
-        flyTo(location: destination)
+        flyTo(location: destination, flightTime: flightTime)
     }
 
     public func dragGestureBegan(at touchPoint: SIMD3<Float>) {
@@ -376,7 +380,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
         }
 
         // print("OrbitingPOVController.dragGestureBegan: beginning drag")
-        self.dragInProgress = CenteredPOVTangentialMove(self.pov, self.center, touchPoint, settings)
+        self.dragInProgress = CenteredPOVTangentialMove(self.pov, self.povCenter, touchPoint, settings)
     }
 
     public func dragGestureChanged(panDistance pan: Float, scrollDistance scroll: Float) {
@@ -405,7 +409,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
             return
         }
         // print("OrbitingPOVController.pinchGestureBegan: starting pinch")
-        self.pinchInProgress = CenteredPOVRadialMove(self.pov, self.center, pinchCenter, settings)
+        self.pinchInProgress = CenteredPOVRadialMove(self.pov, self.povCenter, pinchCenter, settings)
     }
 
     public func pinchGestureChanged(scale: Float) {
@@ -428,7 +432,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
             return
         }
         // print("OrbitingPOVController.rotationGestureBegan: beginning rotation")
-        self.rotationInProgress = CenteredPOVRoll(self.pov, self.center, rotationCenter, settings)
+        self.rotationInProgress = CenteredPOVRoll(self.pov, self.povCenter, rotationCenter, settings)
     }
 
     public func rotationGestureChanged(radians: Float) {
@@ -469,7 +473,7 @@ public class OrbitingPOVController: ObservableObject, POVController {
         if flightInProgress == nil && !queuedFlights.isEmpty {
             let spec = queuedFlights.removeFirst()
             flightInProgress = CenteredPOVFlight(initialLocation: self.pov.location,
-                                                 initialCenter: self.center,
+                                                 initialCenter: self.povCenter,
                                                  initialUp: self.pov.up,
                                                  finalLocation: spec.location,
                                                  finalCenter: spec.center,
@@ -490,8 +494,8 @@ public class OrbitingPOVController: ObservableObject, POVController {
                 let newLocation = (transform * SIMD4<Float>(updatedPOV.location, 1)).xyz
 
                 updatedPOV = CenteredPOV(location: newLocation,
-                                         center: updatedPOV.center,
-                                         up: updatedPOV.up)
+                                         center: currentPOV.center,
+                                         up: currentPOV.up)
             }
             return updatedPOV
         }
