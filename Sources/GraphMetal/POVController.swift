@@ -9,132 +9,6 @@ import Foundation
 import simd
 import Wacoma
 
-//enum POVError: Error {
-//    case notUnitVector(_ name: String, length: Float)
-//    case notOrthogonal(_ name1: String, _ name2: String, dotProduct: Float)
-//}
-//
-//public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
-//
-//    public var description: String {
-//        "{ location: \(location.prettyString), forward: \(trueForward.prettyString), up: \(trueUp.prettyString) }"
-//    }
-//
-//    public var location: SIMD3<Float>
-//
-//    public var forward: SIMD3<Float> {
-//        get { trueForward }
-//        set { trueForward = normalize(newValue) }
-//    }
-//
-//    public var up: SIMD3<Float> {
-//        get { trueUp }
-//        set { trueUp = normalize(newValue - dot(trueForward, newValue) * trueForward) }
-//    }
-//
-//    private var trueForward: SIMD3<Float>
-//
-//    private var trueUp: SIMD3<Float>
-//
-//    /// location: any point
-//    /// forwardHint: any  nonzero vector
-//    /// upHint: any nonzero vector not parallel to forward
-//    public init(location: SIMD3<Float> = SIMD3<Float>(0, 0, -1),
-//                forward: SIMD3<Float> =  SIMD3<Float>(0, 0, 1),
-//                up: SIMD3<Float> = SIMD3<Float>(0, 1, 0)) {
-//        self.init(location: location,
-//                  trueForward: normalize(forward),
-//                  trueUp: normalize(up - (dot(forward, up) / dot(forward, forward)) * forward))
-//    }
-//
-//    public init(from decoder: Decoder) throws {
-//        let container = try decoder.container(keyedBy: CodingKeys.self)
-//        self.init(location: try container.decode(SIMD3<Float>.self, forKey: .location),
-//                  forward: try container.decode(SIMD3<Float>.self, forKey: .forward),
-//                  up: try container.decode(SIMD3<Float>.self, forKey: .up))
-//    }
-//
-//    public func encode(to encoder: Encoder) throws {
-//        var container = encoder.container(keyedBy: CodingKeys.self)
-//        try container.encode(location, forKey: .location)
-//        try container.encode(trueForward, forKey: .forward)
-//        try container.encode(trueUp, forKey: .up)
-//    }
-//
-//    /// location: any point
-//    /// trueForward: unit vector
-//    /// trueUp: unit vector orthogonal to trueForward
-//    internal init(location: SIMD3<Float>, trueForward: SIMD3<Float>, trueUp: SIMD3<Float>) {
-//        do {
-//            try Self.validate(location: location, forward: trueForward, up: trueUp)
-//            self.location = location
-//            self.trueForward = trueForward
-//            self.trueUp = trueUp
-//        }
-//        catch {
-//            // print("Problem with POV -- \(error)")
-//            self.location = SIMD3<Float>(0, 0, -1)
-//            self.trueForward = SIMD3<Float>(0, 0, 1)
-//            self.trueUp = SIMD3<Float>(0, 1, 0)
-//        }
-//    }
-//
-//    static func validate(location: SIMD3<Float>, forward: SIMD3<Float>, up: SIMD3<Float>) throws {
-//        if length(forward).differentFrom(1) {
-//            throw POVError.notUnitVector("forward", length: length(forward))
-//        }
-//        if length(up).differentFrom(1) {
-//            throw POVError.notUnitVector("up", length: length(up))
-//        }
-//        if dot(forward, up).differentFrom(0) {
-//            throw POVError.notOrthogonal("forward", "up", dotProduct: dot(forward, up))
-//        }
-//    }
-//
-//    private enum CodingKeys: String, CodingKey {
-//        case forward
-//        case location
-//        case up
-//    }
-//}
-
-public struct POVControllerSettings {
-
-    public var scrollSensitivity: Float
-
-    public var panSensitivity: Float
-
-    public var rotationSensitivity: Float
-
-    public var defaultFlightTime: TimeInterval
-
-    public var flyCoastingThreshold: Double
-
-    public var flyNormalizedAcceleration: Double
-
-    public var flyMinSpeed: Double
-
-    public var flyMaxSpeed: Double
-
-    public init() {
-
-        // If we need to make os-specific tweaks to these values,
-        // put conditional-compilation switches in here.
-        // #if os(iOS)
-        // #elseif os(macOS)
-        // #endif
-
-        self.scrollSensitivity = 2.5
-        self.panSensitivity = 2.5
-        self.rotationSensitivity = 1.25
-        self.defaultFlightTime = 1
-        self.flyCoastingThreshold = 0.33
-        self.flyNormalizedAcceleration = 3.5
-        self.flyMinSpeed  = 0.05
-        self.flyMaxSpeed = 5
-    }
-}
-
 public protocol POVController {
 
     var settings: POVControllerSettings { get set }
@@ -205,64 +79,46 @@ extension POVController {
     }
 }
 
-/// POV whose forward vector always points toward a fixed point in world coordinates.
-public struct CenteredPOV: Codable, Sendable, Hashable, Equatable, CustomStringConvertible   {
+public struct POVControllerSettings {
 
-    public var description: String {
-        "{ location: \(location.prettyString), center: \(center.prettyString), up: \(trueUp.prettyString) }"
-    }
+    public var scrollSensitivity: Float
 
-    public var radius: Float {
-        simd_distance(location, center)
-    }
+    public var panSensitivity: Float
 
-    public var forward: SIMD3<Float> {
-        normalize(center - location)
-    }
+    public var rotationSensitivity: Float
 
-    public var up: SIMD3<Float> {
-        get { trueUp }
-        set { trueUp = normalize(newValue - dot(forward, newValue) * forward) }
-    }
+    public var defaultFlightTime: TimeInterval
 
-    public var location: SIMD3<Float>
+    public var flyCoastingThreshold: Double
 
-    public var center: SIMD3<Float>
+    public var flyNormalizedAcceleration: Double
 
-    private var trueUp: SIMD3<Float>
+    public var flyMinSpeed: Double
 
-    /// location is any point
-    /// center can be any point not equal to location
-    /// up can be any nonzero vector not parallel to the displacement between center and location
-    public init(location: SIMD3<Float> = SIMD3<Float>(0, 0, -1),
-                center: SIMD3<Float> = SIMD3<Float>(0, 0, 0),
-                up: SIMD3<Float> = SIMD3<Float>(0,1,0)) {
-        self.location = location
-        self.center = center
-        let delta = center - location
-        self.trueUp =  normalize(up - (simd_dot(delta, up) / simd_dot(delta, delta)) * delta)
-    }
+    public var flyMaxSpeed: Double
 
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(location: try container.decode(SIMD3<Float>.self, forKey: .location),
-                  center: try container.decode(SIMD3<Float>.self, forKey: .center),
-                  up: try container.decode(SIMD3<Float>.self, forKey: .up))
-    }
+    public init() {
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(location, forKey: .location)
-        try container.encode(center, forKey: .center)
-        try container.encode(trueUp, forKey: .up)
-    }
+        // If we need to make os-specific tweaks to these values,
+        // put conditional-compilation switches in here.
+        // #if os(iOS)
+        // #elseif os(macOS)
+        // #endif
 
-    private enum CodingKeys: String, CodingKey {
-        case location
-        case center
-        case up
+        self.scrollSensitivity = 2.5
+        self.panSensitivity = 2.5
+        self.rotationSensitivity = 1.25
+        self.defaultFlightTime = 1
+        self.flyCoastingThreshold = 0.33
+        self.flyNormalizedAcceleration = 3.5
+        self.flyMinSpeed  = 0.05
+        self.flyMaxSpeed = 5
     }
 }
+
+// ============================================================================
+// MARK: - CenteredPOVController
+// ============================================================================
 
 public class CenteredPOVController: ObservableObject, POVController {
 
@@ -290,10 +146,8 @@ public class CenteredPOVController: ObservableObject, POVController {
     /// angular rotation rate in radians per second
     @Published public var orbitSpeed: Float
 
-    // TODO: try to move this into the app
-    @Published public var povCenterName: String? = nil
-
-    public private(set) var pov = CenteredPOV()
+    /// Not @Published because it changes too frequently
+    public private(set) var pov: CenteredPOV
 
     public private(set) var markedPOVs = [String: CenteredPOV]()
 
@@ -322,8 +176,12 @@ public class CenteredPOVController: ObservableObject, POVController {
     }
 
     public func reset() {
+        // TODO: reset to the values given in the initializer instead of to their defaults.
+        self.pov = CenteredPOV(location: SIMD3<Float>(1, 1, 1), center: SIMD3<Float>(0, 0, 0), up: SIMD3<Float>(0, 1, 0))
         self.orbitEnabled = true
-        self.orbitSpeed = 1/8
+        self.orbitSpeed = 0.125
+
+        self.markedPOVs.removeAll()
         self.queuedFlights.removeAll()
         self.flightInProgress = nil
         self.dragInProgress = nil
@@ -368,8 +226,7 @@ public class CenteredPOVController: ObservableObject, POVController {
         queuedFlights.append(CenteredPOVFlight.Spec(location: trueLocation, center: trueCenter, up: trueUp, flightTime: trueFlightTime))
     }
 
-    public func centerOn(_ newCenter: SIMD3<Float>, _ newCenterName: String? = nil, flightTime: TimeInterval? = nil) {
-        self.povCenterName = newCenterName
+    public func centerOn(_ newCenter: SIMD3<Float>, flightTime: TimeInterval? = nil) {
         flyTo(center: newCenter, flightTime: flightTime)
     }
 
@@ -510,8 +367,67 @@ public class CenteredPOVController: ObservableObject, POVController {
     }
 }
 
+/// POV whose forward vector always points toward a fixed point in world coordinates.
+public struct CenteredPOV: Codable, Sendable, Hashable, Equatable, CustomStringConvertible   {
+
+    public var description: String {
+        "{ location: \(location.prettyString), center: \(center.prettyString), up: \(trueUp.prettyString) }"
+    }
+
+    public var radius: Float {
+        simd_distance(location, center)
+    }
+
+    public var forward: SIMD3<Float> {
+        normalize(center - location)
+    }
+
+    public var up: SIMD3<Float> {
+        get { trueUp }
+        set { trueUp = normalize(newValue - dot(forward, newValue) * forward) }
+    }
+
+    public var location: SIMD3<Float>
+
+    public var center: SIMD3<Float>
+
+    private var trueUp: SIMD3<Float>
+
+    /// location is any point
+    /// center can be any point not equal to location
+    /// up can be any nonzero vector not parallel to the displacement between center and location
+    public init(location: SIMD3<Float> = SIMD3<Float>(0, 0, -1),
+                center: SIMD3<Float> = SIMD3<Float>(0, 0, 0),
+                up: SIMD3<Float> = SIMD3<Float>(0,1,0)) {
+        self.location = location
+        self.center = center
+        let delta = center - location
+        self.trueUp =  normalize(up - (simd_dot(delta, up) / simd_dot(delta, delta)) * delta)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(location: try container.decode(SIMD3<Float>.self, forKey: .location),
+                  center: try container.decode(SIMD3<Float>.self, forKey: .center),
+                  up: try container.decode(SIMD3<Float>.self, forKey: .up))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(location, forKey: .location)
+        try container.encode(center, forKey: .center)
+        try container.encode(trueUp, forKey: .up)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case location
+        case center
+        case up
+    }
+}
+
 // ===========================================================
-// MARK: - POV Actions
+// MARK: - CenteredPOVController Actions
 // ===========================================================
 
 ///
