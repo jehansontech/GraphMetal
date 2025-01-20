@@ -52,11 +52,24 @@ public enum RenderError: Error {
 
 public class Renderer: ObservableObject {
 
+    public var visibleZ: ClosedRange<Float> {
+        return max(fovController.zNear, fadeoutMidpoint-fadeoutDistance)...min(fovController.zFar, fadeoutMidpoint+fadeoutDistance)
+    }
+
     // TODO: make this no longer necessary.
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
     // FIXME: needs to be set properly
     public var touchPlaneDistance: Float = 1
+
+    /// The midpoint of the visible slice.
+    /// Only points for which the forward distance in view coords from the plane of the POV is in the range fadeoutMidpoint +/- fadeoutDistance will be visible.
+    @Published public var fadeoutMidpoint: Float
+
+    /// The half-width of the visible slice
+    /// Only points for which the forward distance in view coords from the plane of the POV is in the range fadeoutMidpoint +/- fadeoutDistance will be visible.
+    /// Visibility decreases linearly with distance from the midpoint.
+    @Published public var fadeoutDistance: Float
 
     /// In "points"
     // NOTE: Can't mark it Published b/c it gets changed within a view update.
@@ -84,12 +97,16 @@ public class Renderer: ObservableObject {
                 _ fovController: FOVController,
                 _ wireframe: Wireframe,
                 decorations: [Renderable] = []) {
+        let fadeoutDistance = (fovController.zFar - fovController.zNear)/2
+
         self.povController = povController
         self.fovController = fovController
         self.uniforms = UniformsBufferManager()
         self.wireframe = wireframe
         self.decorations = decorations
         self.viewBounds = CGRect.zero // Dummy value
+        self.fadeoutDistance = fadeoutDistance
+        self.fadeoutMidpoint = fovController.zNear + fadeoutDistance
     }
 
     public func requestSnapshot(_ callback: @escaping ((String) -> Any?)) throws {
@@ -141,13 +158,13 @@ public class Renderer: ObservableObject {
 
     public func updateViewBounds(_ viewBounds: CGRect) {
         self.viewBounds = viewBounds
-        self.fovController.update(viewBounds)
+        self.fovController.update(viewBounds: viewBounds)
     }
 
     public func prepareToDraw(_ view: MTKView) {
         let date = Date()
-        povController.update(date)
-        fovController.update(date)
+        povController.update(timestamp: date)
+        fovController.update(timestamp: date)
         uniforms.prepareToDraw(makeUniforms(date))
         wireframe.prepareToDraw(date)
         for i in decorations.indices {
@@ -190,8 +207,8 @@ public class Renderer: ObservableObject {
                         pointSize: wireframe.makePointSize(povController.location),
                         edgeColor: wireframe.defaultColor,
                         backgroundColor: self.backgroundRenderColor,
-                        fadeoutMidpoint: fovController.fadeoutMidpoint,
-                        fadeoutDistance: fovController.fadeoutDistance,
+                        fadeoutMidpoint: self.fadeoutMidpoint,
+                        fadeoutDistance: self.fadeoutDistance,
                         pulsePhase: makePulsePhase(date))
     }
 
@@ -441,7 +458,7 @@ extension Renderer: DragHandler, PinchHandler, RotationHandler {
 
         return TouchRay(origin: self.povController.location,
                         direction: ray1,
-                        range: self.fovController.visibleZ,
+                        range: self.visibleZ,
                         cross1: cross1,
                         cross2: cross2)
     }

@@ -10,21 +10,14 @@ import simd
 
 public protocol FOVController {
 
-    /// The midpoint of the visible slice.
-    /// Only points for which the forward distance in view coords from the plane of the POV is in the range fadeoutMidpoint +/- fadeoutDistance will be visible.
-    var fadeoutMidpoint: Float { get set }
-
-    /// The half-width of the visible slice
-    /// Only points for which the forward distance in view coords from the plane of the POV is in the range fadeoutMidpoint +/- fadeoutDistance will be visible.
-    /// Visibility decreases linearly with distance from the midpoint.
-    var fadeoutDistance: Float { get set }
-
     //    /// The physical dimensions of the UI view in pixels.
     //    /// This is NOT the same as the view's size in its local coordinates (which are measured in "points")..
     //    var drawableSize: CGSize { get set }
     //
     //    /// The bounds of the UI view in points.
     //    var viewBounds: CGRect { get set }
+
+    var aspectRatio: Float { get }
 
     /// front of the FOV, i.e.,  forward distance in view coords from the plane of the POV to the nearest renderable point
     var zNear: Float { get set }
@@ -41,28 +34,20 @@ public protocol FOVController {
 
     /// Sets the FOV's properties to the values they should have at the given system time.
     /// This is called during each rendering cycle as a way to support an FOV that changes on its own
-    func update(_ date: Date)
+    func update(timestamp: Date)
 
     /// Set the FOV's properties to be consistent with the given view bounds (in points).
-    func update(_ viewBounds: CGRect)
+    func update(viewBounds: CGRect)
 
 }
 
-extension FOVController {
-
-    //    var aspectRatio: Float {
-    //        // OLD (drawableSize.height > 0) ? Float(drawableSize.width) / Float(drawableSize.height) : 1
-    //        viewBounds.height > 0 ? Float(viewBounds.width) / Float(viewBounds.height) : 1
-    //    }
-
-    public var visibleZ: ClosedRange<Float> {
-        return max(zNear, fadeoutMidpoint-fadeoutDistance)...min(zFar, fadeoutMidpoint+fadeoutDistance)
-    }
-
-//    public func isInVisibleSlice(z: Float) -> Bool {
-//        return z >= zNear && z <= zFar && z > fadeoutMidpoint - fadeoutDistance && z < fadeoutMidpoint + fadeoutDistance
+//extension FOVController {
+//
+//    public var aspectRatio: Float {
+//        // OLD (drawableSize.height > 0) ? Float(drawableSize.width) / Float(drawableSize.height) : 1
+//        viewBounds.height > 0 ? Float(viewBounds.width) / Float(viewBounds.height) : 1
 //    }
-}
+//}
 
 public class PerspectiveFOVController: ObservableObject, FOVController {
 
@@ -71,14 +56,6 @@ public class PerspectiveFOVController: ObservableObject, FOVController {
     public static let defaultZFar: Float = 1000
 
     public static let defaultYFOV: Float  = .piOverThree
-
-    public static var defaultFadeoutDistance: Float {
-        return defaultZFar - defaultZNear
-    }
-
-    public static var defaultFadeoutMidpoint: Float {
-        return defaultZNear + defaultFadeoutDistance/2
-    }
 
     @Published public var aspectRatio: Float {
         didSet {
@@ -105,40 +82,30 @@ public class PerspectiveFOVController: ObservableObject, FOVController {
         }
     }
 
-    @Published public var fadeoutMidpoint: Float
-
-    @Published public var fadeoutDistance: Float
-
-    public let initialFadeoutMidpoint: Float
-    
-    public let initialFadeoutDistance: Float
-
-    public let initialYFOV: Float
+    private let initialZNear: Float
+    private let initialZFar: Float
+    private let initialYFOV: Float
 
     public private(set) var projectionMatrix: float4x4
 
-    public init(fadeoutMidpoint: Float = PerspectiveFOVController.defaultFadeoutMidpoint,
-                fadeoutDistance: Float = PerspectiveFOVController.defaultFadeoutDistance,
+    public init(zNear: Float = PerspectiveFOVController.defaultZNear,
+                zFar: Float = PerspectiveFOVController.defaultZFar,
                 yFOV: Float = PerspectiveFOVController.defaultYFOV) {
-        self.aspectRatio = 1 // Dummy value
-        self.zNear = PerspectiveFOVController.defaultZNear
-        self.zFar = PerspectiveFOVController.defaultZFar
-        self.yFOV = yFOV
-        self.fadeoutMidpoint = fadeoutMidpoint
-        self.fadeoutDistance = fadeoutDistance
-        self.initialFadeoutMidpoint = fadeoutMidpoint
-        self.initialFadeoutDistance = fadeoutDistance
+        self.initialZNear = zNear
+        self.initialZFar = zFar
         self.initialYFOV = yFOV
+        self.zNear = zNear
+        self.zFar = zFar
+        self.yFOV = yFOV
+        self.aspectRatio = 1 // Dummy value
         self.projectionMatrix = float4x4() // Dummy value
     }
 
     public func reset() {
-        // TODO: decide what to do about these
-        //        self.zNear = 0.001
-        //        self.zFar = 1000
-        self.fadeoutDistance = initialFadeoutDistance
-        self.fadeoutMidpoint = initialFadeoutMidpoint
+        self.zNear = initialZNear
+        self.zFar = initialZFar
         self.yFOV = initialYFOV
+        self.projectionMatrix = makeProjectionMatrix()
     }
 
     public func fovSize(_ zDistance: Float) -> CGSize {
@@ -146,11 +113,11 @@ public class PerspectiveFOVController: ObservableObject, FOVController {
         return CGSize(width: Double(width), height: Double(width / aspectRatio))
     }
 
-    public func update(_ date: Date) {
+    public func update(timestamp: Date) {
         // NOP
     }
 
-    public func update(_ viewBounds: CGRect) {
+    public func update(viewBounds: CGRect) {
         self.aspectRatio = viewBounds.height > 0 ? Float(viewBounds.width) / Float(viewBounds.height) : 1
     }
 

@@ -27,7 +27,7 @@ public protocol POVController {
 
     /// Sets the POV's properties to the values they should have at the given system time.
     /// This method is called during each rendering cycle as a way to support a POV that changes on its own.
-    func update(_ timestamp: Date)
+    func update(timestamp: Date)
 
     func markPOV(_ name: String)
 
@@ -314,7 +314,7 @@ public class CenteredPOVController: ObservableObject, POVController {
         self.rotationInProgress = nil
     }
 
-    public func update(_ timestamp: Date) {
+    public func update(timestamp: Date) {
         self.pov = makeUpdatedPOV(timestamp)
         self._lastUpdateTimestamp = timestamp
 
