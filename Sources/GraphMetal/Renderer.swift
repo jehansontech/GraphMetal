@@ -187,7 +187,7 @@ public class Renderer: ObservableObject {
 
         return Uniforms(projectionMatrix: fovController.projectionMatrix,
                         modelViewMatrix: povController.viewMatrix,
-                        pointSize: wireframe.makePointSize(povController.pov.location),
+                        pointSize: wireframe.makePointSize(povController.location),
                         edgeColor: wireframe.defaultColor,
                         backgroundColor: self.backgroundRenderColor,
                         fadeoutMidpoint: fovController.fadeoutMidpoint,
@@ -385,7 +385,7 @@ extension Renderer: DragHandler, PinchHandler, RotationHandler {
         // touch ray's origin and direction are given in world coordinates
 
         let ray = touchRay(at: clipSpacePoint, size: .zero)
-        let distanceToPoint: Float = depth / simd_dot(self.povController.pov.forward, ray.direction)
+        let distanceToPoint: Float = depth / simd_dot(self.povController.forward, ray.direction)
         let touchPoint = ray.origin + distanceToPoint * ray.direction
 
         //        print("touchPoint")
@@ -439,7 +439,7 @@ extension Renderer: DragHandler, PinchHandler, RotationHandler {
         //        print("                  simd_dot(ray1, cross2): \(simd_dot(ray1, cross2))")
         //        print("                  simd_dot(cross1, cross2): \(simd_dot(cross1, cross2))")
 
-        return TouchRay(origin: self.povController.pov.location,
+        return TouchRay(origin: self.povController.location,
                         direction: ray1,
                         range: self.fovController.visibleZ,
                         cross1: cross1,

@@ -9,94 +9,94 @@ import Foundation
 import simd
 import Wacoma
 
-enum POVError: Error {
-    case notUnitVector(_ name: String, length: Float)
-    case notOrthogonal(_ name1: String, _ name2: String, dotProduct: Float)
-}
-
-public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
-
-    public var description: String {
-        "{ location: \(location.prettyString), forward: \(trueForward.prettyString), up: \(trueUp.prettyString) }"
-    }
-
-    public var location: SIMD3<Float>
-
-    public var forward: SIMD3<Float> {
-        get { trueForward }
-        set { trueForward = normalize(newValue) }
-    }
-
-    public var up: SIMD3<Float> {
-        get { trueUp }
-        set { trueUp = normalize(newValue - dot(trueForward, newValue) * trueForward) }
-    }
-
-    private var trueForward: SIMD3<Float>
-
-    private var trueUp: SIMD3<Float>
-
-    /// location: any point
-    /// forwardHint: any  nonzero vector
-    /// upHint: any nonzero vector not parallel to forward
-    public init(location: SIMD3<Float> = SIMD3<Float>(0, 0, -1),
-                forward: SIMD3<Float> =  SIMD3<Float>(0, 0, 1),
-                up: SIMD3<Float> = SIMD3<Float>(0, 1, 0)) {
-        self.init(location: location,
-                  trueForward: normalize(forward),
-                  trueUp: normalize(up - (dot(forward, up) / dot(forward, forward)) * forward))
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(location: try container.decode(SIMD3<Float>.self, forKey: .location),
-                  forward: try container.decode(SIMD3<Float>.self, forKey: .forward),
-                  up: try container.decode(SIMD3<Float>.self, forKey: .up))
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(location, forKey: .location)
-        try container.encode(trueForward, forKey: .forward)
-        try container.encode(trueUp, forKey: .up)
-    }
-
-    /// location: any point
-    /// trueForward: unit vector
-    /// trueUp: unit vector orthogonal to trueForward
-    internal init(location: SIMD3<Float>, trueForward: SIMD3<Float>, trueUp: SIMD3<Float>) {
-        do {
-            try Self.validate(location: location, forward: trueForward, up: trueUp)
-            self.location = location
-            self.trueForward = trueForward
-            self.trueUp = trueUp
-        }
-        catch {
-            // print("Problem with POV -- \(error)")
-            self.location = SIMD3<Float>(0, 0, -1)
-            self.trueForward = SIMD3<Float>(0, 0, 1)
-            self.trueUp = SIMD3<Float>(0, 1, 0)
-        }
-    }
-
-    static func validate(location: SIMD3<Float>, forward: SIMD3<Float>, up: SIMD3<Float>) throws {
-        if length(forward).differentFrom(1) {
-            throw POVError.notUnitVector("forward", length: length(forward))
-        }
-        if length(up).differentFrom(1) {
-            throw POVError.notUnitVector("up", length: length(up))
-        }
-        if dot(forward, up).differentFrom(0) {
-            throw POVError.notOrthogonal("forward", "up", dotProduct: dot(forward, up))
-        }
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case forward
-        case location
-        case up
-    }
-}
+//enum POVError: Error {
+//    case notUnitVector(_ name: String, length: Float)
+//    case notOrthogonal(_ name1: String, _ name2: String, dotProduct: Float)
+//}
+//
+//public struct POV: Codable, Hashable, Equatable, CustomStringConvertible {
+//
+//    public var description: String {
+//        "{ location: \(location.prettyString), forward: \(trueForward.prettyString), up: \(trueUp.prettyString) }"
+//    }
+//
+//    public var location: SIMD3<Float>
+//
+//    public var forward: SIMD3<Float> {
+//        get { trueForward }
+//        set { trueForward = normalize(newValue) }
+//    }
+//
+//    public var up: SIMD3<Float> {
+//        get { trueUp }
+//        set { trueUp = normalize(newValue - dot(trueForward, newValue) * trueForward) }
+//    }
+//
+//    private var trueForward: SIMD3<Float>
+//
+//    private var trueUp: SIMD3<Float>
+//
+//    /// location: any point
+//    /// forwardHint: any  nonzero vector
+//    /// upHint: any nonzero vector not parallel to forward
+//    public init(location: SIMD3<Float> = SIMD3<Float>(0, 0, -1),
+//                forward: SIMD3<Float> =  SIMD3<Float>(0, 0, 1),
+//                up: SIMD3<Float> = SIMD3<Float>(0, 1, 0)) {
+//        self.init(location: location,
+//                  trueForward: normalize(forward),
+//                  trueUp: normalize(up - (dot(forward, up) / dot(forward, forward)) * forward))
+//    }
+//
+//    public init(from decoder: Decoder) throws {
+//        let container = try decoder.container(keyedBy: CodingKeys.self)
+//        self.init(location: try container.decode(SIMD3<Float>.self, forKey: .location),
+//                  forward: try container.decode(SIMD3<Float>.self, forKey: .forward),
+//                  up: try container.decode(SIMD3<Float>.self, forKey: .up))
+//    }
+//
+//    public func encode(to encoder: Encoder) throws {
+//        var container = encoder.container(keyedBy: CodingKeys.self)
+//        try container.encode(location, forKey: .location)
+//        try container.encode(trueForward, forKey: .forward)
+//        try container.encode(trueUp, forKey: .up)
+//    }
+//
+//    /// location: any point
+//    /// trueForward: unit vector
+//    /// trueUp: unit vector orthogonal to trueForward
+//    internal init(location: SIMD3<Float>, trueForward: SIMD3<Float>, trueUp: SIMD3<Float>) {
+//        do {
+//            try Self.validate(location: location, forward: trueForward, up: trueUp)
+//            self.location = location
+//            self.trueForward = trueForward
+//            self.trueUp = trueUp
+//        }
+//        catch {
+//            // print("Problem with POV -- \(error)")
+//            self.location = SIMD3<Float>(0, 0, -1)
+//            self.trueForward = SIMD3<Float>(0, 0, 1)
+//            self.trueUp = SIMD3<Float>(0, 1, 0)
+//        }
+//    }
+//
+//    static func validate(location: SIMD3<Float>, forward: SIMD3<Float>, up: SIMD3<Float>) throws {
+//        if length(forward).differentFrom(1) {
+//            throw POVError.notUnitVector("forward", length: length(forward))
+//        }
+//        if length(up).differentFrom(1) {
+//            throw POVError.notUnitVector("up", length: length(up))
+//        }
+//        if dot(forward, up).differentFrom(0) {
+//            throw POVError.notOrthogonal("forward", "up", dotProduct: dot(forward, up))
+//        }
+//    }
+//
+//    private enum CodingKeys: String, CodingKey {
+//        case forward
+//        case location
+//        case up
+//    }
+//}
 
 public struct POVControllerSettings {
 
@@ -139,7 +139,13 @@ public protocol POVController {
 
     var settings: POVControllerSettings { get set }
 
-    var pov: POV { get }
+    var location: SIMD3<Float> { get }
+
+    var forward: SIMD3<Float> { get }
+
+    var up: SIMD3<Float> { get }
+
+    var focus: SIMD3<Float> { get }
 
     var viewMatrix: float4x4 { get }
 
@@ -148,6 +154,14 @@ public protocol POVController {
     /// Sets the POV's properties to the values they should have at the given system time.
     /// This method is called during each rendering cycle as a way to support a POV that changes on its own.
     func update(_ timestamp: Date)
+
+    func markPOV(_ name: String)
+
+    func hasMark(_ name: String) -> Bool
+
+    func unsetMark(_ name: String)
+
+    func flyTo(mark: String, flightTime: TimeInterval?)
 
     func dragGestureBegan(at: SIMD3<Float>)
 
@@ -176,15 +190,18 @@ extension POVController {
         // https://stackoverflow.com/questions/9053377/ios-questions-about-camera-information-within-glkmatrix4makelookat-result
         // https://gist.github.com/CaptainRedmuff/5673450
 
-        let pov = self.pov
-        let n = -pov.forward
-        let u = normalize(simd_cross(pov.up, n))
+        let n = -self.forward
+        let u = normalize(simd_cross(self.up, n))
         let v = simd_cross(n, u)
 
         return float4x4(columns: (SIMD4<Float>(u.x, v.x, n.x,  0),
                                   SIMD4<Float>(u.y, v.y, n.y,  0),
                                   SIMD4<Float>(u.z, v.z, n.z,  0),
-                                  SIMD4<Float>(simd_dot(-u, pov.location), simd_dot(-v, pov.location), simd_dot(-n, pov.location),  1)))
+                                  SIMD4<Float>(simd_dot(-u, self.location), simd_dot(-v, self.location), simd_dot(-n, self.location),  1)))
+    }
+
+    public func jumpTo(mark: String) {
+        flyTo(mark: mark, flightTime: 0)
     }
 }
 
@@ -249,25 +266,36 @@ public struct CenteredPOV: Codable, Sendable, Hashable, Equatable, CustomStringC
 
 public class CenteredPOVController: ObservableObject, POVController {
 
-    public var pov: POV { POV(location: centeredPOV.location, forward: centeredPOV.forward, up: centeredPOV.up) }
+    /// Not @Published because it changes too frequently
+    public var location: SIMD3<Float> { pov.location }
+
+    /// Not @Published because it changes too frequently
+    public var forward: SIMD3<Float> { pov.forward }
+
+    /// Not @Published because it changes too frequently
+    public var up: SIMD3<Float> { pov.up }
+
+    /// Not @Published because it changes too frequently
+    public var focus: SIMD3<Float> { pov.center }
+
+    /// Not @Published because it changes too frequently
+    public var center: SIMD3<Float> { pov.center }
+
+    public var isFlying: Bool {
+        return flightInProgress != nil || !queuedFlights.isEmpty
+    }
 
     @Published public var orbitEnabled: Bool
 
     /// angular rotation rate in radians per second
     @Published public var orbitSpeed: Float
 
+    // TODO: try to move this into the app
     @Published public var povCenterName: String? = nil
 
-    /// Not @Published because position changes too frequently
-    public private(set) var centeredPOV = CenteredPOV()
+    public private(set) var pov = CenteredPOV()
 
-    @Published public var centeredPOVDefault = CenteredPOV()
-
-    @Published public var centeredPOVMark: CenteredPOV? = nil
-
-    public var isFlying: Bool {
-        return flightInProgress != nil || !queuedFlights.isEmpty
-    }
+    public private(set) var markedPOVs = [String: CenteredPOV]()
 
     public var settings = POVControllerSettings()
 
@@ -281,23 +309,19 @@ public class CenteredPOVController: ObservableObject, POVController {
 
     private var rotationInProgress: CenteredPOVRoll? = nil
 
-    private var queuedFlights: [CenteredPOVFlight.Spec]
+    private var queuedFlights = [CenteredPOVFlight.Spec]()
 
     public init(location: SIMD3<Float> = SIMD3<Float>(1, 1, 1),
                 center: SIMD3<Float> = SIMD3<Float>(0, 0, 0),
                 up: SIMD3<Float> = SIMD3<Float>(0, 1, 0),
                 orbitEnabled: Bool = true,
                 orbitSpeed: Float = 0.125) {
-        let centeredPOV = CenteredPOV(location: location, center: center, up: up)
-        self.centeredPOV = centeredPOV
-        self.centeredPOVDefault = centeredPOV
+        self.pov = CenteredPOV(location: location, center: center, up: up)
         self.orbitEnabled = orbitEnabled
         self.orbitSpeed = orbitSpeed
-        self.queuedFlights = .init()
     }
 
     public func reset() {
-        self.centeredPOV = centeredPOVDefault
         self.orbitEnabled = true
         self.orbitSpeed = 1/8
         self.queuedFlights.removeAll()
@@ -308,22 +332,38 @@ public class CenteredPOVController: ObservableObject, POVController {
         self._lastUpdateTimestamp = nil
     }
 
-    public func markPOV() {
-        centeredPOVMark = centeredPOV
+    public func markPOV(_ name: String) {
+        markedPOVs[name] = pov
     }
 
-    public func unsetMark() {
-        centeredPOVMark = nil
+    public func hasMark(_ name: String) -> Bool {
+        markedPOVs[name] != nil
     }
 
-    public func flyTo(pov: POV, flightTime: TimeInterval) {
-        self.flyTo(location: pov.location, up: pov.up, flightTime: flightTime)
+    public func unsetMark(_ name: String) {
+        markedPOVs[name] = nil
     }
 
-    public func flyTo(location newLocation: SIMD3<Float>? = nil, center newCenter: SIMD3<Float>? = nil, up newUp: SIMD3<Float>? = nil, flightTime: TimeInterval? = nil) {
-        let trueLocation = newLocation ?? self.centeredPOV.location
-        let trueCenter = newCenter ?? self.centeredPOV.center
-        let trueUp = newUp ?? self.centeredPOV.up
+    public func flyTo(mark: String, flightTime: TimeInterval? = nil)  {
+        if let destination = markedPOVs[mark] {
+            flyTo(location: destination.location,
+                  center: destination.center,
+                  up: destination.up,
+                  flightTime: flightTime)
+        }
+    }
+
+    public func setMark(_ name: String, location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) {
+        markedPOVs[name] = CenteredPOV(location: location, center: center, up: up)
+    }
+
+    public func flyTo(location newLocation: SIMD3<Float>? = nil,
+                      center newCenter: SIMD3<Float>? = nil,
+                      up newUp: SIMD3<Float>? = nil,
+                      flightTime: TimeInterval? = nil) {
+        let trueLocation = newLocation ?? self.pov.location
+        let trueCenter = newCenter ?? self.pov.center
+        let trueUp = newUp ?? self.pov.up
         let trueFlightTime = flightTime ?? settings.defaultFlightTime
         queuedFlights.append(CenteredPOVFlight.Spec(location: trueLocation, center: trueCenter, up: trueUp, flightTime: trueFlightTime))
     }
@@ -335,7 +375,7 @@ public class CenteredPOVController: ObservableObject, POVController {
 
     public func hoverOver(_ point: SIMD3<Float>, _ distance: Float = 5, flightTime: TimeInterval? = nil) {
         self.orbitEnabled = false
-        var displacementRTP = cartesianToSpherical(xyz: point - self.centeredPOV.center)
+        var displacementRTP = cartesianToSpherical(xyz: point - self.pov.center)
         displacementRTP.x += distance
         let destination = sphericalToCartesian(rtp: displacementRTP)
         flyTo(location: destination, flightTime: flightTime)
@@ -348,7 +388,7 @@ public class CenteredPOVController: ObservableObject, POVController {
         }
 
         // print("OrbitingPOVController.dragGestureBegan: beginning drag")
-        self.dragInProgress = CenteredPOVTangentialMove(self.centeredPOV, touchPoint, settings)
+        self.dragInProgress = CenteredPOVTangentialMove(self.pov, touchPoint, settings)
     }
 
     public func dragGestureChanged(panDistance pan: Float, scrollDistance scroll: Float) {
@@ -359,7 +399,7 @@ public class CenteredPOVController: ObservableObject, POVController {
 
             // ORIG
             if let newPOV = handler.locationChanged(panDistance: pan, scrollDistance: scroll) {
-                self.centeredPOV = newPOV
+                self.pov = newPOV
             }
         }
     }
@@ -377,13 +417,13 @@ public class CenteredPOVController: ObservableObject, POVController {
             return
         }
         // print("OrbitingPOVController.pinchGestureBegan: starting pinch")
-        self.pinchInProgress = CenteredPOVRadialMove(self.centeredPOV, pinchCenter, settings)
+        self.pinchInProgress = CenteredPOVRadialMove(self.pov, pinchCenter, settings)
     }
 
     public func pinchGestureChanged(scale: Float) {
         if let handler = self.pinchInProgress {
             if let newPOV = handler.scaleChanged(scale: scale) {
-                self.centeredPOV = newPOV
+                self.pov = newPOV
             }
         }
     }
@@ -400,13 +440,13 @@ public class CenteredPOVController: ObservableObject, POVController {
             return
         }
         // print("OrbitingPOVController.rotationGestureBegan: beginning rotation")
-        self.rotationInProgress = CenteredPOVRoll(self.centeredPOV, rotationCenter, settings)
+        self.rotationInProgress = CenteredPOVRoll(self.pov, rotationCenter, settings)
     }
 
     public func rotationGestureChanged(radians: Float) {
         if let handler = self.rotationInProgress {
             if let newPOV = handler.rotationChanged(radians: radians) {
-                self.centeredPOV = newPOV
+                self.pov = newPOV
             }
         }
     }
@@ -418,7 +458,7 @@ public class CenteredPOVController: ObservableObject, POVController {
     }
 
     public func update(_ timestamp: Date) {
-        self.centeredPOV = makeUpdatedPOV(timestamp)
+        self.pov = makeUpdatedPOV(timestamp)
         self._lastUpdateTimestamp = timestamp
 
         // print("OrbitingPOVController.update: Exiting. new POV: \(currentPOV)")
@@ -440,9 +480,9 @@ public class CenteredPOVController: ObservableObject, POVController {
 
         if flightInProgress == nil && !queuedFlights.isEmpty {
             let spec = queuedFlights.removeFirst()
-            flightInProgress = CenteredPOVFlight(initialLocation: centeredPOV.location,
-                                                 initialCenter: centeredPOV.center,
-                                                 initialUp: centeredPOV.up,
+            flightInProgress = CenteredPOVFlight(initialLocation: pov.location,
+                                                 initialCenter: pov.center,
+                                                 initialUp: pov.up,
                                                  finalLocation: spec.location,
                                                  finalCenter: spec.center,
                                                  finalUp: spec.up,
@@ -454,7 +494,7 @@ public class CenteredPOVController: ObservableObject, POVController {
         }
         else {
             flightInProgress = nil // cleanup
-            var updatedPOV = centeredPOV
+            var updatedPOV = pov
             if orbitEnabled, let t0 = _lastUpdateTimestamp {
                 let transform = float4x4(translationBy: updatedPOV.center)
                 * float4x4(rotationAround: updatedPOV.up, by: orbitSpeed * Float(timestamp.timeIntervalSince(t0)))
@@ -462,8 +502,8 @@ public class CenteredPOVController: ObservableObject, POVController {
                 let newLocation = (transform * SIMD4<Float>(updatedPOV.location, 1)).xyz
 
                 updatedPOV = CenteredPOV(location: newLocation,
-                                         center: centeredPOV.center,
-                                         up: centeredPOV.up)
+                                         center: pov.center,
+                                         up: pov.up)
             }
             return updatedPOV
         }
