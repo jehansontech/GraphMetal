@@ -9,6 +9,7 @@ import SwiftUI
 import MetalKit
 import Wacoma
 
+/// This is a View by an extension
 public struct RendererView {
 
     @ObservedObject var renderer: Renderer
@@ -84,7 +85,7 @@ public struct RendererView {
         // in pixels. They need not match, e.g., on my ipad, bounds = (0.0, 0.0, 1180.0, 820.0)
         // and drawableSize =  (2360.0, 1640.0)
         //
-        // RenderController's settings MIGHT have changed. The only one we care about
+        // Renderer's settings MIGHT have changed. The only one we care about
         // here is backgroundColor.
 
         let clearColor: SIMD4<Float> = coordinator.renderer.backgroundRenderColor

@@ -23,6 +23,14 @@ public protocol POVController {
 
     var viewMatrix: float4x4 { get }
 
+    var isFlying: Bool { get }
+
+    var isDragging: Bool { get }
+
+    var isPinching: Bool { get }
+
+    var isRotating: Bool { get }
+
     func reset()
 
     /// Sets the POV's properties to the values they should have at the given system time.
@@ -141,6 +149,12 @@ public class CenteredPOVController: ObservableObject, POVController {
         return flightInProgress != nil || !queuedFlights.isEmpty
     }
 
+    public var isDragging: Bool { dragInProgress != nil }
+
+    public var isPinching: Bool { pinchInProgress != nil }
+
+    public var isRotating: Bool { rotationInProgress != nil }
+
     @Published public var orbitEnabled: Bool
 
     /// angular rotation rate in radians per second
@@ -238,13 +252,19 @@ public class CenteredPOVController: ObservableObject, POVController {
         flyTo(location: destination, flightTime: flightTime)
     }
 
+    // DEBUGGING
+    private var unfinishedDragCount: Int = 0
+
     public func dragGestureBegan(at touchPoint: SIMD3<Float>) {
         if isFlying {
-            // print("OrbitingPOVController.dragGestureBegan: aborting because flight is in progress")
+            // print("CenteredPOVController.dragGestureBegan: aborting because flight is in progress")
             return
         }
 
-        // print("OrbitingPOVController.dragGestureBegan: beginning drag")
+        if self.unfinishedDragCount > 0 {
+            Messages.debug("CenteredPOVController.dragGestureBegan", "PROBLEM: unfinishedDragCount=\(unfinishedDragCount)")
+        }
+        self.unfinishedDragCount += 1
         self.dragInProgress = CenteredPOVTangentialMove(self.pov, touchPoint, settings)
     }
 
@@ -261,19 +281,25 @@ public class CenteredPOVController: ObservableObject, POVController {
         }
     }
 
-    /// DON'T COUNT ON THIS. Sometimes it's not delivered
+    /// EMPIRICAL: Don't count on this. Sometimes it's not delivered
     public func dragGestureEnded() {
-        // print("OrbitingPOVController.dragGestureEnded")
+        // print("CenteredPOVController.dragGestureEnded")
+        self.unfinishedDragCount -= 1
         self.dragInProgress = nil
     }
 
+    // DEBUGGING
+    private var unfinishedPinchCount: Int = 0
 
     public func pinchGestureBegan(at pinchCenter: SIMD3<Float>) {
         if isFlying {
-            // print("OrbitingPOVController.pinchGestureBegan: aborting because flight is in progress")
+            // print("CenteredPOVController.pinchGestureBegan: aborting because flight is in progress")
             return
         }
-        // print("OrbitingPOVController.pinchGestureBegan: starting pinch")
+        if unfinishedPinchCount > 0 {
+            Messages.debug("CenteredPOVController.pinchGestureBegan", "PROBLEM: unfinishedPinchCount=\(unfinishedPinchCount)")
+        }
+        self.unfinishedPinchCount += 1
         self.pinchInProgress = CenteredPOVRadialMove(self.pov, pinchCenter, settings)
     }
 
@@ -285,18 +311,26 @@ public class CenteredPOVController: ObservableObject, POVController {
         }
     }
 
-    /// DON'T COUNT ON THIS. Sometimes it's not delivered
+    /// EMPIRICAL: Don't count on this. Sometimes it's not delivered
     public func pinchGestureEnded() {
-        // print("OrbitingPOVController.pinchGestureEnded")
+        // print("CenteredPOVController.pinchGestureEnded")
+        self.unfinishedPinchCount -= 1
         pinchInProgress = nil
     }
 
+    // DEBUGGING
+    private var unfinishedRotationCount: Int = 0
+
     public func rotationGestureBegan(at rotationCenter: SIMD3<Float>) {
         if isFlying {
-            // print("OrbitingPOVController.rotationGestureBegan: aborting because flight is in progress")
+            // print("CenteredPOVController.rotationGestureBegan: aborting because flight is in progress")
             return
         }
-        // print("OrbitingPOVController.rotationGestureBegan: beginning rotation")
+
+        if unfinishedRotationCount > 0 {
+            Messages.debug("CenteredPOVController.rotationGestureBegan", "PROBLEM: unfinishedRotationCount=\(unfinishedRotationCount)")
+        }
+        self.unfinishedRotationCount += 1
         self.rotationInProgress = CenteredPOVRoll(self.pov, rotationCenter, settings)
     }
 
@@ -308,9 +342,10 @@ public class CenteredPOVController: ObservableObject, POVController {
         }
     }
 
-    /// DON'T COUNT ON THIS. Sometimes it's not delivered
+    /// EMPIRICAL: Don't count on this. Sometimes it's not delivered
     public func rotationGestureEnded() {
-        // print("OrbitingPOVController.rotationGestureEnded")
+        // print("CenteredPOVController.rotationGestureEnded")
+        self.unfinishedRotationCount += 1
         self.rotationInProgress = nil
     }
 
@@ -318,7 +353,7 @@ public class CenteredPOVController: ObservableObject, POVController {
         self.pov = makeUpdatedPOV(timestamp)
         self._lastUpdateTimestamp = timestamp
 
-        // print("OrbitingPOVController.update: Exiting. new POV: \(currentPOV)")
+        // print("CenteredPOVController.update: Exiting. new POV: \(currentPOV)")
     }
 
     private func makeUpdatedPOV(_ timestamp: Date) -> CenteredPOV {
@@ -328,7 +363,7 @@ public class CenteredPOVController: ObservableObject, POVController {
         // A: Naaah, unnecessary complication.
         //
         // Q: how about if we're handling a gesture?
-        // A: Problem there is that we don't always get notified whenn a gesture
+        // A: Problem there is that we don't always get notified when a gesture
         //    ends. So we can't disallow update during a gesture.
         //
         // If orbit speed is > 0 then it looks like we're flying *east* over

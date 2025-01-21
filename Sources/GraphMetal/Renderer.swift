@@ -93,6 +93,9 @@ public class Renderer: ObservableObject {
 
     private var depthStencilState: MTLDepthStencilState!
 
+    /// Distance in world (and view) coordinates between POV's location and its focus point.
+    private var focusDistance: Float? = nil
+
     public init(_ povController: POVController,
                 _ fovController: FOVController,
                 _ wireframe: Wireframe,
@@ -162,13 +165,28 @@ public class Renderer: ObservableObject {
     }
 
     public func prepareToDraw(_ view: MTKView) {
-        let date = Date()
-        povController.update(timestamp: date)
-        fovController.update(timestamp: date)
-        uniforms.prepareToDraw(makeUniforms(date))
-        wireframe.prepareToDraw(date)
+
+        // FIDDLY:
+        // - gotta set isFlying before doing povController.update
+        // - gotta set fadeoutMidpoint before calling makeUniforms
+
+        let t0 = Date()
+        let isFlying = povController.isFlying
+
+        povController.update(timestamp: t0)
+        fovController.update(timestamp: t0)
+
+        let newFocusDistance = simd_distance(povController.location, povController.focus)
+        if !isFlying,
+           let oldFocusDistance = focusDistance {
+                self.fadeoutMidpoint += (newFocusDistance - oldFocusDistance)
+        }
+        self.focusDistance = newFocusDistance
+
+        uniforms.prepareToDraw(makeUniforms(t0))
+        wireframe.prepareToDraw(t0)
         for i in decorations.indices {
-            decorations[i].prepareToDraw(date)
+            decorations[i].prepareToDraw(t0)
         }
     }
 
