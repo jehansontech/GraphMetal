@@ -30,56 +30,57 @@ public struct WireframeGraphChange: Codable, Sendable {
 
     public static let none = WireframeGraphChange()
 
-    public static let all = WireframeGraphChange(nodes: true,
+    public static let all = WireframeGraphChange(nodeSet: true,
                                                  nodeColors: true,
                                                  nodePositions: true,
-                                                 edges: true,
+                                                 edgeSet: true,
                                                  edgeColors: true)
 
-    public static let topology = WireframeGraphChange(nodes: true,
+    public static let topology = WireframeGraphChange(nodeSet: true,
                                                       nodeColors: false,
                                                       nodePositions: false,
-                                                      edges: true,
+                                                      edgeSet: true,
                                                       edgeColors: false)
 
-    public static let geometry = WireframeGraphChange(nodes: false,
-                                                      nodeColors: false,
-                                                      nodePositions: true,
-                                                      edges: false,
-                                                      edgeColors: false)
-
-    public static let colors = WireframeGraphChange(nodes: false,
+    public static let colors = WireframeGraphChange(nodeSet: false,
                                                     nodeColors: true,
                                                     nodePositions: false,
-                                                    edges: false,
+                                                    edgeSet: false,
                                                     edgeColors: true)
 
-    public static let nodeColors = WireframeGraphChange(nodes: false,
+    public static let nodeSet = WireframeGraphChange(nodeSet: true,
+                                                     nodeColors: false,
+                                                     nodePositions: false,
+                                                     edgeSet: false,
+                                                     edgeColors: false)
+
+    public static let nodeColors = WireframeGraphChange(nodeSet: false,
                                                         nodeColors: true,
                                                         nodePositions: false,
-                                                        edges: false,
+                                                        edgeSet: false,
                                                         edgeColors: false)
 
-    public static let edgeColors = WireframeGraphChange(nodes: false,
+    public static let nodePositions = WireframeGraphChange(nodeSet: false,
+                                                           nodeColors: false,
+                                                           nodePositions: true,
+                                                           edgeSet: false,
+                                                           edgeColors: false)
+
+    public static let edgeSet = WireframeGraphChange(nodeSet: false,
+                                                     nodeColors: false,
+                                                     nodePositions: false,
+                                                     edgeSet: true,
+                                                     edgeColors: false)
+
+    public static let edgeColors = WireframeGraphChange(nodeSet: false,
                                                         nodeColors: false,
                                                         nodePositions: false,
-                                                        edges: false,
+                                                        edgeSet: false,
                                                         edgeColors: true)
 
-    public static let nodes = WireframeGraphChange(nodes: true,
-                                                   nodeColors: false,
-                                                   nodePositions: false,
-                                                   edges: false,
-                                                   edgeColors: false)
-
-    public static let edges = WireframeGraphChange(nodes: false,
-                                                   nodeColors: false,
-                                                   nodePositions: false,
-                                                   edges: true,
-                                                   edgeColors: false)
 
     /// indicates whether any nodes have been added and/or removed
-    public var nodes: Bool
+    public var nodeSet: Bool
 
     /// indicates whether any nodes have changed color
     public var nodeColors: Bool
@@ -88,28 +89,28 @@ public struct WireframeGraphChange: Codable, Sendable {
     public var nodePositions: Bool
 
     /// indicates whether any edges have been added and/or removed
-    public var edges: Bool
+    public var edgeSet: Bool
 
     /// indicates whether any edges have changed color
     public var edgeColors: Bool
 
-    public init(nodes: Bool = false,
+    public init(nodeSet: Bool = false,
                 nodeColors: Bool = false,
                 nodePositions: Bool = false,
-                edges: Bool = false,
+                edgeSet: Bool = false,
                 edgeColors: Bool = false) {
-        self.nodes = nodes
+        self.nodeSet = nodeSet
         self.nodeColors = nodeColors
         self.nodePositions = nodePositions
-        self.edges = edges
+        self.edgeSet = edgeSet
         self.edgeColors = edgeColors
     }
 
     public mutating func merge(_ change: WireframeGraphChange) {
-        self.nodes = self.nodes || change.nodes
+        self.nodeSet = self.nodeSet || change.nodeSet
         self.nodeColors = self.nodeColors || change.nodeColors
         self.nodePositions = self.nodePositions || change.nodePositions
-        self.edges = self.edges || change.edges
+        self.edgeSet = self.edgeSet || change.edgeSet
         self.edgeColors = self.edgeColors || change.edgeColors
     }
 }

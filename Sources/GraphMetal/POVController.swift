@@ -225,8 +225,12 @@ public class CenteredPOVController: ObservableObject, POVController {
         }
     }
 
+    public func setMark(_ name: String, pov: CenteredPOV) {
+        markedPOVs[name] = pov
+    }
+
     public func setMark(_ name: String, location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) {
-        markedPOVs[name] = CenteredPOV(location: location, center: center, up: up)
+        setMark(name, pov: CenteredPOV(location: location, center: center, up: up))
     }
 
     public func flyTo(location newLocation: SIMD3<Float>? = nil,
