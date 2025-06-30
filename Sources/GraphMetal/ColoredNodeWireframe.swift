@@ -387,8 +387,14 @@ public class ColoredNodeWireframe: ObservableObject, Wireframe {
             self.buildNodeColors = true
         }
 
-        public mutating func graphHasChanged<G: Graph>(_ graph: G, _ graphChange: WireframeGraphChange) {
-            
+        public mutating func graphHasChanged<G: Graph>(_ graph: G, _ graphChange: WireframeGraphChange)
+        where G.NodeType.ValueType : EmbeddedValue & ColoredValue
+        {
+            graphHasChanged(graph,
+                            nodeSet: graphChange.nodeSet,
+                            nodeColors: graphChange.nodeColors,
+                            nodePositions: graphChange.nodePositions,
+                            edgeSet: graphChange.edgeSet)
         }
 
         public mutating func graphHasChanged<G: Graph>(_ graph: G,
