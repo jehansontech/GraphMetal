@@ -216,6 +216,14 @@ public class CenteredPOVController: ObservableObject, POVController {
         markedPOVs[name] = nil
     }
 
+    public func setMark(_ name: String, pov: CenteredPOV) {
+        markedPOVs[name] = pov
+    }
+
+    public func setMark(_ name: String, location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) {
+        setMark(name, pov: CenteredPOV(location: location, center: center, up: up))
+    }
+
     public func flyTo(mark: String, flightTime: TimeInterval? = nil)  {
         if let destination = markedPOVs[mark] {
             flyTo(location: destination.location,
@@ -225,12 +233,9 @@ public class CenteredPOVController: ObservableObject, POVController {
         }
     }
 
-    public func setMark(_ name: String, pov: CenteredPOV) {
-        markedPOVs[name] = pov
-    }
-
-    public func setMark(_ name: String, location: SIMD3<Float>, center: SIMD3<Float>, up: SIMD3<Float>) {
-        setMark(name, pov: CenteredPOV(location: location, center: center, up: up))
+    public func flyTo(pov: CenteredPOV, flightTime: TimeInterval? = nil) {
+        let trueFlightTime = flightTime ?? settings.defaultFlightTime
+        queuedFlights.append(CenteredPOVFlight.Spec(location: pov.location, center: pov.center, up: pov.up, flightTime: trueFlightTime))
     }
 
     public func flyTo(location newLocation: SIMD3<Float>? = nil,
@@ -469,9 +474,6 @@ public struct CenteredPOV: Codable, Sendable, Hashable, Equatable, CustomStringC
 // MARK: - CenteredPOVController Actions
 // ===========================================================
 
-///
-///
-///
 class CenteredPOVFlight {
 
     struct Spec {
