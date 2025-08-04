@@ -99,17 +99,16 @@ public class Renderer: ObservableObject {
     public init(_ povController: POVController,
                 _ fovController: FOVController,
                 _ wireframe: Wireframe,
-                decorations: [Renderable] = []) {
-        let fadeoutDistance = (fovController.zFar - fovController.zNear)/2
-
+                decorations: [Renderable] = [])
+    {
         self.povController = povController
         self.fovController = fovController
         self.uniforms = UniformsBufferManager()
         self.wireframe = wireframe
         self.decorations = decorations
         self.viewBounds = CGRect.zero // Dummy value
-        self.fadeoutDistance = fadeoutDistance
-        self.fadeoutMidpoint = fovController.zNear + fadeoutDistance
+        self.fadeoutDistance = fovController.zFar - fovController.zNear
+        self.fadeoutMidpoint = fovController.zNear
     }
 
     public func requestSnapshot(_ callback: @escaping ((String) -> Any?)) throws {
