@@ -224,6 +224,19 @@ public class CenteredPOVController: ObservableObject, POVController {
         setMark(name, pov: CenteredPOV(location: location, center: center, up: up))
     }
 
+    public func jumpTo(pov: CenteredPOV) {
+        flyTo(pov: pov, flightTime: 0)
+    }
+
+    public func jumpTo(location newLocation: SIMD3<Float>? = nil,
+                       center newCenter: SIMD3<Float>? = nil,
+                       up newUp: SIMD3<Float>? = nil) {
+        flyTo(location: newLocation,
+              center: newCenter,
+              up: newUp,
+              flightTime: 0)
+    }
+
     public func flyTo(mark: String, flightTime: TimeInterval? = nil)  {
         if let destination = markedPOVs[mark] {
             flyTo(location: destination.location,
