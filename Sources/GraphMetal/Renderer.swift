@@ -56,10 +56,9 @@ public class Renderer: ObservableObject {
         return max(fovController.zNear, fadeoutMidpoint-fadeoutDistance)...min(fovController.zFar, fadeoutMidpoint+fadeoutDistance)
     }
 
-    // TODO: make this no longer necessary.
+    // TODO: either make this no longer necessary or set it properly.
     /// Distance in world coordinates between the POV's location and the plane on which a touch is located.
     /// Non-negative. If zero, then pinching and dragging do not work.
-    // FIXME: needs to be set properly
     public var touchPlaneDistance: Float = 1
 
     /// The midpoint of the visible slice.
@@ -436,6 +435,7 @@ extension Renderer: DragHandler, PinchHandler, RotationHandler {
     }
 
     /// Returns a TouchRay whose origin is in the center of the screen and whose direction is derived from the given location.
+    /// size defines an onscreen rectangle
     /// location and size are both in clip-space coords
     public func touchRay(at clipSpacePoint: SIMD2<Float>, size: SIMD2<Float>) -> TouchRay {
         let inverseProjectionMatrix = self.fovController.projectionMatrix.inverse
@@ -456,7 +456,7 @@ extension Renderer: DragHandler, PinchHandler, RotationHandler {
         v3.w = 0
         let ray3 = normalize(inverseViewMatrix * v3).xyz
 
-        // Starting at ray origin, make a right triangle in space such that ray1 forms
+        // Starting at ray1 origin, make a right triangle in space such that ray1 forms
         // one leg and the hypoteneuse lies along ray2. cross1 is the other leg.
         let cross1 = (ray2 / simd_dot(ray1, ray2)) - ray1
 
