@@ -74,7 +74,7 @@ extension Graph where NodeType.ValueType: EmbeddedValue {
         return nearestNode
     }
 
-    public func pickNode(_ ray: TouchRay) -> NodeType?
+    public func pickBestNode(_ ray: TouchRay) -> NodeType?
     {
         let cross1Norm = normalize(ray.cross1)
         let cross2Norm = normalize(ray.cross2)
