@@ -13,7 +13,7 @@ import GenericGraph
 
 public struct RenderConstants {
 
-    public static let darkBackground = SIMD4<Float>(0.025, 0.025, 0.025, 1)
+    public static let darkBackground = SIMD4<Float>(0.015, 0.015, 0.015, 1)
 
     public static let lightBackground = SIMD4<Float>(0.975, 0.975, 0.975, 1)
 
