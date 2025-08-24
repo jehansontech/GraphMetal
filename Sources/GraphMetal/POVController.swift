@@ -262,8 +262,14 @@ public class CenteredPOVController: ObservableObject, POVController {
         queuedFlights.append(CenteredPOVFlight.Spec(location: trueLocation, center: trueCenter, up: trueUp, flightTime: trueFlightTime))
     }
 
-    public func centerOn(_ newCenter: SIMD3<Float>, flightTime: TimeInterval? = nil) {
-        flyTo(center: newCenter, flightTime: flightTime)
+    public func centerOn(_ newCenter: SIMD3<Float>, distance: Float? = nil, flightTime: TimeInterval? = nil) {
+        var newLocation: SIMD3<Float>? = nil
+        if let distance {
+            var displacementRTP = cartesianToSpherical(xyz: self.pov.location - newCenter)
+            displacementRTP.x = distance
+            newLocation = sphericalToCartesian(rtp: displacementRTP)
+        }
+        flyTo(location: newLocation, center: newCenter, flightTime: flightTime)
     }
 
     public func hoverOver(_ point: SIMD3<Float>, _ distance: Float = 5, flightTime: TimeInterval? = nil) {
