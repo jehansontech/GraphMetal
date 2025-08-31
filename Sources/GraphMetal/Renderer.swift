@@ -53,7 +53,9 @@ public enum RenderError: Error {
 public class Renderer: ObservableObject {
 
     public var visibleZ: ClosedRange<Float> {
-        return max(fovController.zNear, fadeoutMidpoint-fadeoutDistance)...min(fovController.zFar, fadeoutMidpoint+fadeoutDistance)
+        let lowerBound = max(fovController.zNear, fadeoutMidpoint - fadeoutDistance)
+        let upperBound = min(fovController.zFar,  fadeoutMidpoint + fadeoutDistance)
+        return lowerBound...upperBound
     }
 
     // TODO: either make this no longer necessary or set it properly.
