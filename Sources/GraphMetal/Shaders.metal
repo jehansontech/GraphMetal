@@ -60,38 +60,38 @@ struct ColoredVertexIn {
 // beams
 // =============================================================================
 
-//struct BeamVertexOut {
-//    float4 position [[position]];
-//    float3 fragmentPosition;
-//    float4 color;
-//};
-//
-//vertex BeamVertexOut beam_vertex(ColoredVertexIn vertexIn [[stage_in]],
-//                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
-//
-//    float4x4 mv_Matrix = uniforms.modelViewMatrix;
-//    float4x4 proj_Matrix = uniforms.projectionMatrix;
-//
-//    BeamVertexOut vertexOut;
-//    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
-//    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
-//    vertexOut.color = vertexIn.color;
-//
-//    return vertexOut;
-//}
-//
-//fragment float4 beam_fragment(BeamVertexOut interpolated [[stage_in]],
-//                              const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
-//
-//    // (Beams don't fade out)
-//
-//    // transparent edges
-//    if (interpolated.color.a <= 0) {
-//        discard_fragment();
-//    }
-//
-//    return interpolated.color;
-//}
+struct BeamVertexOut {
+    float4 position [[position]];
+    float3 fragmentPosition;
+    float4 color;
+};
+
+vertex BeamVertexOut beam_vertex(ColoredVertexIn vertexIn [[stage_in]],
+                                 const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+
+    float4x4 mv_Matrix = uniforms.modelViewMatrix;
+    float4x4 proj_Matrix = uniforms.projectionMatrix;
+
+    BeamVertexOut vertexOut;
+    vertexOut.position = proj_Matrix * mv_Matrix * float4(vertexIn.position,1);
+    vertexOut.fragmentPosition = (mv_Matrix * float4(vertexIn.position,1)).xyz;
+    vertexOut.color = vertexIn.color;
+
+    return vertexOut;
+}
+
+fragment float4 beam_fragment(BeamVertexOut interpolated [[stage_in]],
+                              const device Uniforms& uniforms [[buffer(WireframeBufferIndexUniform)]]) {
+
+    // (Beams don't fade out)
+
+    // transparent edges
+    if (interpolated.color.a <= 0) {
+        discard_fragment();
+    }
+
+    return interpolated.color;
+}
 
 // =============================================================================
 // edges
