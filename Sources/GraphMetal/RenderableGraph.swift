@@ -86,7 +86,7 @@ extension Graph where NodeType.ValueType: EmbeddedValue {
 
                 // The ray is cone w/ elliptical cross section. We want to consider the
                 // ellipse formed by the intersection of the ray with the perpendicular
-                // plane that contains the node}.
+                // plane that contains the node.
 
                 // nodeDisplacement is the displacement vector from the ray origin
                 // to the node.
@@ -218,6 +218,14 @@ public struct TouchRay: Codable, Sendable {
     /// Start and end of the ray, given as distance along ray
     public var range: ClosedRange<Float>
 
+    public var length: Float {
+        range.upperBound - range.lowerBound
+    }
+
+    public var end: SIMD3<Float> {
+        origin + length * direction
+    }
+    
     /// cross1 and cross2 are two vectors perpendicular to ray direction giving its rate of spreading.
     /// They give the semi-major and semi-minor axes of the ellipse that is the cross-section (we
     /// don't know which is which).
